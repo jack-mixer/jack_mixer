@@ -1,0 +1,34 @@
+Build requirements:
+ * You need gcc (3.4.3 should work)
+ * You need SWIG (1.3.29 should work)
+ * You need python headers (python-dev package or something like that)
+ * You need JACK headers (jack-dev package or something like that)
+
+Runtime requirements:
+ * You need Python (2.4 should work, maybe 2.3 too - please report)
+ * PyGTK with cairo support
+ * fpconst (floating point constants) Python module.
+   You can use this URL if you cannot find it in more sane place
+   http://nedko.arnaudov.name/soft/jack_mixer/fpconst-0.7.2.tar.gz
+
+Runtime optional things, that will enable you to get full functionality:
+ * To get LASH (Linux audio session) support, you need Python bindings
+   for LASH, currently available at
+   http://nedko.arnaudov.name/soft/pylash/, until Dave Robillard is
+   kind enough to include them in the official LASH distribution.
+   For LASH support you also need PyXML (0.8.4 should work)
+ * To get balance/panorama functionality for each channel you need
+   pyphat. Get it from http://phat.berlios.de/, you want latest SVN
+   version, phat-0.4.0 has some bugs trigered by jack_mixer and misses
+   some functionality (like reset to center).
+ * If you want your settings to be preserved in GConf you need Python
+   bindings for GConf, part of the Python bindings for GNOME. Chances
+   are that package you need to install is called gnome-python
+
+Once you have all needed requisites you run "make" to build the mixer
+engine and "make install" to install it. Chances are that you will
+need superuser (root) access to install. You may want to change
+install paths specified at the top of the GNUmakefile.
+
+If you ever need to remove jack_mixer from your system you could run
+"make uninstall" to uninstall all installed files.

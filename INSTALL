@@ -4,6 +4,13 @@ Build requirements:
  * You need python headers (python-dev package or something like that)
  * You need JACK headers (jack-dev package or something like that)
 
+Adjust GNUmakefile to suit your needs.
+
+!!!!!!!!!!!!
+!!! Ubuntu, chances are that you need
+!!! INSTALL_GCONF_SCHEMAS_DIR=/usr/share/gconf/schemas/
+!!!!!!!!!!!!
+
 Runtime requirements:
  * You need Python (2.4 should work, maybe 2.3 too - please report)
  * PyGTK with cairo support

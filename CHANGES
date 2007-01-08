@@ -1,0 +1,6 @@
+Changes since version 1:
+
+ * Fix compilation issue for 64-bit platforms (-fPIC)
+ * Add new meter scale - iec268, fewer marks
+ * Add hints in documentation for compiling on Ubuntu
+ * Fix compilation with offsetof macro definition

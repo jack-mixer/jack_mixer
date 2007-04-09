@@ -45,14 +45,18 @@ class widget(gtk.EventBox):
 
     def set_peak(self, peak):
         self.peak = peak
-        text = "%+.1f" % peak
-
-        if peak > 0:
-            self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(int(65535 * 0.8), int(65535 * 0.3), 0))
+        if fpconst.isNaN(peak):
+            self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(int(65535 * 0.7), 0, 0))
+            self.label.set_text("NaN")
         else:
-            self.modify_bg(gtk.STATE_NORMAL, self.label.style.bg[gtk.STATE_NORMAL])
+            text = "%+.1f" % peak
 
-        self.label.set_text(text)
+            if peak > 0:
+                self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(int(65535 * 0.8), int(65535 * 0.3), 0))
+            else:
+                self.modify_bg(gtk.STATE_NORMAL, self.label.style.bg[gtk.STATE_NORMAL])
+
+            self.label.set_text(text)
 
 gobject.signal_new("reset", widget, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
 gobject.signal_new("volume-adjust", widget, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_FLOAT])

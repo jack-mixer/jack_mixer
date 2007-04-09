@@ -33,6 +33,8 @@ jack_client_t * g_jack_client;
 
 #define PEAK_FRAMES_CHUNK 4800
 
+#define FLOAT_EXISTS(x) (!((x) - (x)))
+
 struct list_head g_channels_list;
 
 struct channel
@@ -55,6 +57,8 @@ struct channel
   jack_nframes_t peak_frames;
   float peak_left;
   float peak_right;
+
+  int NaN_detected;       /* boolean */
 };
 
 struct channel g_main_mix_channel;
@@ -187,6 +191,8 @@ void * add_channel(const char * channel_name, int stereo)
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
 
+  channel_ptr->NaN_detected = 0; /* false */
+
   calc_channel_volumes(channel_ptr);
 
   list_add_tail(&channel_ptr->siblings, &g_channels_list);
@@ -310,12 +316,20 @@ void channel_balance_write(void * channel, double balance)
 
 double channel_abspeak_read(void * channel)
 {
-  return value_to_db(channel_ptr->abspeak);
+  if (channel_ptr->NaN_detected)
+  {
+    return sqrt(-1);
+  }
+  else
+  {
+    return value_to_db(channel_ptr->abspeak);
+  }
 }
 
 void channel_abspeak_reset(void * channel)
 {
   channel_ptr->abspeak = 0;
+  channel_ptr->NaN_detected = 0; /* false */
 }
 
 void channel_mute(void * channel)
@@ -414,12 +428,24 @@ process(jack_nframes_t nframes, void *arg)
 
     for (i = 0 ; i < nframes ; i++)
     {
+      if (!FLOAT_EXISTS(in_left[i]))
+      {
+        channel_ptr->NaN_detected = 1; /* true */
+        break;
+      }
+
       frame_left = in_left[i] * channel_ptr->volume_left;
       out_left[i] += frame_left;
 
       if (channel_ptr->stereo)
       {
         frame_right = in_right[i] * channel_ptr->volume_right;
+
+        if (!FLOAT_EXISTS(in_right[i]))
+        {
+          channel_ptr->NaN_detected = 1; /* true */
+          break;
+        }
       }
       else
       {

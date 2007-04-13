@@ -262,7 +262,7 @@ void channel_rename(void * channel, const char * name)
   }
   else
   {
-    ret = jack_port_set_name(channel_ptr->port_left, port_name);
+    ret = jack_port_set_name(channel_ptr->port_left, name);
     if (ret != 0)
     {
       /* what could we do here? */
@@ -413,6 +413,8 @@ process(jack_nframes_t nframes, void *arg)
     out_left[i] = 0.0;
     out_right[i] = 0.0;
   }
+
+  in_right = NULL;              /* disable warning */
 
   /* process input channels and mix them into main mix */
   list_for_each(node_ptr, &g_channels_list)

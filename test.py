@@ -19,7 +19,7 @@
 
 import jack_mixer_c
 
-jack_mixer_c.init()
+jack_mixer_c.init("test")
 
 print "Channels count: %u" % jack_mixer_c.get_channels_count()
 

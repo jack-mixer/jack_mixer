@@ -1,0 +1,63 @@
+#
+# This file is part of zynjacku
+#
+# Copyright (C) 2007 Nedko Arnaudov <nedko@arnaudov.name>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+AM_CFLAGS = @JACK_CFLAGS@ -D_GNU_SOURCE -Wall -Werror
+INCLUDES = $(PYTHON_INCLUDES)
+
+jack_mixerdir = $(pkgdatadir)
+pkgpyexecdir = $(pythondir)
+pkgpyexec_LTLIBRARIES = _jack_mixer_c.la
+
+_jack_mixer_c_la_LDFLAGS = -module -avoid-version
+
+_jack_mixer_c_la_LIBADD = @JACK_LIBS@
+
+dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py jack_mixer.glade
+
+jack_mixer_c.py jack_mixer_wrap.c: $(top_srcdir)/jack_mixer.h
+	$(SWIG) -o jack_mixer_wrap.c -I$(top_srcdir) -python $(top_srcdir)/jack_mixer.h
+
+pkgpyexec_SCRIPTS = jack_mixer_c.py
+
+CLEANFILES = jack_mixer_c.py jack_mixer_wrap.c *.pyc
+EXTRA_DIST = test.py gpl.txt jack_mixer.schemas
+
+_jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h
+nodist__jack_mixer_c_la_SOURCES = jack_mixer_wrap.c
+
+bin_SCRIPTS = $(srcdir)/jack_mixer.py
+
+_jack_mixer_c.so: _jack_mixer_c.la
+	ln -nfs .libs/_jack_mixer_c.so
+
+test: _jack_mixer_c.so
+	@./test.py
+
+schemadir = @GCONF_SCHEMA_FILE_DIR@
+schema_DATA = jack_mixer.schemas
+
+install-data-hook:
+	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) gconftool-2 --makefile-install-rule $(srcdir)/$(schema_DATA)
+
+install-exec-hook:
+	ln -vfs $(DESTDIR)$(pkgdatadir)/jack_mixer.py $(DESTDIR)$(bindir)/jack_mixer
+
+uninstall-hook:
+	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) gconftool-2 --makefile-uninstall-rule $(srcdir)/$(schema_DATA)
+	rm -vf $(DESTDIR)$(bindir)/jack_mixer

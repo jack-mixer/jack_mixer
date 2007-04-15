@@ -36,7 +36,7 @@ jack_mixer_c.py jack_mixer_wrap.c: $(top_srcdir)/jack_mixer.h
 pkgpyexec_SCRIPTS = jack_mixer_c.py
 
 CLEANFILES = jack_mixer_c.py jack_mixer_wrap.c *.pyc
-EXTRA_DIST = test.py gpl.txt jack_mixer.schemas
+EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py
 
 _jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h
 nodist__jack_mixer_c_la_SOURCES = jack_mixer_wrap.c

@@ -21,16 +21,21 @@ import gtk
 import gobject
 import jack_mixer_c
 import sys
-from channel import *
 import gtk.glade
 import os
-import gui
 
 try:
     import lash
 except:
     print "Cannot load LASH python bindings, you want LASH unless you enjoy manual jack plumbing each time you use this app"
     lash = None
+
+old_path = sys.path
+sys.path.insert(0, os.path.dirname(sys.argv[0]) + os.sep + ".." + os.sep + "share"+ os.sep + "jack_mixer")
+from channel import *
+import gui
+sys.path = old_path
+
 
 # no need for serialization if there is no LASH available
 if lash:

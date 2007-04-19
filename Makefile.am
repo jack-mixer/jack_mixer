@@ -56,7 +56,7 @@ install-data-hook:
 	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) gconftool-2 --makefile-install-rule $(srcdir)/$(schema_DATA)
 
 install-exec-hook:
-	ln -vfs $(DESTDIR)$(pkgdatadir)/jack_mixer.py $(DESTDIR)$(bindir)/jack_mixer
+	ln -vfs jack_mixer.py $(DESTDIR)$(bindir)/jack_mixer
 
 uninstall-hook:
 	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) gconftool-2 --makefile-uninstall-rule $(srcdir)/$(schema_DATA)

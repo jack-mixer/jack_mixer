@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-AM_CFLAGS = @JACK_CFLAGS@ -D_GNU_SOURCE -Wall -Werror
+AM_CFLAGS = @JACK_CFLAGS@ -D_GNU_SOURCE -Wall
 INCLUDES = $(PYTHON_INCLUDES)
 
 jack_mixerdir = $(pkgdatadir)

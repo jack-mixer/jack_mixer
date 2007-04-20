@@ -1,0 +1,7 @@
+Changes since version 2:
+
+ * Detect NaNs
+ * Dont mix nan sample and next samples in current jack frame (only messed channel)
+ * Show NaNs to user (abspeak goes red and shows NaN)
+ * Reset channel NaN status on abspeak reset
+ * Switch to autotools (prepare for JACK MIDI support)

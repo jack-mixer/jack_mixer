@@ -20,7 +20,7 @@
 #
 
 AC_PREREQ(2.61)
-AC_INIT(jack_mixer, dev)
+AC_INIT(jack_mixer, 3)
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])

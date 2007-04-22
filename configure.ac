@@ -71,6 +71,7 @@ AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
 #AS_AC_EXPAND(PYTHONDIR, $pythondir)
 #AC_SUBST(PYTHONDIR)
 
+AC_PATH_PROG(GCONFTOOL, gconftool-2, no)
 AM_GCONF_SOURCE_2
 
 AC_CONFIG_FILES([Makefile])

@@ -52,12 +52,14 @@ test: _jack_mixer_c.so
 schemadir = @GCONF_SCHEMA_FILE_DIR@
 schema_DATA = jack_mixer.schemas
 
-install-data-hook:
-	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) gconftool-2 --makefile-install-rule $(srcdir)/$(schema_DATA)
-
 install-exec-hook:
 	ln -vfs jack_mixer.py $(DESTDIR)$(bindir)/jack_mixer
 
+if GCONF_SCHEMAS_INSTALL
+install-data-hook:
+	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-install-rule $(srcdir)/$(schema_DATA)
+
 uninstall-hook:
-	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) gconftool-2 --makefile-uninstall-rule $(srcdir)/$(schema_DATA)
+	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-uninstall-rule $(srcdir)/$(schema_DATA)
 	rm -vf $(DESTDIR)$(bindir)/jack_mixer
+endif

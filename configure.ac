@@ -34,8 +34,6 @@ AC_PROG_LIBTOOL
 
 # Checks for libraries.
 
-PKG_CHECK_MODULES(GTK, gtk+-2.0)
-PKG_CHECK_MODULES(PYGTK, pygtk-2.0)
 PKG_CHECK_MODULES(JACK, jack)
 
 AC_PROG_SWIG(1.3.31)
@@ -70,6 +68,17 @@ AM_PATH_PYTHON(2.4)
 AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
 #AS_AC_EXPAND(PYTHONDIR, $pythondir)
 #AC_SUBST(PYTHONDIR)
+
+AC_ARG_ENABLE(pymod-checks, [AS_HELP_STRING(--disable-pymod-checks, [Force disable checks for Python modules required at run time])], [ disable_pymod_checks="yes" ], [ disable_pymod_checks="no" ])
+
+if test "$disable_pymod_checks" != "yes"
+then
+  AM_CHECK_PYMOD(gtk,,,[AC_MSG_ERROR(Could not find PyGTK)])
+  AM_CHECK_PYMOD(cairo,,,[AC_MSG_ERROR(Could not find Pycairo)])
+  AM_CHECK_PYMOD(fpconst,,,[AC_MSG_ERROR(Could not find fpconst Python module)])
+else
+  AC_MSG_WARN([Checks for python modules required runtime have been force disabled])
+fi
 
 AC_PATH_PROG(GCONFTOOL, gconftool-2, no)
 AM_GCONF_SOURCE_2

@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# autotools bootstrap script for zynjacku
+# autotools bootstrap script for jack_mixer
 #
-# This file is part of zynjacku
+# This file is part of jack_mixer
 #
 # Copyright (C) 2007 Nedko Arnaudov <nedko@arnaudov.name>
 #

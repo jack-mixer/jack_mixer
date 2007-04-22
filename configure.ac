@@ -1,7 +1,7 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# This file is part of zynjacku
+# This file is part of jack_mixer
 #
 # Copyright (C) 2007 Nedko Arnaudov <nedko@arnaudov.name>
 #

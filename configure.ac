@@ -36,8 +36,6 @@ AC_PROG_LIBTOOL
 
 PKG_CHECK_MODULES(JACK, jack)
 
-AC_PROG_SWIG(1.3.31)
-
 # JACK MIDI
 have_jackmidi="unknown"
 AC_ARG_ENABLE(jackmidi, [AS_HELP_STRING(--disable-jackmidi, [Force disable JACK MIDI support [default=no]])], [ have_jackmidi="no" ])

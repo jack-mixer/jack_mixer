@@ -31,15 +31,14 @@ _jack_mixer_c_la_LIBADD = @JACK_LIBS@
 dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py jack_mixer.glade
 
 jack_mixer_c.py jack_mixer_wrap.c: $(top_srcdir)/jack_mixer.h
-	$(SWIG) -o jack_mixer_wrap.c -I$(top_srcdir) -python $(top_srcdir)/jack_mixer.h
+	swig -o jack_mixer_wrap.c -I$(top_srcdir) -python $(top_srcdir)/jack_mixer.h
 
 pkgpyexec_SCRIPTS = jack_mixer_c.py
 
 CLEANFILES = jack_mixer_c.py jack_mixer_wrap.c *.pyc
-EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py
+EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py jack_mixer_c.py
 
-_jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h
-nodist__jack_mixer_c_la_SOURCES = jack_mixer_wrap.c
+_jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h jack_mixer_wrap.c
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 

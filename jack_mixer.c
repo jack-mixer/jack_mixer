@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 #include <jack/jack.h>
 
@@ -41,11 +42,11 @@ struct channel
 {
   struct list_head siblings;
   char * name;
-  int stereo;                   /* boolean */
+  bool stereo;
   float volume;
   float balance;
-  int muted;
-  int soloed;
+  bool muted;
+  bool soloed;
   float volume_left;
   float volume_right;
   float meter_left;
@@ -58,7 +59,7 @@ struct channel
   float peak_left;
   float peak_right;
 
-  int NaN_detected;       /* boolean */
+  bool NaN_detected;
 };
 
 struct channel g_main_mix_channel;
@@ -191,7 +192,7 @@ void * add_channel(const char * channel_name, int stereo)
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
 
-  channel_ptr->NaN_detected = 0; /* false */
+  channel_ptr->NaN_detected = false;
 
   calc_channel_volumes(channel_ptr);
 
@@ -270,7 +271,7 @@ void channel_rename(void * channel, const char * name)
   }
 }
 
-int channel_is_stereo(void * channel)
+bool channel_is_stereo(void * channel)
 {
   return channel_ptr->stereo;
 }
@@ -329,7 +330,7 @@ double channel_abspeak_read(void * channel)
 void channel_abspeak_reset(void * channel)
 {
   channel_ptr->abspeak = 0;
-  channel_ptr->NaN_detected = 0; /* false */
+  channel_ptr->NaN_detected = false;
 }
 
 void channel_mute(void * channel)
@@ -380,12 +381,12 @@ void channel_unsolo(void * channel)
   }
 }
 
-int channel_is_muted(void * channel)
+bool channel_is_muted(void * channel)
 {
   return channel_ptr->muted;
 }
 
-int channel_is_soloed(void * channel)
+bool channel_is_soloed(void * channel)
 {
   return channel_ptr->soloed;
 }
@@ -432,7 +433,7 @@ process(jack_nframes_t nframes, void *arg)
     {
       if (!FLOAT_EXISTS(in_left[i]))
       {
-        channel_ptr->NaN_detected = 1; /* true */
+        channel_ptr->NaN_detected = true;
         break;
       }
 
@@ -445,7 +446,7 @@ process(jack_nframes_t nframes, void *arg)
 
         if (!FLOAT_EXISTS(in_right[i]))
         {
-          channel_ptr->NaN_detected = 1; /* true */
+          channel_ptr->NaN_detected = true;
           break;
         }
       }
@@ -556,7 +557,7 @@ process(jack_nframes_t nframes, void *arg)
   return 0;      
 }
 
-int init(const char * jack_client_name_ptr)
+bool init(const char * jack_client_name_ptr)
 {
   int ret;
 
@@ -589,7 +590,7 @@ int init(const char * jack_client_name_ptr)
     goto close_jack;
   }
 
-  g_main_mix_channel.stereo = 1; /* true */
+  g_main_mix_channel.stereo = true;
 
   g_main_mix_channel.volume = 0.0;
   g_main_mix_channel.balance = 0.0;
@@ -619,13 +620,13 @@ int init(const char * jack_client_name_ptr)
     goto close_jack;
   }
 
-  return 1;                     /* true */
+  return true;
 
 close_jack:
   jack_client_close(g_jack_client); /* this should clear all other resources we obtained through the client handle */
 
 exit:
-  return 0;                     /* false */
+  return false;
 }
 
 void uninit()

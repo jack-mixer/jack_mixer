@@ -28,11 +28,12 @@
 %include "typemaps.i"
 %apply double *OUTPUT { double * left_ptr, double * right_ptr, double * mono_ptr };
 %{
+#include <stdbool.h>
 #include "jack_mixer.h"
 %}
 #endif
 
-int init(const char * jack_client_name_ptr);
+bool init(const char * jack_client_name_ptr);
 
 int get_channels_count();
 
@@ -46,7 +47,7 @@ void channel_stereo_meter_read(void * channel, double * left_ptr, double * right
 /* returned value is in dBFS */
 void channel_mono_meter_read(void * channel, double * mono_ptr);
 
-int channel_is_stereo(void * channel);
+bool channel_is_stereo(void * channel);
 
 /* volume is in dBFS */
 void channel_volume_write(void * channel, double volume);
@@ -71,9 +72,9 @@ void channel_solo(void * channel);
 
 void channel_unsolo(void * channel);
 
-int channel_is_muted(void * channel);
+bool channel_is_muted(void * channel);
 
-int channel_is_soloed(void * channel);
+bool channel_is_soloed(void * channel);
 
 void channel_rename(void * channel, const char * name);
 

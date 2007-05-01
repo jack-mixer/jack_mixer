@@ -31,6 +31,8 @@ rtsafe_memory_pool_create(
   size_t data_size,             /* chunk size */
   size_t min_preallocated,      /* min chunks preallocated */
   size_t max_preallocated,      /* max chunks preallocated */
+  bool enforce_thread_safety,   /* true - enforce thread safety (internal mutex),
+                                   false - assume caller code is already thread-safe */
   rtsafe_memory_pool_handle * pool_ptr);
 
 /* will sleep */
@@ -48,7 +50,7 @@ void *
 rtsafe_memory_pool_allocate(
   rtsafe_memory_pool_handle pool);
 
-/* may sleep */
+/* may sleep, will not fail */
 void *
 rtsafe_memory_pool_allocate_sleepy(
   rtsafe_memory_pool_handle pool);
@@ -67,14 +69,17 @@ rtsafe_memory_init(
   size_t max_size,
   size_t prealloc_min,
   size_t prealloc_max,
+  bool enforce_thread_safety,   /* true - enforce thread safety (internal mutex),
+                                   false - assume caller code is already thread-safe */
   rtsafe_memory_handle * handle_ptr);
 
-/* will not sleep */
+/* will not sleep, returns NULL if no memory is available */
 void *
 rtsafe_memory_allocate(
   rtsafe_memory_handle handle_ptr,
   size_t size);
 
+/* may sleep */
 void
 rtsafe_memory_sleepy(
   rtsafe_memory_handle handle_ptr);

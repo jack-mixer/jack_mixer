@@ -30,13 +30,9 @@
 #include "jack_mixer.h"
 #include "list.h"
 
-jack_client_t * g_jack_client;
-
 #define PEAK_FRAMES_CHUNK 4800
 
 #define FLOAT_EXISTS(x) (!((x) - (x)))
-
-struct list_head g_channels_list;
 
 struct channel
 {
@@ -62,10 +58,16 @@ struct channel
   bool NaN_detected;
 };
 
-struct channel g_main_mix_channel;
+struct jack_mixer
+{
+  jack_client_t * jack_client;
+  struct list_head channels_list;
+  struct channel main_mix_channel;
+  int channels_count;
+  int soloed_channels_count;
+};
 
-int g_channels_count;
-int g_soloed_channels_count;
+struct jack_mixer * g_the_mixer_ptr;
 
 float value_to_db(float value)
 {
@@ -84,12 +86,12 @@ float db_to_value(float db)
 
 void * get_main_mix_channel()
 {
-  return &g_main_mix_channel;
+  return &g_the_mixer_ptr->main_mix_channel;
 }
 
 int get_channels_count()
 {
-  return g_channels_count;
+  return g_the_mixer_ptr->channels_count;
 }
 
 void
@@ -102,7 +104,7 @@ calc_channel_volumes(struct channel * channel_ptr)
     return;
   }
 
-  if (g_soloed_channels_count > 0 && !channel_ptr->soloed) /* there are soloed channels but we are not one of them */
+  if (g_the_mixer_ptr->soloed_channels_count > 0 && !channel_ptr->soloed) /* there are soloed channels but we are not one of them */
   {
     channel_ptr->volume_left = 0;
     channel_ptr->volume_right = 0;
@@ -135,7 +137,7 @@ calc_all_channel_volumes()
   struct list_head * node_ptr;
   struct channel * channel_ptr;
 
-  list_for_each(node_ptr, &g_channels_list)
+  list_for_each(node_ptr, &g_the_mixer_ptr->channels_list)
   {
     channel_ptr = list_entry(node_ptr, struct channel, siblings);
     calc_channel_volumes(channel_ptr);
@@ -168,14 +170,14 @@ void * add_channel(const char * channel_name, int stereo)
     port_name[channel_name_size] = ' ';
     port_name[channel_name_size+1] = 'L';
     port_name[channel_name_size+2] = 0;
-    channel_ptr->port_left = jack_port_register(g_jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_left = jack_port_register(g_the_mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     port_name[channel_name_size+1] = 'R';
-    channel_ptr->port_right = jack_port_register(g_jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_right = jack_port_register(g_the_mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     free(port_name);
   }
   else
   {
-    channel_ptr->port_left = jack_port_register(g_jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_left = jack_port_register(g_the_mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
   }
 
   channel_ptr->stereo = stereo;
@@ -196,8 +198,8 @@ void * add_channel(const char * channel_name, int stereo)
 
   calc_channel_volumes(channel_ptr);
 
-  list_add_tail(&channel_ptr->siblings, &g_channels_list);
-  g_channels_count++;
+  list_add_tail(&channel_ptr->siblings, &g_the_mixer_ptr->channels_list);
+  g_the_mixer_ptr->channels_count++;
 
   goto exit;
 
@@ -281,15 +283,15 @@ void remove_channel(void * channel)
   list_del(&channel_ptr->siblings);
   free(channel_ptr->name);
 
-  jack_port_unregister(g_jack_client, channel_ptr->port_left);
+  jack_port_unregister(g_the_mixer_ptr->jack_client, channel_ptr->port_left);
   if (channel_ptr->stereo)
   {
-    jack_port_unregister(g_jack_client, channel_ptr->port_right);
+    jack_port_unregister(g_the_mixer_ptr->jack_client, channel_ptr->port_right);
   }
 
   free(channel_ptr);
 
-  g_channels_count--;
+  g_the_mixer_ptr->channels_count--;
 }
 
 void channel_stereo_meter_read(void * channel, double * left_ptr, double * right_ptr)
@@ -350,9 +352,9 @@ void channel_solo(void * channel)
   if (!channel_ptr->soloed)
   {
     channel_ptr->soloed = 1;
-    g_soloed_channels_count++;
+    g_the_mixer_ptr->soloed_channels_count++;
 
-    if (g_soloed_channels_count == 1)
+    if (g_the_mixer_ptr->soloed_channels_count == 1)
     {
       calc_all_channel_volumes();
     }
@@ -368,9 +370,9 @@ void channel_unsolo(void * channel)
   if (channel_ptr->soloed)
   {
     channel_ptr->soloed = 0;
-    g_soloed_channels_count--;
+    g_the_mixer_ptr->soloed_channels_count--;
 
-    if (g_soloed_channels_count == 0)
+    if (g_the_mixer_ptr->soloed_channels_count == 0)
     {
       calc_all_channel_volumes();
     }
@@ -406,8 +408,8 @@ process(jack_nframes_t nframes, void *arg)
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
 
-  out_left = jack_port_get_buffer(g_main_mix_channel.port_left, nframes);
-  out_right = jack_port_get_buffer(g_main_mix_channel.port_right, nframes);
+  out_left = jack_port_get_buffer(g_the_mixer_ptr->main_mix_channel.port_left, nframes);
+  out_right = jack_port_get_buffer(g_the_mixer_ptr->main_mix_channel.port_right, nframes);
 
   for (i = 0 ; i < nframes ; i++)
   {
@@ -418,7 +420,7 @@ process(jack_nframes_t nframes, void *arg)
   in_right = NULL;              /* disable warning */
 
   /* process input channels and mix them into main mix */
-  list_for_each(node_ptr, &g_channels_list)
+  list_for_each(node_ptr, &g_the_mixer_ptr->channels_list)
   {
     channel_ptr = list_entry(node_ptr, struct channel, siblings);
 
@@ -516,41 +518,41 @@ process(jack_nframes_t nframes, void *arg)
   /* process main mix channel */
   for (i = 0 ; i < nframes ; i++)
   {
-    out_left[i] = out_left[i] * g_main_mix_channel.volume_left;
-    out_right[i] = out_right[i] * g_main_mix_channel.volume_right;
+    out_left[i] = out_left[i] * g_the_mixer_ptr->main_mix_channel.volume_left;
+    out_right[i] = out_right[i] * g_the_mixer_ptr->main_mix_channel.volume_right;
 
     frame_left = fabsf(out_left[i]);
-    if (g_main_mix_channel.peak_left < frame_left)
+    if (g_the_mixer_ptr->main_mix_channel.peak_left < frame_left)
     {
-      g_main_mix_channel.peak_left = frame_left;
+      g_the_mixer_ptr->main_mix_channel.peak_left = frame_left;
 
-      if (frame_left > g_main_mix_channel.abspeak)
+      if (frame_left > g_the_mixer_ptr->main_mix_channel.abspeak)
       {
-        g_main_mix_channel.abspeak = frame_left;
+        g_the_mixer_ptr->main_mix_channel.abspeak = frame_left;
       }
     }
 
     frame_right = fabsf(out_right[i]);
-    if (g_main_mix_channel.peak_right < frame_right)
+    if (g_the_mixer_ptr->main_mix_channel.peak_right < frame_right)
     {
-      g_main_mix_channel.peak_right = frame_right;
+      g_the_mixer_ptr->main_mix_channel.peak_right = frame_right;
 
-      if (frame_right > g_main_mix_channel.abspeak)
+      if (frame_right > g_the_mixer_ptr->main_mix_channel.abspeak)
       {
-        g_main_mix_channel.abspeak = frame_right;
+        g_the_mixer_ptr->main_mix_channel.abspeak = frame_right;
       }
     }
 
-    g_main_mix_channel.peak_frames++;
-    if (g_main_mix_channel.peak_frames >= PEAK_FRAMES_CHUNK)
+    g_the_mixer_ptr->main_mix_channel.peak_frames++;
+    if (g_the_mixer_ptr->main_mix_channel.peak_frames >= PEAK_FRAMES_CHUNK)
     {
-      g_main_mix_channel.meter_left = g_main_mix_channel.peak_left;
-      g_main_mix_channel.peak_left = 0.0;
+      g_the_mixer_ptr->main_mix_channel.meter_left = g_the_mixer_ptr->main_mix_channel.peak_left;
+      g_the_mixer_ptr->main_mix_channel.peak_left = 0.0;
 
-      g_main_mix_channel.meter_right = g_main_mix_channel.peak_right;
-      g_main_mix_channel.peak_right = 0.0;
+      g_the_mixer_ptr->main_mix_channel.meter_right = g_the_mixer_ptr->main_mix_channel.peak_right;
+      g_the_mixer_ptr->main_mix_channel.peak_right = 0.0;
 
-      g_main_mix_channel.peak_frames = 0;
+      g_the_mixer_ptr->main_mix_channel.peak_frames = 0;
     }
   }
 
@@ -561,59 +563,67 @@ bool init(const char * jack_client_name_ptr)
 {
   int ret;
 
-  INIT_LIST_HEAD(&g_channels_list);
+  g_the_mixer_ptr = malloc(sizeof(struct jack_mixer));
+  if (g_the_mixer_ptr == NULL)
+  {
+    goto exit;
+  }
+
+  INIT_LIST_HEAD(&g_the_mixer_ptr->channels_list);
 
   printf("Initializing JACK\n");
-  g_jack_client = jack_client_new(jack_client_name_ptr);
-  if (g_jack_client == NULL)
+  g_the_mixer_ptr->jack_client = jack_client_new(jack_client_name_ptr);
+  if (g_the_mixer_ptr->jack_client == NULL)
   {
     fprintf(stderr, "Cannot create JACK client.\n");
     fprintf(stderr, "Please make sure JACK daemon is running.\n");
-    goto exit;
+    goto exit_free;
   }
 
   printf("JACK client created\n");
 
-  printf("Sample rate: %" PRIu32 "\n", jack_get_sample_rate(g_jack_client));
+  printf("Sample rate: %" PRIu32 "\n", jack_get_sample_rate(g_the_mixer_ptr->jack_client));
 
-  g_main_mix_channel.port_left = jack_port_register(g_jack_client, "main out L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-  if (g_main_mix_channel.port_left == NULL)
+  g_the_mixer_ptr->main_mix_channel.port_left = jack_port_register(g_the_mixer_ptr->jack_client, "main out L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+  if (g_the_mixer_ptr->main_mix_channel.port_left == NULL)
   {
     fprintf(stderr, "Cannot create JACK port");
     goto close_jack;
   }
 
-  g_main_mix_channel.port_right = jack_port_register(g_jack_client, "main out R", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-  if (g_main_mix_channel.port_right == NULL)
+  g_the_mixer_ptr->main_mix_channel.port_right = jack_port_register(g_the_mixer_ptr->jack_client, "main out R", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+  if (g_the_mixer_ptr->main_mix_channel.port_right == NULL)
   {
     fprintf(stderr, "Cannot create JACK port");
     goto close_jack;
   }
 
-  g_main_mix_channel.stereo = true;
+  g_the_mixer_ptr->main_mix_channel.stereo = true;
 
-  g_main_mix_channel.volume = 0.0;
-  g_main_mix_channel.balance = 0.0;
-  g_main_mix_channel.muted = 0;
-  g_main_mix_channel.soloed = 0;
-  g_main_mix_channel.meter_left = 0.0;
-  g_main_mix_channel.meter_right = 0.0;
-  g_main_mix_channel.abspeak = 0.0;
+  g_the_mixer_ptr->main_mix_channel.volume = 0.0;
+  g_the_mixer_ptr->main_mix_channel.balance = 0.0;
+  g_the_mixer_ptr->main_mix_channel.muted = 0;
+  g_the_mixer_ptr->main_mix_channel.soloed = 0;
+  g_the_mixer_ptr->main_mix_channel.meter_left = 0.0;
+  g_the_mixer_ptr->main_mix_channel.meter_right = 0.0;
+  g_the_mixer_ptr->main_mix_channel.abspeak = 0.0;
 
-  g_main_mix_channel.peak_left = 0.0;
-  g_main_mix_channel.peak_right = 0.0;
-  g_main_mix_channel.peak_frames = 0;
+  g_the_mixer_ptr->main_mix_channel.peak_left = 0.0;
+  g_the_mixer_ptr->main_mix_channel.peak_right = 0.0;
+  g_the_mixer_ptr->main_mix_channel.peak_frames = 0;
 
-  calc_channel_volumes(&g_main_mix_channel);
+  g_the_mixer_ptr->main_mix_channel.NaN_detected = false;
 
-	ret = jack_set_process_callback(g_jack_client, process, NULL);
+  calc_channel_volumes(&g_the_mixer_ptr->main_mix_channel);
+
+	ret = jack_set_process_callback(g_the_mixer_ptr->jack_client, process, NULL);
   if (ret != 0)
   {
     fprintf(stderr, "Cannot set JACK process callback");
     goto close_jack;
   }
 
-  ret = jack_activate(g_jack_client);
+  ret = jack_activate(g_the_mixer_ptr->jack_client);
   if (ret != 0)
   {
     fprintf(stderr, "Cannot activate JACK client");
@@ -623,7 +633,10 @@ bool init(const char * jack_client_name_ptr)
   return true;
 
 close_jack:
-  jack_client_close(g_jack_client); /* this should clear all other resources we obtained through the client handle */
+  jack_client_close(g_the_mixer_ptr->jack_client); /* this should clear all other resources we obtained through the client handle */
+
+exit_free:
+  free(g_the_mixer_ptr);
 
 exit:
   return false;
@@ -632,8 +645,10 @@ exit:
 void uninit()
 {
   printf("Uninitializing JACK\n");
-  if (g_jack_client != NULL)
+  if (g_the_mixer_ptr->jack_client != NULL)
   {
-    jack_client_close(g_jack_client);
+    jack_client_close(g_the_mixer_ptr->jack_client);
   }
+
+  free(g_the_mixer_ptr);
 }

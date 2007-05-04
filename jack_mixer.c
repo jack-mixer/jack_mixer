@@ -184,8 +184,8 @@ void * add_channel(const char * channel_name, int stereo)
 
   channel_ptr->volume = 0.0;
   channel_ptr->balance = 0.0;
-  channel_ptr->muted = 0;
-  channel_ptr->soloed = 0;
+  channel_ptr->muted = false;
+  channel_ptr->soloed = false;
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;
   channel_ptr->abspeak = 0.0;
@@ -337,13 +337,13 @@ void channel_abspeak_reset(void * channel)
 
 void channel_mute(void * channel)
 {
-  channel_ptr->muted = 1;
+  channel_ptr->muted = true;
   calc_channel_volumes(channel_ptr);
 }
 
 void channel_unmute(void * channel)
 {
-  channel_ptr->muted = 0;
+  channel_ptr->muted = false;
   calc_channel_volumes(channel_ptr);
 }
 
@@ -351,7 +351,7 @@ void channel_solo(void * channel)
 {
   if (!channel_ptr->soloed)
   {
-    channel_ptr->soloed = 1;
+    channel_ptr->soloed = true;
     g_the_mixer_ptr->soloed_channels_count++;
 
     if (g_the_mixer_ptr->soloed_channels_count == 1)
@@ -369,7 +369,7 @@ void channel_unsolo(void * channel)
 {
   if (channel_ptr->soloed)
   {
-    channel_ptr->soloed = 0;
+    channel_ptr->soloed = false;
     g_the_mixer_ptr->soloed_channels_count--;
 
     if (g_the_mixer_ptr->soloed_channels_count == 0)
@@ -395,8 +395,10 @@ bool channel_is_soloed(void * channel)
 
 #undef channel_ptr
 
+#define mixer_ptr ((struct jack_mixer *)context)
+
 int
-process(jack_nframes_t nframes, void *arg)
+process(jack_nframes_t nframes, void * context)
 {
   jack_default_audio_sample_t * out_left;
   jack_default_audio_sample_t * out_right;
@@ -408,8 +410,8 @@ process(jack_nframes_t nframes, void *arg)
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
 
-  out_left = jack_port_get_buffer(g_the_mixer_ptr->main_mix_channel.port_left, nframes);
-  out_right = jack_port_get_buffer(g_the_mixer_ptr->main_mix_channel.port_right, nframes);
+  out_left = jack_port_get_buffer(mixer_ptr->main_mix_channel.port_left, nframes);
+  out_right = jack_port_get_buffer(mixer_ptr->main_mix_channel.port_right, nframes);
 
   for (i = 0 ; i < nframes ; i++)
   {
@@ -420,7 +422,7 @@ process(jack_nframes_t nframes, void *arg)
   in_right = NULL;              /* disable warning */
 
   /* process input channels and mix them into main mix */
-  list_for_each(node_ptr, &g_the_mixer_ptr->channels_list)
+  list_for_each(node_ptr, &mixer_ptr->channels_list)
   {
     channel_ptr = list_entry(node_ptr, struct channel, siblings);
 
@@ -518,46 +520,48 @@ process(jack_nframes_t nframes, void *arg)
   /* process main mix channel */
   for (i = 0 ; i < nframes ; i++)
   {
-    out_left[i] = out_left[i] * g_the_mixer_ptr->main_mix_channel.volume_left;
-    out_right[i] = out_right[i] * g_the_mixer_ptr->main_mix_channel.volume_right;
+    out_left[i] = out_left[i] * mixer_ptr->main_mix_channel.volume_left;
+    out_right[i] = out_right[i] * mixer_ptr->main_mix_channel.volume_right;
 
     frame_left = fabsf(out_left[i]);
-    if (g_the_mixer_ptr->main_mix_channel.peak_left < frame_left)
+    if (mixer_ptr->main_mix_channel.peak_left < frame_left)
     {
-      g_the_mixer_ptr->main_mix_channel.peak_left = frame_left;
+      mixer_ptr->main_mix_channel.peak_left = frame_left;
 
-      if (frame_left > g_the_mixer_ptr->main_mix_channel.abspeak)
+      if (frame_left > mixer_ptr->main_mix_channel.abspeak)
       {
-        g_the_mixer_ptr->main_mix_channel.abspeak = frame_left;
+        mixer_ptr->main_mix_channel.abspeak = frame_left;
       }
     }
 
     frame_right = fabsf(out_right[i]);
-    if (g_the_mixer_ptr->main_mix_channel.peak_right < frame_right)
+    if (mixer_ptr->main_mix_channel.peak_right < frame_right)
     {
-      g_the_mixer_ptr->main_mix_channel.peak_right = frame_right;
+      mixer_ptr->main_mix_channel.peak_right = frame_right;
 
-      if (frame_right > g_the_mixer_ptr->main_mix_channel.abspeak)
+      if (frame_right > mixer_ptr->main_mix_channel.abspeak)
       {
-        g_the_mixer_ptr->main_mix_channel.abspeak = frame_right;
+        mixer_ptr->main_mix_channel.abspeak = frame_right;
       }
     }
 
-    g_the_mixer_ptr->main_mix_channel.peak_frames++;
-    if (g_the_mixer_ptr->main_mix_channel.peak_frames >= PEAK_FRAMES_CHUNK)
+    mixer_ptr->main_mix_channel.peak_frames++;
+    if (mixer_ptr->main_mix_channel.peak_frames >= PEAK_FRAMES_CHUNK)
     {
-      g_the_mixer_ptr->main_mix_channel.meter_left = g_the_mixer_ptr->main_mix_channel.peak_left;
-      g_the_mixer_ptr->main_mix_channel.peak_left = 0.0;
+      mixer_ptr->main_mix_channel.meter_left = mixer_ptr->main_mix_channel.peak_left;
+      mixer_ptr->main_mix_channel.peak_left = 0.0;
 
-      g_the_mixer_ptr->main_mix_channel.meter_right = g_the_mixer_ptr->main_mix_channel.peak_right;
-      g_the_mixer_ptr->main_mix_channel.peak_right = 0.0;
+      mixer_ptr->main_mix_channel.meter_right = mixer_ptr->main_mix_channel.peak_right;
+      mixer_ptr->main_mix_channel.peak_right = 0.0;
 
-      g_the_mixer_ptr->main_mix_channel.peak_frames = 0;
+      mixer_ptr->main_mix_channel.peak_frames = 0;
     }
   }
 
   return 0;      
 }
+
+#undef mixer_ptr
 
 bool init(const char * jack_client_name_ptr)
 {
@@ -570,6 +574,9 @@ bool init(const char * jack_client_name_ptr)
   }
 
   INIT_LIST_HEAD(&g_the_mixer_ptr->channels_list);
+
+  g_the_mixer_ptr->channels_count = 0;
+  g_the_mixer_ptr->soloed_channels_count = 0;
 
   printf("Initializing JACK\n");
   g_the_mixer_ptr->jack_client = jack_client_new(jack_client_name_ptr);
@@ -602,8 +609,8 @@ bool init(const char * jack_client_name_ptr)
 
   g_the_mixer_ptr->main_mix_channel.volume = 0.0;
   g_the_mixer_ptr->main_mix_channel.balance = 0.0;
-  g_the_mixer_ptr->main_mix_channel.muted = 0;
-  g_the_mixer_ptr->main_mix_channel.soloed = 0;
+  g_the_mixer_ptr->main_mix_channel.muted = false;
+  g_the_mixer_ptr->main_mix_channel.soloed = false;
   g_the_mixer_ptr->main_mix_channel.meter_left = 0.0;
   g_the_mixer_ptr->main_mix_channel.meter_right = 0.0;
   g_the_mixer_ptr->main_mix_channel.abspeak = 0.0;
@@ -616,7 +623,7 @@ bool init(const char * jack_client_name_ptr)
 
   calc_channel_volumes(&g_the_mixer_ptr->main_mix_channel);
 
-	ret = jack_set_process_callback(g_the_mixer_ptr->jack_client, process, NULL);
+	ret = jack_set_process_callback(g_the_mixer_ptr->jack_client, process, g_the_mixer_ptr);
   if (ret != 0)
   {
     fprintf(stderr, "Cannot set JACK process callback");

@@ -144,7 +144,7 @@ calc_all_channel_volumes()
   }
 }
 
-void * add_channel(const char * channel_name, int stereo)
+void * add_channel(const char * channel_name, bool stereo)
 {
   struct channel * channel_ptr;
   char * port_name;

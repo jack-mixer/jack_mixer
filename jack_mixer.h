@@ -37,7 +37,7 @@ bool init(const char * jack_client_name_ptr);
 
 int get_channels_count();
 
-void * add_channel(const char * channel_name, int stereo);
+void * add_channel(const char * channel_name, bool stereo);
 
 const char * channel_get_name(void * channel);
 

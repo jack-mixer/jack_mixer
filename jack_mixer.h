@@ -33,51 +33,104 @@
 %}
 #endif
 
-bool init(const char * jack_client_name_ptr);
+typedef void * jack_mixer_t;
+typedef void * jack_mixer_channel_t;
 
-int get_channels_count();
+jack_mixer_t
+create(
+  const char * jack_client_name_ptr);
 
-void * add_channel(const char * channel_name, bool stereo);
+void
+destroy(
+  jack_mixer_t mixer);
 
-const char * channel_get_name(void * channel);
+jack_mixer_channel_t
+get_main_mix_channel(
+  jack_mixer_t mixer);
+
+unsigned int
+get_channels_count(
+  jack_mixer_t mixer);
+
+jack_mixer_channel_t
+add_channel(
+  jack_mixer_t mixer,
+  const char * channel_name,
+  bool stereo);
+
+const char *
+channel_get_name(
+  jack_mixer_channel_t channel);
 
 /* returned values are in dBFS */
-void channel_stereo_meter_read(void * channel, double * left_ptr, double * right_ptr);
+void
+channel_stereo_meter_read(
+  jack_mixer_channel_t channel,
+  double * left_ptr,
+  double * right_ptr);
 
 /* returned value is in dBFS */
-void channel_mono_meter_read(void * channel, double * mono_ptr);
+void
+channel_mono_meter_read(
+  jack_mixer_channel_t channel,
+  double * mono_ptr);
 
-bool channel_is_stereo(void * channel);
+bool
+channel_is_stereo(
+  jack_mixer_channel_t channel);
 
 /* volume is in dBFS */
-void channel_volume_write(void * channel, double volume);
+void
+channel_volume_write(
+  jack_mixer_channel_t channel,
+  double volume);
 
 /* balance is from -1.0 (full left) to +1.0 (full right) */
-void channel_balance_write(void * channel, double balance);
+void
+channel_balance_write(
+  jack_mixer_channel_t channel,
+  double balance);
 
-void remove_channel(void * channel);
-
-void * get_main_mix_channel();
+void
+remove_channel(
+  jack_mixer_channel_t channel);
 
 /* returned value is in dBFS */
-double channel_abspeak_read(void * channel);
+double
+channel_abspeak_read(
+  jack_mixer_channel_t channel);
 
-void channel_abspeak_reset(void * channel);
+void
+channel_abspeak_reset(
+  jack_mixer_channel_t channel);
 
-void channel_mute(void * channel);
+void
+channel_mute(
+  jack_mixer_channel_t channel);
 
-void channel_unmute(void * channel);
+void
+channel_unmute(
+  jack_mixer_channel_t channel);
 
-void channel_solo(void * channel);
+void
+channel_solo(
+  jack_mixer_channel_t channel);
 
-void channel_unsolo(void * channel);
+void
+channel_unsolo(
+  jack_mixer_channel_t channel);
 
-bool channel_is_muted(void * channel);
+bool
+channel_is_muted(
+  jack_mixer_channel_t channel);
 
-bool channel_is_soloed(void * channel);
+bool
+channel_is_soloed(
+  jack_mixer_channel_t channel);
 
-void channel_rename(void * channel, const char * name);
-
-void uninit();
+void
+channel_rename(
+  jack_mixer_channel_t channel,
+  const char * name);
 
 #endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

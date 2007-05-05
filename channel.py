@@ -37,8 +37,9 @@ import fpconst
 
 class channel(gtk.VBox, serialized_object):
     '''Widget with slider and meter used as base class for more specific channel widgets'''
-    def __init__(self, gui_factory, name, stereo):
+    def __init__(self, mixer, gui_factory, name, stereo):
         gtk.VBox.__init__(self)
+        self.mixer = mixer
         self.gui_factory = gui_factory
         self.channel_name = name
         self.stereo = stereo
@@ -176,12 +177,12 @@ class channel(gtk.VBox, serialized_object):
         return False
 
 class input_channel(channel):
-    def __init__(self, gui_factory, name, stereo):
-        channel.__init__(self,  gui_factory, name, stereo)
+    def __init__(self, mixer, gui_factory, name, stereo):
+        channel.__init__(self, mixer, gui_factory, name, stereo)
 
     def realize(self):
         channel.realize(self)
-        self.channel = jack_mixer_c.add_channel(self.channel_name, self.stereo)
+        self.channel = jack_mixer_c.add_channel(self.mixer, self.channel_name, self.stereo)
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
@@ -309,12 +310,12 @@ def input_channel_serialization_name():
     return "input_channel"
 
 class main_mix(channel):
-    def __init__(self, gui_factory):
-        channel.__init__(self, gui_factory, "MAIN", True)
+    def __init__(self, mixer, gui_factory):
+        channel.__init__(self, mixer, gui_factory, "MAIN", True)
 
     def realize(self):
         channel.realize(self)
-        self.channel = jack_mixer_c.get_main_mix_channel()
+        self.channel = jack_mixer_c.get_main_mix_channel(self.mixer)
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)

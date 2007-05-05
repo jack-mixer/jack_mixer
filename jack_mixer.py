@@ -44,6 +44,18 @@ if lash:
 
 class jack_mixer(serialized_object):
     def __init__(self, name, lash_client):
+        self.mixer = jack_mixer_c.create(name)
+        if not self.mixer:
+            return
+
+        if lash_client:
+            # Send our client name to server
+            lash_event = lash.lash_event_new_with_type(lash.LASH_Client_Name)
+            lash.lash_event_set_string(lash_event, name)
+            lash.lash_send_event(lash_client, lash_event)
+
+        lash.lash_jack_client_name(lash_client, name)
+
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(name)
 
@@ -107,7 +119,7 @@ class jack_mixer(serialized_object):
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
-        self.main_mix = main_mix(self.gui_factory)
+        self.main_mix = main_mix(self.mixer, self.gui_factory)
         self.main_mix.realize()
         frame = gtk.Frame()
         frame.add(self.main_mix)
@@ -123,8 +135,13 @@ class jack_mixer(serialized_object):
 
     def cleanup(self):
         print "Cleaning jack_mixer"
+        if not self.mixer:
+            return
+
         for channel in self.channels:
             channel.unrealize()
+
+        jack_mixer_c.destroy(self.mixer)
 
     def on_choose_meter_scale(self, widget):
         self.gui_factory.run_dialog_choose_meter_scale()
@@ -160,7 +177,7 @@ class jack_mixer(serialized_object):
         self.channel_remove_menu_item.set_sensitive(False)
 
     def add_channel(self, name, stereo):
-        channel = input_channel(self.gui_factory, name, stereo)
+        channel = input_channel(self.mixer, self.gui_factory, name, stereo)
         self.add_channel_precreated(channel)
 
     def add_channel_precreated(self, channel):
@@ -259,6 +276,9 @@ class jack_mixer(serialized_object):
         return "jack_mixer"
 
     def main(self):
+        if not self.mixer:
+            return
+
         self.window.show_all()
 
         gtk.main()
@@ -307,24 +327,11 @@ def main():
     if not name:
         name = "jack_mixer-%u" % os.getpid()
 
-    if not jack_mixer_c.init(name):
-        return
-
-    if lash_client:
-        # Send our client name to server
-        lash_event = lash.lash_event_new_with_type(lash.LASH_Client_Name)
-        lash.lash_event_set_string(lash_event, name)
-        lash.lash_send_event(lash_client, lash_event)
-
-        lash.lash_jack_client_name(lash_client, name)
-
     mixer = jack_mixer(name, lash_client)
 
     mixer.main()
 
     mixer.cleanup()
-
-    jack_mixer_c.uninit()
 
 glade_dir = os.path.dirname(sys.argv[0])
 

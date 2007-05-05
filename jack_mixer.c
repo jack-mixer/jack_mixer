@@ -67,6 +67,9 @@ struct jack_mixer
   struct channel main_mix_channel;
   unsigned int channels_count;
   unsigned int soloed_channels_count;
+
+  jack_port_t * port_midi_in;
+  jack_port_t * port_midi_out;
 };
 
 float value_to_db(float value)
@@ -521,6 +524,20 @@ create(
   LOG_DEBUG("Sample rate: %" PRIu32, jack_get_sample_rate(mixer_ptr->jack_client));
 
   mixer_ptr->main_mix_channel.mixer_ptr = mixer_ptr;
+
+  mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+  if (mixer_ptr->port_midi_in == NULL)
+  {
+    LOG_ERROR("Cannot create JACK port");
+    goto close_jack;
+  }
+
+  mixer_ptr->port_midi_out = jack_port_register(mixer_ptr->jack_client, "midi out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+  if (mixer_ptr->port_midi_out == NULL)
+  {
+    LOG_ERROR("Cannot create JACK port");
+    goto close_jack;
+  }
 
   mixer_ptr->main_mix_channel.port_left = jack_port_register(mixer_ptr->jack_client, "main out L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
   if (mixer_ptr->main_mix_channel.port_left == NULL)

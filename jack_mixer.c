@@ -22,13 +22,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
 #include <jack/jack.h>
 
 #include "jack_mixer.h"
 #include "list.h"
+//#define LOG_LEVEL LOG_LEVEL_DEBUG
+#include "log.h"
 
 #define PEAK_FRAMES_CHUNK 4800
 
@@ -578,30 +579,30 @@ bool init(const char * jack_client_name_ptr)
   g_the_mixer_ptr->channels_count = 0;
   g_the_mixer_ptr->soloed_channels_count = 0;
 
-  printf("Initializing JACK\n");
+  LOG_DEBUG("Initializing JACK");
   g_the_mixer_ptr->jack_client = jack_client_new(jack_client_name_ptr);
   if (g_the_mixer_ptr->jack_client == NULL)
   {
-    fprintf(stderr, "Cannot create JACK client.\n");
-    fprintf(stderr, "Please make sure JACK daemon is running.\n");
+    LOG_ERROR("Cannot create JACK client.");
+    LOG_NOTICE("Please make sure JACK daemon is running.");
     goto exit_free;
   }
 
-  printf("JACK client created\n");
+  LOG_DEBUG("JACK client created");
 
-  printf("Sample rate: %" PRIu32 "\n", jack_get_sample_rate(g_the_mixer_ptr->jack_client));
+  LOG_DEBUG("Sample rate: %" PRIu32, jack_get_sample_rate(g_the_mixer_ptr->jack_client));
 
   g_the_mixer_ptr->main_mix_channel.port_left = jack_port_register(g_the_mixer_ptr->jack_client, "main out L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
   if (g_the_mixer_ptr->main_mix_channel.port_left == NULL)
   {
-    fprintf(stderr, "Cannot create JACK port");
+    LOG_ERROR("Cannot create JACK port");
     goto close_jack;
   }
 
   g_the_mixer_ptr->main_mix_channel.port_right = jack_port_register(g_the_mixer_ptr->jack_client, "main out R", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
   if (g_the_mixer_ptr->main_mix_channel.port_right == NULL)
   {
-    fprintf(stderr, "Cannot create JACK port");
+    LOG_ERROR("Cannot create JACK port");
     goto close_jack;
   }
 
@@ -626,14 +627,14 @@ bool init(const char * jack_client_name_ptr)
 	ret = jack_set_process_callback(g_the_mixer_ptr->jack_client, process, g_the_mixer_ptr);
   if (ret != 0)
   {
-    fprintf(stderr, "Cannot set JACK process callback");
+    LOG_ERROR("Cannot set JACK process callback");
     goto close_jack;
   }
 
   ret = jack_activate(g_the_mixer_ptr->jack_client);
   if (ret != 0)
   {
-    fprintf(stderr, "Cannot activate JACK client");
+    LOG_ERROR("Cannot activate JACK client");
     goto close_jack;
   }
 
@@ -651,7 +652,7 @@ exit:
 
 void uninit()
 {
-  printf("Uninitializing JACK\n");
+  LOG_DEBUG("Uninitializing JACK");
   if (g_the_mixer_ptr->jack_client != NULL)
   {
     jack_client_close(g_the_mixer_ptr->jack_client);

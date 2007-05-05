@@ -26,6 +26,7 @@
 #include <math.h>
 #include <jack/jack.h>
 #include <jack/midiport.h>
+#include <assert.h>
 
 #include "jack_mixer.h"
 #include "list.h"
@@ -59,6 +60,9 @@ struct channel
   float peak_right;
 
   bool NaN_detected;
+
+  struct channel ** cc_map_volume_ptr_ptr;
+  struct channel ** cc_map_balance_ptr_ptr;
 };
 
 struct jack_mixer
@@ -71,6 +75,12 @@ struct jack_mixer
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
+
+  struct
+  {
+    bool balance;               /* volume or balance is controlled by this mapping */
+    struct channel * channel_ptr;
+  } midi_cc_map[128];
 };
 
 float value_to_db(float value)
@@ -220,6 +230,18 @@ void remove_channel(jack_mixer_channel_t channel)
 
   channel_ptr->mixer_ptr->channels_count--;
 
+  if (channel_ptr->cc_map_volume_ptr_ptr != NULL)
+  {
+    assert(*(channel_ptr->cc_map_volume_ptr_ptr) == channel_ptr);
+    *(channel_ptr->cc_map_volume_ptr_ptr) = NULL;
+  }
+
+  if (channel_ptr->cc_map_balance_ptr_ptr != NULL)
+  {
+    assert(*(channel_ptr->cc_map_balance_ptr_ptr) == channel_ptr);
+    *(channel_ptr->cc_map_balance_ptr_ptr) = NULL;
+  }
+
   free(channel_ptr);
 }
 
@@ -358,7 +380,10 @@ process(jack_nframes_t nframes, void * context)
   {
     jack_midi_event_get(&in_event, midi_buffer, i);
 
-    if (in_event.size != 3 || (in_event.buffer[0] & 0xF0) != 0xB0)
+    if (in_event.size != 3 ||
+        (in_event.buffer[0] & 0xF0) != 0xB0 ||
+        in_event.buffer[1] > 127 ||
+        in_event.buffer[2] > 127)
     {
       continue;
     }
@@ -369,11 +394,22 @@ process(jack_nframes_t nframes, void * context)
       (unsigned int)in_event.buffer[1],
       (unsigned int)in_event.buffer[2]);
 
-    if (in_event.buffer[1] == 7)
+    channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]].channel_ptr;
+    if (channel_ptr != NULL)    /* if we have mapping for particular CC */
     {
-      mixer_ptr->main_mix_channel.volume = (float)in_event.buffer[2] / 127;
-      LOG_DEBUG("main volume -> %f", mixer_ptr->main_mix_channel.volume);
-      calc_channel_volumes(&mixer_ptr->main_mix_channel);
+      if (mixer_ptr->midi_cc_map[in_event.buffer[1]].balance)
+      {
+        channel_ptr->balance = ((float)in_event.buffer[2] / 127 - 0.5) * 2;
+        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->balance);
+      }
+      else
+      {
+        channel_ptr->volume = (float)in_event.buffer[2] / 127;
+
+        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume);
+      }
+
+      calc_channel_volumes(channel_ptr);
     }
   }
 
@@ -527,6 +563,7 @@ create(
 {
   int ret;
   struct jack_mixer * mixer_ptr;
+  int i;
 
 
   mixer_ptr = malloc(sizeof(struct jack_mixer));
@@ -539,6 +576,19 @@ create(
 
   mixer_ptr->channels_count = 0;
   mixer_ptr->soloed_channels_count = 0;
+
+  for (i = 0 ; i < 128 ; i++)
+  {
+    mixer_ptr->midi_cc_map[i].channel_ptr = NULL;
+  }
+
+  mixer_ptr->midi_cc_map[7].channel_ptr = &mixer_ptr->main_mix_channel;
+  mixer_ptr->midi_cc_map[7].balance = false;
+  mixer_ptr->main_mix_channel.cc_map_volume_ptr_ptr = &mixer_ptr->midi_cc_map[7].channel_ptr;
+
+  mixer_ptr->midi_cc_map[8].channel_ptr = &mixer_ptr->main_mix_channel;
+  mixer_ptr->midi_cc_map[8].balance = true;
+  mixer_ptr->main_mix_channel.cc_map_balance_ptr_ptr = &mixer_ptr->midi_cc_map[8].channel_ptr;
 
   LOG_DEBUG("Initializing JACK");
   mixer_ptr->jack_client = jack_client_new(jack_client_name_ptr);
@@ -665,6 +715,7 @@ add_channel(
   struct channel * channel_ptr;
   char * port_name;
   size_t channel_name_size;
+  int i;
 
   channel_ptr = malloc(sizeof(struct channel));
   if (channel_ptr == NULL)
@@ -718,6 +769,34 @@ add_channel(
 
   list_add_tail(&channel_ptr->siblings, &channel_ptr->mixer_ptr->channels_list);
   channel_ptr->mixer_ptr->channels_count++;
+
+  for (i = 11 ; i < 128 ; i++)
+  {
+    if (mixer_ctx_ptr->midi_cc_map[i].channel_ptr == NULL)
+    {
+      mixer_ctx_ptr->midi_cc_map[i].channel_ptr = channel_ptr;
+      mixer_ctx_ptr->midi_cc_map[i].balance = false;
+      channel_ptr->cc_map_volume_ptr_ptr = &mixer_ctx_ptr->midi_cc_map[i].channel_ptr;
+
+      LOG_NOTICE("New channel \"%s\" volume mapped to CC#%i", channel_name, i);
+
+      break;
+    }
+  }
+
+  for (; i < 128 ; i++)
+  {
+    if (mixer_ctx_ptr->midi_cc_map[i].channel_ptr == NULL)
+    {
+      mixer_ctx_ptr->midi_cc_map[i].channel_ptr = channel_ptr;
+      mixer_ctx_ptr->midi_cc_map[i].balance = true;
+      channel_ptr->cc_map_balance_ptr_ptr = &mixer_ctx_ptr->midi_cc_map[i].channel_ptr;
+
+      LOG_NOTICE("New channel \"%s\" balance mapped to CC#%i", channel_name, i);
+
+      break;
+    }
+  }
 
   goto exit;
 

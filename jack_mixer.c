@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <jack/jack.h>
+#include <jack/midiport.h>
 
 #include "jack_mixer.h"
 #include "list.h"
@@ -337,6 +338,9 @@ process(jack_nframes_t nframes, void * context)
   struct channel * channel_ptr;
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
+  jack_nframes_t event_count;
+  jack_midi_event_t in_event;
+  void * midi_buffer;
 
   out_left = jack_port_get_buffer(mixer_ptr->main_mix_channel.port_left, nframes);
   out_right = jack_port_get_buffer(mixer_ptr->main_mix_channel.port_right, nframes);
@@ -345,6 +349,32 @@ process(jack_nframes_t nframes, void * context)
   {
     out_left[i] = 0.0;
     out_right[i] = 0.0;
+  }
+
+  midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
+  event_count = jack_midi_get_event_count(midi_buffer);
+
+  for (i = 0 ; i < event_count; i++)
+  {
+    jack_midi_event_get(&in_event, midi_buffer, i);
+
+    if (in_event.size != 3 || (in_event.buffer[0] & 0xF0) != 0xB0)
+    {
+      continue;
+    }
+
+    LOG_DEBUG(
+      "%u: CC#%u -> %u",
+      (unsigned int)(in_event.buffer[0] & 0x0F),
+      (unsigned int)in_event.buffer[1],
+      (unsigned int)in_event.buffer[2]);
+
+    if (in_event.buffer[1] == 7)
+    {
+      mixer_ptr->main_mix_channel.volume = (float)in_event.buffer[2] / 127;
+      LOG_DEBUG("main volume -> %f", mixer_ptr->main_mix_channel.volume);
+      calc_channel_volumes(&mixer_ptr->main_mix_channel);
+    }
   }
 
   in_right = NULL;              /* disable warning */

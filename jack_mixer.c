@@ -38,6 +38,7 @@
 struct channel
 {
   struct list_head siblings;
+  struct jack_mixer * mixer_ptr;
   char * name;
   bool stereo;
   float volume;
@@ -105,7 +106,7 @@ calc_channel_volumes(struct channel * channel_ptr)
     return;
   }
 
-  if (g_the_mixer_ptr->soloed_channels_count > 0 && !channel_ptr->soloed) /* there are soloed channels but we are not one of them */
+  if (channel_ptr->mixer_ptr->soloed_channels_count > 0 && !channel_ptr->soloed) /* there are soloed channels but we are not one of them */
   {
     channel_ptr->volume_left = 0;
     channel_ptr->volume_right = 0;
@@ -133,12 +134,13 @@ calc_channel_volumes(struct channel * channel_ptr)
 }
 
 void
-calc_all_channel_volumes()
+calc_all_channel_volumes(
+  struct jack_mixer * mixer_ptr)
 {
   struct list_head * node_ptr;
   struct channel * channel_ptr;
 
-  list_for_each(node_ptr, &g_the_mixer_ptr->channels_list)
+  list_for_each(node_ptr, &mixer_ptr->channels_list)
   {
     channel_ptr = list_entry(node_ptr, struct channel, siblings);
     calc_channel_volumes(channel_ptr);
@@ -157,6 +159,8 @@ void * add_channel(const char * channel_name, bool stereo)
     goto exit;
   }
 
+  channel_ptr->mixer_ptr = g_the_mixer_ptr;
+
   channel_ptr->name = strdup(channel_name);
   if (channel_ptr->name == NULL)
   {
@@ -171,14 +175,14 @@ void * add_channel(const char * channel_name, bool stereo)
     port_name[channel_name_size] = ' ';
     port_name[channel_name_size+1] = 'L';
     port_name[channel_name_size+2] = 0;
-    channel_ptr->port_left = jack_port_register(g_the_mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     port_name[channel_name_size+1] = 'R';
-    channel_ptr->port_right = jack_port_register(g_the_mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     free(port_name);
   }
   else
   {
-    channel_ptr->port_left = jack_port_register(g_the_mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
   }
 
   channel_ptr->stereo = stereo;
@@ -199,8 +203,8 @@ void * add_channel(const char * channel_name, bool stereo)
 
   calc_channel_volumes(channel_ptr);
 
-  list_add_tail(&channel_ptr->siblings, &g_the_mixer_ptr->channels_list);
-  g_the_mixer_ptr->channels_count++;
+  list_add_tail(&channel_ptr->siblings, &channel_ptr->mixer_ptr->channels_list);
+  channel_ptr->mixer_ptr->channels_count++;
 
   goto exit;
 
@@ -284,15 +288,15 @@ void remove_channel(void * channel)
   list_del(&channel_ptr->siblings);
   free(channel_ptr->name);
 
-  jack_port_unregister(g_the_mixer_ptr->jack_client, channel_ptr->port_left);
+  jack_port_unregister(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left);
   if (channel_ptr->stereo)
   {
-    jack_port_unregister(g_the_mixer_ptr->jack_client, channel_ptr->port_right);
+    jack_port_unregister(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_right);
   }
 
-  free(channel_ptr);
+  channel_ptr->mixer_ptr->channels_count--;
 
-  g_the_mixer_ptr->channels_count--;
+  free(channel_ptr);
 }
 
 void channel_stereo_meter_read(void * channel, double * left_ptr, double * right_ptr)
@@ -353,11 +357,11 @@ void channel_solo(void * channel)
   if (!channel_ptr->soloed)
   {
     channel_ptr->soloed = true;
-    g_the_mixer_ptr->soloed_channels_count++;
+    channel_ptr->mixer_ptr->soloed_channels_count++;
 
-    if (g_the_mixer_ptr->soloed_channels_count == 1)
+    if (channel_ptr->mixer_ptr->soloed_channels_count == 1)
     {
-      calc_all_channel_volumes();
+      calc_all_channel_volumes(channel_ptr->mixer_ptr);
     }
     else
     {
@@ -371,11 +375,11 @@ void channel_unsolo(void * channel)
   if (channel_ptr->soloed)
   {
     channel_ptr->soloed = false;
-    g_the_mixer_ptr->soloed_channels_count--;
+    channel_ptr->mixer_ptr->soloed_channels_count--;
 
-    if (g_the_mixer_ptr->soloed_channels_count == 0)
+    if (channel_ptr->mixer_ptr->soloed_channels_count == 0)
     {
-      calc_all_channel_volumes();
+      calc_all_channel_volumes(channel_ptr->mixer_ptr);
     }
     else
     {
@@ -591,6 +595,8 @@ bool init(const char * jack_client_name_ptr)
   LOG_DEBUG("JACK client created");
 
   LOG_DEBUG("Sample rate: %" PRIu32, jack_get_sample_rate(g_the_mixer_ptr->jack_client));
+
+  g_the_mixer_ptr->main_mix_channel.mixer_ptr = g_the_mixer_ptr;
 
   g_the_mixer_ptr->main_mix_channel.port_left = jack_port_register(g_the_mixer_ptr->jack_client, "main out L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
   if (g_the_mixer_ptr->main_mix_channel.port_left == NULL)

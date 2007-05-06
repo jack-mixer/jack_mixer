@@ -27,6 +27,7 @@
 #include <jack/jack.h>
 #include <jack/midiport.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include "jack_mixer.h"
 #include "list.h"
@@ -67,6 +68,7 @@ struct channel
 
 struct jack_mixer
 {
+  pthread_mutex_t mutex;
   jack_client_t * jack_client;
   struct list_head channels_list;
   struct channel main_mix_channel;
@@ -572,6 +574,12 @@ create(
     goto exit;
   }
 
+  ret = pthread_mutex_init(&mixer_ptr->mutex, NULL);
+  if (ret != 0)
+  {
+    goto exit_free;
+  }
+
   INIT_LIST_HEAD(&mixer_ptr->channels_list);
 
   mixer_ptr->channels_count = 0;
@@ -596,7 +604,7 @@ create(
   {
     LOG_ERROR("Cannot create JACK client.");
     LOG_NOTICE("Please make sure JACK daemon is running.");
-    goto exit_free;
+    goto exit_destroy_mutex;
   }
 
   LOG_DEBUG("JACK client created");
@@ -670,6 +678,9 @@ create(
 close_jack:
   jack_client_close(mixer_ptr->jack_client); /* this should clear all other resources we obtained through the client handle */
 
+exit_destroy_mutex:
+  pthread_mutex_destroy(&mixer_ptr->mutex);
+
 exit_free:
   free(mixer_ptr);
 
@@ -684,10 +695,12 @@ destroy(
   jack_mixer_t mixer)
 {
   LOG_DEBUG("Uninitializing JACK");
-  if (mixer_ctx_ptr->jack_client != NULL)
-  {
-    jack_client_close(mixer_ctx_ptr->jack_client);
-  }
+
+  assert(mixer_ctx_ptr->jack_client != NULL);
+
+  jack_client_close(mixer_ctx_ptr->jack_client);
+
+  pthread_mutex_destroy(&mixer_ctx_ptr->mutex);
 
   free(mixer_ctx_ptr);
 }

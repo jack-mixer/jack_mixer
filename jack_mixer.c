@@ -351,101 +351,26 @@ bool channel_is_soloed(jack_mixer_channel_t channel)
 
 #undef channel_ptr
 
+/* process input channels and mix them into main mix */
 static
 inline
 void
 mix(
   struct jack_mixer * mixer_ptr,
-  jack_nframes_t start,
-  jack_nframes_t count)
-{
-}
-
-static
-inline
-void
-update_channel_buffers(
-  struct channel * channel_ptr,
-  jack_nframes_t nframes)
-{
-  channel_ptr->left_buffer_ptr = jack_port_get_buffer(channel_ptr->port_left, nframes);
-
-  if (channel_ptr->stereo)
-  {
-    channel_ptr->right_buffer_ptr = jack_port_get_buffer(channel_ptr->port_right, nframes);
-  }
-}
-
-#define mixer_ptr ((struct jack_mixer *)context)
-
-int
-process(jack_nframes_t nframes, void * context)
+  jack_nframes_t start,         /* index of first sample to process */
+  jack_nframes_t end)           /* index of sample to stop processing before */
 {
   jack_nframes_t i;
   struct list_head * node_ptr;
   struct channel * channel_ptr;
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
-  jack_nframes_t event_count;
-  jack_midi_event_t in_event;
-  void * midi_buffer;
 
-  update_channel_buffers(&mixer_ptr->main_mix_channel, nframes);
-
-  for (i = 0 ; i < nframes ; i++)
-  {
-    mixer_ptr->main_mix_channel.left_buffer_ptr[i] = 0.0;
-    mixer_ptr->main_mix_channel.right_buffer_ptr[i] = 0.0;
-  }
-
-  midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
-  event_count = jack_midi_get_event_count(midi_buffer);
-
-  for (i = 0 ; i < event_count; i++)
-  {
-    jack_midi_event_get(&in_event, midi_buffer, i);
-
-    if (in_event.size != 3 ||
-        (in_event.buffer[0] & 0xF0) != 0xB0 ||
-        in_event.buffer[1] > 127 ||
-        in_event.buffer[2] > 127)
-    {
-      continue;
-    }
-
-    LOG_DEBUG(
-      "%u: CC#%u -> %u",
-      (unsigned int)(in_event.buffer[0] & 0x0F),
-      (unsigned int)in_event.buffer[1],
-      (unsigned int)in_event.buffer[2]);
-
-    channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]].channel_ptr;
-    if (channel_ptr != NULL)    /* if we have mapping for particular CC */
-    {
-      if (mixer_ptr->midi_cc_map[in_event.buffer[1]].balance)
-      {
-        channel_ptr->balance = ((float)in_event.buffer[2] / 127 - 0.5) * 2;
-        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->balance);
-      }
-      else
-      {
-        channel_ptr->volume = (float)in_event.buffer[2] / 127;
-
-        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume);
-      }
-
-      calc_channel_volumes(channel_ptr);
-    }
-  }
-
-  /* process input channels and mix them into main mix */
   list_for_each(node_ptr, &mixer_ptr->channels_list)
   {
     channel_ptr = list_entry(node_ptr, struct channel, siblings);
 
-    update_channel_buffers(channel_ptr, nframes);
-
-    for (i = 0 ; i < nframes ; i++)
+    for (i = start ; i < end ; i++)
     {
       if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
       {
@@ -531,7 +456,7 @@ process(jack_nframes_t nframes, void * context)
   }
 
   /* process main mix channel */
-  for (i = 0 ; i < nframes ; i++)
+  for (i = start ; i < end ; i++)
   {
     mixer_ptr->main_mix_channel.left_buffer_ptr[i] *= mixer_ptr->main_mix_channel.volume_left;
     mixer_ptr->main_mix_channel.right_buffer_ptr[i] *= mixer_ptr->main_mix_channel.volume_right;
@@ -570,6 +495,105 @@ process(jack_nframes_t nframes, void * context)
       mixer_ptr->main_mix_channel.peak_frames = 0;
     }
   }
+}
+
+static
+inline
+void
+update_channel_buffers(
+  struct channel * channel_ptr,
+  jack_nframes_t nframes)
+{
+  channel_ptr->left_buffer_ptr = jack_port_get_buffer(channel_ptr->port_left, nframes);
+
+  if (channel_ptr->stereo)
+  {
+    channel_ptr->right_buffer_ptr = jack_port_get_buffer(channel_ptr->port_right, nframes);
+  }
+}
+
+#define mixer_ptr ((struct jack_mixer *)context)
+
+int
+process(jack_nframes_t nframes, void * context)
+{
+  jack_nframes_t i;
+  struct list_head * node_ptr;
+  struct channel * channel_ptr;
+  jack_nframes_t event_count;
+  jack_midi_event_t in_event;
+  void * midi_buffer;
+  jack_nframes_t offset;
+
+  update_channel_buffers(&mixer_ptr->main_mix_channel, nframes);
+
+  list_for_each(node_ptr, &mixer_ptr->channels_list)
+  {
+    channel_ptr = list_entry(node_ptr, struct channel, siblings);
+
+    update_channel_buffers(channel_ptr, nframes);
+  }
+
+  for (i = 0 ; i < nframes ; i++)
+  {
+    mixer_ptr->main_mix_channel.left_buffer_ptr[i] = 0.0;
+    mixer_ptr->main_mix_channel.right_buffer_ptr[i] = 0.0;
+  }
+
+  midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
+  event_count = jack_midi_get_event_count(midi_buffer);
+
+  offset = 0;
+
+  for (i = 0 ; i < event_count; i++)
+  {
+    jack_midi_event_get(&in_event, midi_buffer, i);
+
+    if (in_event.size != 3 ||
+        (in_event.buffer[0] & 0xF0) != 0xB0 ||
+        in_event.buffer[1] > 127 ||
+        in_event.buffer[2] > 127)
+    {
+      continue;
+    }
+
+    assert(in_event.time < nframes);
+
+    LOG_DEBUG(
+      "%u: CC#%u -> %u",
+      (unsigned int)(in_event.buffer[0] & 0x0F),
+      (unsigned int)in_event.buffer[1],
+      (unsigned int)in_event.buffer[2]);
+
+    channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]].channel_ptr;
+    if (channel_ptr != NULL)    /* if we have mapping for particular CC */
+    {
+      assert(in_event.time >= offset);
+
+      if (in_event.time > offset)
+      {
+        mix(mixer_ptr, offset, in_event.time);
+        offset = in_event.time;
+      }
+
+      if (mixer_ptr->midi_cc_map[in_event.buffer[1]].balance)
+      {
+        channel_ptr->balance = ((float)in_event.buffer[2] / 127 - 0.5) * 2;
+        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->balance);
+      }
+      else
+      {
+        channel_ptr->volume = (float)in_event.buffer[2] / 127;
+
+        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume);
+      }
+
+      calc_channel_volumes(channel_ptr);
+    }
+
+  }
+
+  mix(mixer_ptr, offset, nframes);
 
   return 0;      
 }

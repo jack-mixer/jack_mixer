@@ -64,6 +64,9 @@ struct channel
 
   struct channel ** cc_map_volume_ptr_ptr;
   struct channel ** cc_map_balance_ptr_ptr;
+
+  jack_default_audio_sample_t * left_buffer_ptr;
+  jack_default_audio_sample_t * right_buffer_ptr;
 };
 
 struct jack_mixer
@@ -348,15 +351,36 @@ bool channel_is_soloed(jack_mixer_channel_t channel)
 
 #undef channel_ptr
 
+static
+inline
+void
+mix(
+  struct jack_mixer * mixer_ptr,
+  jack_nframes_t start,
+  jack_nframes_t count)
+{
+}
+
+static
+inline
+void
+update_channel_buffers(
+  struct channel * channel_ptr,
+  jack_nframes_t nframes)
+{
+  channel_ptr->left_buffer_ptr = jack_port_get_buffer(channel_ptr->port_left, nframes);
+
+  if (channel_ptr->stereo)
+  {
+    channel_ptr->right_buffer_ptr = jack_port_get_buffer(channel_ptr->port_right, nframes);
+  }
+}
+
 #define mixer_ptr ((struct jack_mixer *)context)
 
 int
 process(jack_nframes_t nframes, void * context)
 {
-  jack_default_audio_sample_t * out_left;
-  jack_default_audio_sample_t * out_right;
-  jack_default_audio_sample_t * in_left;
-  jack_default_audio_sample_t * in_right;
   jack_nframes_t i;
   struct list_head * node_ptr;
   struct channel * channel_ptr;
@@ -366,13 +390,12 @@ process(jack_nframes_t nframes, void * context)
   jack_midi_event_t in_event;
   void * midi_buffer;
 
-  out_left = jack_port_get_buffer(mixer_ptr->main_mix_channel.port_left, nframes);
-  out_right = jack_port_get_buffer(mixer_ptr->main_mix_channel.port_right, nframes);
+  update_channel_buffers(&mixer_ptr->main_mix_channel, nframes);
 
   for (i = 0 ; i < nframes ; i++)
   {
-    out_left[i] = 0.0;
-    out_right[i] = 0.0;
+    mixer_ptr->main_mix_channel.left_buffer_ptr[i] = 0.0;
+    mixer_ptr->main_mix_channel.right_buffer_ptr[i] = 0.0;
   }
 
   midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
@@ -415,46 +438,40 @@ process(jack_nframes_t nframes, void * context)
     }
   }
 
-  in_right = NULL;              /* disable warning */
-
   /* process input channels and mix them into main mix */
   list_for_each(node_ptr, &mixer_ptr->channels_list)
   {
     channel_ptr = list_entry(node_ptr, struct channel, siblings);
 
-    in_left = jack_port_get_buffer(channel_ptr->port_left, nframes);
-
-    if (channel_ptr->stereo)
-    {
-      in_right = jack_port_get_buffer(channel_ptr->port_right, nframes);
-    }
+    update_channel_buffers(channel_ptr, nframes);
 
     for (i = 0 ; i < nframes ; i++)
     {
-      if (!FLOAT_EXISTS(in_left[i]))
+      if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
       {
         channel_ptr->NaN_detected = true;
         break;
       }
 
-      frame_left = in_left[i] * channel_ptr->volume_left;
-      out_left[i] += frame_left;
+      frame_left = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_left;
+      mixer_ptr->main_mix_channel.left_buffer_ptr[i] += frame_left;
 
       if (channel_ptr->stereo)
       {
-        frame_right = in_right[i] * channel_ptr->volume_right;
-
-        if (!FLOAT_EXISTS(in_right[i]))
+        if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i]))
         {
           channel_ptr->NaN_detected = true;
           break;
         }
+
+        frame_right = channel_ptr->right_buffer_ptr[i] * channel_ptr->volume_right;
       }
       else
       {
-        frame_right = in_left[i] * channel_ptr->volume_right;
+        frame_right = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_right;
       }
-      out_right[i] += frame_right;
+
+      mixer_ptr->main_mix_channel.right_buffer_ptr[i] += frame_right;
 
       if (channel_ptr->stereo)
       {
@@ -516,10 +533,10 @@ process(jack_nframes_t nframes, void * context)
   /* process main mix channel */
   for (i = 0 ; i < nframes ; i++)
   {
-    out_left[i] = out_left[i] * mixer_ptr->main_mix_channel.volume_left;
-    out_right[i] = out_right[i] * mixer_ptr->main_mix_channel.volume_right;
+    mixer_ptr->main_mix_channel.left_buffer_ptr[i] *= mixer_ptr->main_mix_channel.volume_left;
+    mixer_ptr->main_mix_channel.right_buffer_ptr[i] *= mixer_ptr->main_mix_channel.volume_right;
 
-    frame_left = fabsf(out_left[i]);
+    frame_left = fabsf(mixer_ptr->main_mix_channel.left_buffer_ptr[i]);
     if (mixer_ptr->main_mix_channel.peak_left < frame_left)
     {
       mixer_ptr->main_mix_channel.peak_left = frame_left;
@@ -530,7 +547,7 @@ process(jack_nframes_t nframes, void * context)
       }
     }
 
-    frame_right = fabsf(out_right[i]);
+    frame_right = fabsf(mixer_ptr->main_mix_channel.right_buffer_ptr[i]);
     if (mixer_ptr->main_mix_channel.peak_right < frame_right)
     {
       mixer_ptr->main_mix_channel.peak_right = frame_right;

@@ -126,6 +126,14 @@ class channel(gtk.VBox, serialized_object):
 
         self.abspeak.set_peak(jack_mixer_c.channel_abspeak_read(self.channel))
 
+    def midi_change_check(self):
+        if jack_mixer_c.channel_is_midi_modified(self.channel):
+            volume = jack_mixer_c.channel_volume_read(self.channel)
+            balance = jack_mixer_c.channel_balance_read(self.channel)
+            #print volume, balance
+            self.slider_adjustment.set_value_db(volume)
+            self.balance.set_value(balance)
+
     def on_scroll(self, widget, event):
         if event.direction == gtk.gdk.SCROLL_DOWN:
             self.slider_adjustment.step_down()

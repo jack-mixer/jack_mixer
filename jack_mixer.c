@@ -67,6 +67,8 @@ struct channel
 
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
+
+  bool midi_modified;
 };
 
 struct jack_mixer
@@ -261,16 +263,42 @@ void channel_mono_meter_read(jack_mixer_channel_t channel, double * mono_ptr)
   *mono_ptr = value_to_db(channel_ptr->meter_left);
 }
 
+bool
+channel_is_midi_modified(
+  jack_mixer_channel_t channel)
+{
+  bool midi_modified;
+
+  midi_modified = channel_ptr->midi_modified;
+  channel_ptr->midi_modified = false;
+
+  return midi_modified;
+}
+
 void channel_volume_write(jack_mixer_channel_t channel, double volume)
 {
   channel_ptr->volume = db_to_value(volume);
   calc_channel_volumes(channel_ptr);
 }
 
+float
+channel_volume_read(
+  jack_mixer_channel_t channel)
+{
+  return value_to_db(channel_ptr->volume);
+}
+
 void channel_balance_write(jack_mixer_channel_t channel, double balance)
 {
   channel_ptr->balance = balance;
   calc_channel_volumes(channel_ptr);
+}
+
+float
+channel_balance_read(
+  jack_mixer_channel_t channel)
+{
+  return channel_ptr->balance;
 }
 
 double channel_abspeak_read(jack_mixer_channel_t channel)
@@ -524,6 +552,7 @@ process(jack_nframes_t nframes, void * context)
   jack_midi_event_t in_event;
   void * midi_buffer;
   jack_nframes_t offset;
+  signed char byte;
 
   update_channel_buffers(&mixer_ptr->main_mix_channel, nframes);
 
@@ -578,17 +607,33 @@ process(jack_nframes_t nframes, void * context)
 
       if (mixer_ptr->midi_cc_map[in_event.buffer[1]].balance)
       {
-        channel_ptr->balance = ((float)in_event.buffer[2] / 127 - 0.5) * 2;
-        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->balance);
+        byte = in_event.buffer[2];
+        if (byte == 0)
+        {
+          byte = 1;
+        }
+        byte -= 64;
+
+        channel_ptr->balance = (float)byte / 63;
+        LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance);
       }
       else
       {
-        channel_ptr->volume = (float)in_event.buffer[2] / 127;
+        if (in_event.buffer[2] == 0)
+        {
+          channel_ptr->volume = 0;
+        }
+        else
+        {
+          channel_ptr->volume = db_to_value(((float)in_event.buffer[2] - 127) / 1.75);
+        }
 
         LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume);
       }
 
       calc_channel_volumes(channel_ptr);
+
+      channel_ptr->midi_modified = true;
     }
 
   }
@@ -684,6 +729,8 @@ create(
 
   mixer_ptr->main_mix_channel.stereo = true;
 
+  mixer_ptr->main_mix_channel.name = "MAIN";
+
   mixer_ptr->main_mix_channel.volume = 0.0;
   mixer_ptr->main_mix_channel.balance = 0.0;
   mixer_ptr->main_mix_channel.muted = false;
@@ -697,6 +744,7 @@ create(
   mixer_ptr->main_mix_channel.peak_frames = 0;
 
   mixer_ptr->main_mix_channel.NaN_detected = false;
+  mixer_ptr->main_mix_channel.midi_modified = false;
 
   calc_channel_volumes(&mixer_ptr->main_mix_channel);
 
@@ -818,6 +866,7 @@ add_channel(
   channel_ptr->peak_frames = 0;
 
   channel_ptr->NaN_detected = false;
+  channel_ptr->midi_modified = false;
 
   calc_channel_volumes(channel_ptr);
 

@@ -133,6 +133,8 @@ class jack_mixer(serialized_object):
         if lash_client:
             gobject.timeout_add(1000, self.lash_check_events)
 
+        gobject.timeout_add(100, self.midi_change_check)
+
     def cleanup(self):
         print "Cleaning jack_mixer"
         if not self.mixer:
@@ -195,6 +197,12 @@ class jack_mixer(serialized_object):
         for channel in self.channels:
             channel.read_meter()
         self.main_mix.read_meter()
+        return True
+
+    def midi_change_check(self):
+        for channel in self.channels:
+            channel.midi_change_check()
+        self.main_mix.midi_change_check()
         return True
 
     def lash_check_events(self):

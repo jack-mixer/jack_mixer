@@ -79,17 +79,29 @@ bool
 channel_is_stereo(
   jack_mixer_channel_t channel);
 
+bool
+channel_is_midi_modified(
+  jack_mixer_channel_t channel);
+
 /* volume is in dBFS */
 void
 channel_volume_write(
   jack_mixer_channel_t channel,
   double volume);
 
+float
+channel_volume_read(
+  jack_mixer_channel_t channel);
+
 /* balance is from -1.0 (full left) to +1.0 (full right) */
 void
 channel_balance_write(
   jack_mixer_channel_t channel,
   double balance);
+
+float
+channel_balance_read(
+  jack_mixer_channel_t channel);
 
 void
 remove_channel(

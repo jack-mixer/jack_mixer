@@ -50,7 +50,7 @@ fi
 
 AM_CONDITIONAL(HAVE_JACK_MIDI, test "$have_jackmidi" = "yes" -o "$have_jackmidi" = "yes (old one)")
 
-if test "$have_jackmidi" != "yes"
+if test "$have_jackmidi" != "yes" -a "$have_jackmidi" != "yes (old one)"
 then
   AC_MSG_ERROR([You need JACK version with MIDI support.])
 else

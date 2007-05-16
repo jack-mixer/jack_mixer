@@ -21,45 +21,25 @@ import math
 import fpconst
 import jack_mixer_c
 
-class threshold:
+class mark:
     '''Encapsulates scale linear function edge and coefficients for scale = a * dB + b formula'''
     def __init__(self, db, scale):
         self.db = db
         self.scale = scale
-        self.threshold = jack_mixer_c.threshold_create(db, scale)
         self.text = "%.0f" % math.fabs(db)
-        if not self.threshold:
-            raise "creating new threshold failed"
-
-    def calculate_coefficients(self, prev):
-        jack_mixer_c.threshold_calculate_coefficients(self.threshold, prev.threshold)
-
-    def db_to_scale(self, db):
-        return jack_mixer_c.threshold_db_to_scale(self.threshold, db)
-
-    def scale_to_db(self, scale):
-        return jack_mixer_c.threshold_scale_to_db(self.threshold, scale)
-
-    def __del__(self):
-        if self.threshold:
-            jack_mixer_c.threshold_destroy(self.threshold)
 
 class base:
     '''Scale abstraction, various scale implementation derive from this class'''
     def __init__(self, scale_id, description):
         self.marks = []
-        self.thresholds = []
         self.scale_id = scale_id
         self.description = description
         self.scale = jack_mixer_c.scale_create()
 
-    def add_threshold(self, db, scale, mark):
-        thr = threshold(db, scale)
-        #print repr(thr.threshold)
-        self.thresholds.append(thr)
-        jack_mixer_c.scale_add_threshold(self.scale, thr.threshold)
-        if mark:
-            self.marks.append(thr)
+    def add_threshold(self, db, scale, is_mark):
+        jack_mixer_c.scale_add_threshold(self.scale, db, scale)
+        if is_mark:
+            self.marks.append(mark(db, scale))
 
     def calculate_coefficients(self):
         jack_mixer_c.scale_calculate_coefficients(self.scale)
@@ -74,8 +54,7 @@ class base:
         return jack_mixer_c.scale_scale_to_db(self.scale, scale)
 
     def add_mark(self, db):
-        mark = threshold(db, -1.0)
-        self.marks.append(mark)
+        self.marks.append(mark(db, -1.0))
 
     def get_marks(self):
         return self.marks

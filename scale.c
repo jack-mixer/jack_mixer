@@ -43,70 +43,8 @@ struct threshold
 struct scale
 {
   struct list_head thresholds;
+  double max_db;
 };
-
-jack_mixer_threshold_t
-threshold_create(double db, double scale)
-{
-  struct threshold * threshold_ptr;
-
-  threshold_ptr = malloc(sizeof(struct threshold));
-  if (threshold_ptr == NULL)
-  {
-    return NULL;
-  }
-
-  threshold_ptr->db = db;
-  threshold_ptr->scale = scale;
-
-  LOG_DEBUG("Threshold %p created (%f dBFS -> %f)", threshold_ptr, db, scale);
-
-  return (jack_mixer_threshold_t)threshold_ptr;
-}
-
-void
-threshold_calculate_coefficients_internal(
-  struct threshold * threshold_ptr,
-  struct threshold * prev_ptr)
-{
-  threshold_ptr->a = (prev_ptr->scale - threshold_ptr->scale) / (prev_ptr->db - threshold_ptr->db);
-  threshold_ptr->b = threshold_ptr->scale - threshold_ptr->a * threshold_ptr->db;
-  LOG_DEBUG("%.0f dB - %.0f dB: scale = %f * dB + %f", prev_ptr->db, threshold_ptr->db, threshold_ptr->a, threshold_ptr->b);
-}
-
-#define threshold_ptr ((struct threshold *)threshold)
-
-void
-threshold_calculate_coefficients(
-  jack_mixer_threshold_t threshold,
-  jack_mixer_threshold_t prev)
-{
-  threshold_calculate_coefficients_internal(threshold_ptr, (struct threshold *)prev);
-}
-
-double
-threshold_db_to_scale(
-  jack_mixer_threshold_t threshold,
-  double db)
-{
-  return threshold_ptr->a * db + threshold_ptr->b;
-}
-
-double
-threshold_scale_to_db(
-  jack_mixer_threshold_t threshold,
-  double scale)
-{
-  return (scale - threshold_ptr->b) / threshold_ptr->a;
-}
-
-void
-threshold_destroy(
-  jack_mixer_threshold_t threshold)
-{
-  LOG_DEBUG("Destroying threshold %p (%f dBFS -> %f)", threshold_ptr, threshold_ptr->db, threshold_ptr->scale);
-  free(threshold_ptr);
-}
 
 jack_mixer_scale_t
 scale_create()
@@ -120,6 +58,7 @@ scale_create()
   }
 
   INIT_LIST_HEAD(&scale_ptr->thresholds);
+  scale_ptr->max_db = -INFINITY;
 
   LOG_DEBUG("Scale %p created", scale_ptr);
 
@@ -135,13 +74,34 @@ scale_destroy(
   free(scale_ptr);
 }
 
-void
+bool
 scale_add_threshold(
   jack_mixer_scale_t scale,
-  jack_mixer_threshold_t threshold)
+  float db,
+  float scale_value)
 {
-  LOG_DEBUG("Adding threshold %p to scale %p", threshold_ptr, scale_ptr);
+  struct threshold * threshold_ptr;
+
+  LOG_DEBUG("Adding threshold (%f dBFS -> %f) to scale %p", db, scale, scale_ptr);
+  LOG_DEBUG("Threshold %p created ", threshold_ptr, db, scale);
+
+  threshold_ptr = malloc(sizeof(struct threshold));
+  if (threshold_ptr == NULL)
+  {
+    return false;
+  }
+
+  threshold_ptr->db = db;
+  threshold_ptr->scale = scale_value;
+
   list_add_tail(&threshold_ptr->scale_siblings, &scale_ptr->thresholds);
+
+  if (db > scale_ptr->max_db)
+  {
+    scale_ptr->max_db = db;
+  }
+
+  return true;
 }
 
 #undef threshold_ptr
@@ -164,7 +124,9 @@ scale_calculate_coefficients(
 
     if (prev_ptr != NULL)
     {
-      threshold_calculate_coefficients_internal(threshold_ptr, prev_ptr);
+      threshold_ptr->a = (prev_ptr->scale - threshold_ptr->scale) / (prev_ptr->db - threshold_ptr->db);
+      threshold_ptr->b = threshold_ptr->scale - threshold_ptr->a * threshold_ptr->db;
+      LOG_DEBUG("%.0f dB - %.0f dB: scale = %f * dB + %f", prev_ptr->db, threshold_ptr->db, threshold_ptr->a, threshold_ptr->b);
     }
 
     prev_ptr = threshold_ptr;
@@ -195,7 +157,7 @@ scale_db_to_scale(
         return 0.0;
       }
 
-      return threshold_db_to_scale((jack_mixer_threshold_t)threshold_ptr, db);
+      return threshold_ptr->a * db + threshold_ptr->b;
     }
 
     prev_ptr = threshold_ptr;
@@ -227,11 +189,11 @@ scale_scale_to_db(
         return -INFINITY;
       }
 
-      return threshold_scale_to_db((jack_mixer_threshold_t)threshold_ptr, scale_value);
+      return (scale_value - threshold_ptr->b) / threshold_ptr->a;
     }
 
     prev_ptr = threshold_ptr;
   }
 
-  return threshold_scale_to_db((jack_mixer_threshold_t)list_entry(scale_ptr->thresholds.prev, struct threshold, scale_siblings), scale_value);
+  return scale_ptr->max_db;
 }

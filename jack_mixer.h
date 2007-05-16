@@ -147,35 +147,14 @@ channel_rename(
   jack_mixer_channel_t channel,
   const char * name);
 
-jack_mixer_threshold_t
-threshold_create(double db, double scale);
-
-void
-threshold_calculate_coefficients(
-  jack_mixer_threshold_t threshold,
-  jack_mixer_threshold_t prev);
-
-double
-threshold_db_to_scale(
-  jack_mixer_threshold_t threshold,
-  double db);
-
-double
-threshold_scale_to_db(
-  jack_mixer_threshold_t threshold,
-  double scale);
-
-void
-threshold_destroy(
-  jack_mixer_threshold_t threshold);
-
 jack_mixer_scale_t
 scale_create();
 
-void
+bool
 scale_add_threshold(
   jack_mixer_scale_t scale,
-  jack_mixer_threshold_t threshold);
+  float db,
+  float scale_value);
 
 void
 scale_calculate_coefficients(

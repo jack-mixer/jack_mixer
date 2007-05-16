@@ -38,9 +38,10 @@ PKG_CHECK_MODULES(JACK, jack)
 
 # JACK MIDI
 have_jackmidi="unknown"
-AC_ARG_ENABLE(jackmidi, [AS_HELP_STRING(--disable-jackmidi, [Force disable JACK MIDI support [default=no]])], [ have_jackmidi="no" ])
+AC_ARG_ENABLE(jackmidi, [AS_HELP_STRING(--disable-jackmidi, [Force disable JACK MIDI support [default=no]])], [ have_jackmidi="no (disabled)" ])
 if test "$have_jackmidi" = "unknown"
 then
+  have_jackmidi="no"
   PKG_CHECK_MODULES(JACK_MIDI, jack >= 0.102.0, AC_DEFINE([HAVE_JACK_MIDI], [], [Defined if we have JACK MIDI support.]) have_jackmidi="yes")
   if test "$have_jackmidi" = "yes"
   then
@@ -50,10 +51,13 @@ fi
 
 AM_CONDITIONAL(HAVE_JACK_MIDI, test "$have_jackmidi" = "yes" -o "$have_jackmidi" = "yes (old one)")
 
-if test "$have_jackmidi" != "yes" -a "$have_jackmidi" != "yes (old one)"
+if test "$have_jackmidi" = "no"
 then
-  AC_MSG_ERROR([You need JACK version with MIDI support.])
-else
+  AC_MSG_WARN([Your JACK is missing MIDI support.])
+fi
+
+if test "$have_jackmidi" = "yes"
+then
   AC_JACK_MIDI_NFRAMES_CHECK()
   if test "$jackmidi_nframes" = "yes"
   then

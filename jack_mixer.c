@@ -20,12 +20,16 @@
  *
  *****************************************************************************/
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
 #include <jack/jack.h>
+#if defined(HAVE_JACK_MIDI)
 #include <jack/midiport.h>
+#endif
 #include <assert.h>
 #include <pthread.h>
 
@@ -557,11 +561,13 @@ process(jack_nframes_t nframes, void * context)
   jack_nframes_t i;
   struct list_head * node_ptr;
   struct channel * channel_ptr;
+#if defined(HAVE_JACK_MIDI)
   jack_nframes_t event_count;
   jack_midi_event_t in_event;
   void * midi_buffer;
-  jack_nframes_t offset;
   signed char byte;
+#endif
+  jack_nframes_t offset;
 
   update_channel_buffers(&mixer_ptr->main_mix_channel, nframes);
 
@@ -578,10 +584,11 @@ process(jack_nframes_t nframes, void * context)
     mixer_ptr->main_mix_channel.right_buffer_ptr[i] = 0.0;
   }
 
+  offset = 0;
+
+#if defined(HAVE_JACK_MIDI)
   midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
   event_count = jack_midi_get_event_count(midi_buffer);
-
-  offset = 0;
 
   for (i = 0 ; i < event_count; i++)
   {
@@ -640,6 +647,8 @@ process(jack_nframes_t nframes, void * context)
     }
 
   }
+
+#endif
 
   mix(mixer_ptr, offset, nframes);
 
@@ -702,12 +711,14 @@ create(
 
   mixer_ptr->main_mix_channel.mixer_ptr = mixer_ptr;
 
+#if defined(HAVE_JACK_MIDI)
   mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
   if (mixer_ptr->port_midi_in == NULL)
   {
     LOG_ERROR("Cannot create JACK port");
     goto close_jack;
   }
+#endif
 
   mixer_ptr->main_mix_channel.port_left = jack_port_register(mixer_ptr->jack_client, "main out L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
   if (mixer_ptr->main_mix_channel.port_left == NULL)

@@ -69,6 +69,8 @@ struct channel
   jack_default_audio_sample_t * right_buffer_ptr;
 
   bool midi_modified;
+
+  jack_mixer_scale_t midi_scale;
 };
 
 struct jack_mixer
@@ -377,6 +379,14 @@ bool channel_is_soloed(jack_mixer_channel_t channel)
   return channel_ptr->soloed;
 }
 
+void
+channel_set_midi_scale(
+  jack_mixer_channel_t channel,
+  jack_mixer_scale_t scale)
+{
+  channel_ptr->midi_scale = scale;
+}
+
 #undef channel_ptr
 
 /* process input channels and mix them into main mix */
@@ -595,7 +605,9 @@ process(jack_nframes_t nframes, void * context)
       (unsigned int)in_event.buffer[2]);
 
     channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]].channel_ptr;
-    if (channel_ptr != NULL)    /* if we have mapping for particular CC */
+
+    /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
+    if (channel_ptr != NULL && channel_ptr->midi_scale != NULL)
     {
       assert(in_event.time >= offset);
 
@@ -619,15 +631,7 @@ process(jack_nframes_t nframes, void * context)
       }
       else
       {
-        if (in_event.buffer[2] == 0)
-        {
-          channel_ptr->volume = 0;
-        }
-        else
-        {
-          channel_ptr->volume = db_to_value(((float)in_event.buffer[2] - 127) / 1.75);
-        }
-
+        channel_ptr->volume = db_to_value(scale_scale_to_db(channel_ptr->midi_scale, (double)in_event.buffer[2] / 127));
         LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume);
       }
 
@@ -745,6 +749,8 @@ create(
 
   mixer_ptr->main_mix_channel.NaN_detected = false;
   mixer_ptr->main_mix_channel.midi_modified = false;
+
+  mixer_ptr->main_mix_channel.midi_scale = NULL;
 
   calc_channel_volumes(&mixer_ptr->main_mix_channel);
 
@@ -867,6 +873,8 @@ add_channel(
 
   channel_ptr->NaN_detected = false;
   channel_ptr->midi_modified = false;
+
+  channel_ptr->midi_scale = NULL;
 
   calc_channel_volumes(channel_ptr);
 

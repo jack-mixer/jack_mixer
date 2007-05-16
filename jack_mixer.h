@@ -147,6 +147,11 @@ channel_rename(
   jack_mixer_channel_t channel,
   const char * name);
 
+void
+channel_set_midi_scale(
+  jack_mixer_channel_t channel,
+  jack_mixer_scale_t scale);
+
 jack_mixer_scale_t
 scale_create();
 

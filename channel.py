@@ -87,7 +87,9 @@ class channel(gtk.VBox, serialized_object):
 
     def on_default_slider_scale_changed(self, gui_factory, scale):
         #print "Default slider scale change detected."
+        self.slider_scale = scale
         self.slider_adjustment.set_scale(scale)
+        jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
 
     def on_abspeak_adjust(self, abspeak, adjust):
         #print "abspeak adjust %f" % adjust
@@ -191,6 +193,7 @@ class input_channel(channel):
     def realize(self):
         channel.realize(self)
         self.channel = jack_mixer_c.add_channel(self.mixer, self.channel_name, self.stereo)
+        jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
@@ -324,6 +327,7 @@ class main_mix(channel):
     def realize(self):
         channel.realize(self)
         self.channel = jack_mixer_c.get_main_mix_channel(self.mixer)
+        jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)

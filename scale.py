@@ -19,52 +19,63 @@
 
 import math
 import fpconst
+import jack_mixer_c
 
 class threshold:
     '''Encapsulates scale linear function edge and coefficients for scale = a * dB + b formula'''
     def __init__(self, db, scale):
         self.db = db
         self.scale = scale
+        self.threshold = jack_mixer_c.threshold_create(db, scale)
         self.text = "%.0f" % math.fabs(db)
+        if not self.threshold:
+            raise "creating new threshold failed"
 
     def calculate_coefficients(self, prev):
-        self.a = (prev.scale - self.scale) / (prev.db - self.db)
-        self.b = self.scale - self.a * self.db
-        #print "%.0f dB - %.0f dB: scale = %f * dB + %f" % (prev.db, self.db, self.a, self.b)
+        jack_mixer_c.threshold_calculate_coefficients(self.threshold, prev.threshold)
 
     def db_to_scale(self, db):
-        return self.a * db + self.b
+        return jack_mixer_c.threshold_db_to_scale(self.threshold, db)
 
     def scale_to_db(self, scale):
-        return (scale - self.b) / self.a
+        return jack_mixer_c.threshold_scale_to_db(self.threshold, scale)
+
+    def __del__(self):
+        if self.threshold:
+            jack_mixer_c.threshold_destroy(self.threshold)
 
 class base:
     '''Scale abstraction, various scale implementation derive from this class'''
     def __init__(self, scale_id, description):
-        self.scale = []
         self.marks = []
-        self.db_max = fpconst.NegInf
+        self.thresholds = []
         self.scale_id = scale_id
         self.description = description
+        self.scale = jack_mixer_c.scale_create()
 
     def add_threshold(self, db, scale, mark):
         thr = threshold(db, scale)
-        self.scale.append(thr)
+        #print repr(thr.threshold)
+        self.thresholds.append(thr)
+        jack_mixer_c.scale_add_threshold(self.scale, thr.threshold)
         if mark:
             self.marks.append(thr)
+
+    def calculate_coefficients(self):
+        jack_mixer_c.scale_calculate_coefficients(self.scale)
+
+    def db_to_scale(self, db):
+        '''Convert dBFS value to number in range 0.0-1.0 used in GUI'''
+        #print "db_to_scale(%f)" % db
+        return jack_mixer_c.scale_db_to_scale(self.scale, db)
+
+    def scale_to_db(self, scale):
+        '''Convert number in range 0.0-1.0 used in GUI to dBFS value'''
+        return jack_mixer_c.scale_scale_to_db(self.scale, scale)
 
     def add_mark(self, db):
         mark = threshold(db, -1.0)
         self.marks.append(mark)
-        if db > self.db_max:
-            self.db_max = db
-
-    def calculate_coefficients(self):
-        prev = None
-        for i in self.scale:
-            if prev != None:
-                i.calculate_coefficients(prev)
-            prev = i
 
     def get_marks(self):
         return self.marks
@@ -73,29 +84,6 @@ class base:
         for i in self.marks:
             if i.scale == -1.0:
                 i.scale = self.db_to_scale(i.db)
-
-    def db_to_scale(self, db):
-        '''Convert dBFS value to number in range 0.0-1.0 used in GUI'''
-        prev = None
-        for i in self.scale:
-            if db < i.db:
-                #print "Match at %f dB treshold" % i.db
-                if prev == None:
-                    return 0.0
-                return i.db_to_scale(db)
-            prev = i
-        return 1.0
-
-    def scale_to_db(self, scale):
-        '''Convert number in range 0.0-1.0 used in GUI to dBFS value'''
-        prev = None
-        for i in self.scale:
-            if scale <= i.scale:
-                if prev == None:
-                    return fpconst.NegInf;
-                return i.scale_to_db(scale)
-            prev = i
-        return self.db_max
 
 # IEC 60268-18 Peak programme level meters - Digital audio peak level meter
 # Adapted from meterpridge, may be wrong, I'm not buying standards, event if they cost $45

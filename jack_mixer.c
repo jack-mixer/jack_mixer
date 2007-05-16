@@ -281,7 +281,7 @@ void channel_volume_write(jack_mixer_channel_t channel, double volume)
   calc_channel_volumes(channel_ptr);
 }
 
-float
+double
 channel_volume_read(
   jack_mixer_channel_t channel)
 {
@@ -294,7 +294,7 @@ void channel_balance_write(jack_mixer_channel_t channel, double balance)
   calc_channel_volumes(channel_ptr);
 }
 
-float
+double
 channel_balance_read(
   jack_mixer_channel_t channel)
 {

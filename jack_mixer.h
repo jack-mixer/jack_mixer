@@ -35,6 +35,8 @@
 
 typedef void * jack_mixer_t;
 typedef void * jack_mixer_channel_t;
+typedef void * jack_mixer_scale_t;
+typedef void * jack_mixer_threshold_t;
 
 jack_mixer_t
 create(
@@ -89,7 +91,7 @@ channel_volume_write(
   jack_mixer_channel_t channel,
   double volume);
 
-float
+double
 channel_volume_read(
   jack_mixer_channel_t channel);
 
@@ -99,7 +101,7 @@ channel_balance_write(
   jack_mixer_channel_t channel,
   double balance);
 
-float
+double
 channel_balance_read(
   jack_mixer_channel_t channel);
 
@@ -144,5 +146,53 @@ void
 channel_rename(
   jack_mixer_channel_t channel,
   const char * name);
+
+jack_mixer_threshold_t
+threshold_create(double db, double scale);
+
+void
+threshold_calculate_coefficients(
+  jack_mixer_threshold_t threshold,
+  jack_mixer_threshold_t prev);
+
+double
+threshold_db_to_scale(
+  jack_mixer_threshold_t threshold,
+  double db);
+
+double
+threshold_scale_to_db(
+  jack_mixer_threshold_t threshold,
+  double scale);
+
+void
+threshold_destroy(
+  jack_mixer_threshold_t threshold);
+
+jack_mixer_scale_t
+scale_create();
+
+void
+scale_add_threshold(
+  jack_mixer_scale_t scale,
+  jack_mixer_threshold_t threshold);
+
+void
+scale_calculate_coefficients(
+  jack_mixer_scale_t scale);
+
+double
+scale_db_to_scale(
+  jack_mixer_scale_t scale,
+  double db);
+
+double
+scale_scale_to_db(
+  jack_mixer_scale_t scale,
+  double scale_value);
+
+void
+scale_destroy(
+  jack_mixer_scale_t scale);
 
 #endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

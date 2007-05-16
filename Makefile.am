@@ -38,7 +38,7 @@ pkgpyexec_SCRIPTS = jack_mixer_c.py
 CLEANFILES = jack_mixer_c.py jack_mixer_wrap.c *.pyc
 EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py jack_mixer_c.py
 
-_jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h jack_mixer_wrap.c memory_atomic.c memory_atomic.h log.h log.c
+_jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h jack_mixer_wrap.c memory_atomic.c memory_atomic.h log.h log.c scale.c
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 

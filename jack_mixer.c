@@ -83,7 +83,6 @@ struct jack_mixer
   unsigned int soloed_channels_count;
 
   jack_port_t * port_midi_in;
-  jack_port_t * port_midi_out;
 
   struct
   {
@@ -705,13 +704,6 @@ create(
 
   mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
   if (mixer_ptr->port_midi_in == NULL)
-  {
-    LOG_ERROR("Cannot create JACK port");
-    goto close_jack;
-  }
-
-  mixer_ptr->port_midi_out = jack_port_register(mixer_ptr->jack_client, "midi out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
-  if (mixer_ptr->port_midi_out == NULL)
   {
     LOG_ERROR("Cannot create JACK port");
     goto close_jack;

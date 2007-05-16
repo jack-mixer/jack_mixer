@@ -5,3 +5,23 @@ jack_mixer is licensed under GPL version 2, check gpl.txt for more info.
 
 Please visit project homepage is at http://home.gna.org/jackmixer/ for
 more info.
+
+= Using MIDI CCs to control jack_mixer =
+MIDI CCs can be used to control volume and balance/panorama of channels.
+
+Controller for main channel volume is 7
+Controller for main channel balance is 8
+
+Controller for input channels are choosen using predefined algorithm,
+first free controller starting from 11, first for volume, next for
+balance/panorama.
+
+So, if you don't delete channels, you will get CC#11 used for first
+input channel volume, CC#12 for first channel balance/panorama, CC#13
+for second channel volume, CC#14 for second channel balance/panorama,
+etc.
+
+MIDI CCs are accepted on any channel.
+
+MIDI CC values (0-127) are mapped to dBFS using current slider scale
+for corresponding channel.

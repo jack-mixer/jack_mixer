@@ -38,6 +38,8 @@
 //#define LOG_LEVEL LOG_LEVEL_DEBUG
 #include "log.h"
 
+#include "jack_compat.h"
+
 #define PEAK_FRAMES_CHUNK 4800
 
 #define FLOAT_EXISTS(x) (!((x) - (x)))

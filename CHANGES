@@ -1,0 +1,5 @@
+Changes since version 3:
+
+ * Improve configure script (autotools)
+ * Remove SWIG dependency for tarball sources
+ * JACK MIDI support (sample accurate automation of volume and balance/panorama)

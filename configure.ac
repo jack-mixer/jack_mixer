@@ -56,7 +56,7 @@ then
   AC_MSG_WARN([Your JACK is missing MIDI support.])
 fi
 
-if test "$have_jackmidi" = "yes"
+if test "$have_jackmidi" = "yes" -o "$have_jackmidi" = "yes (old one)"
 then
   AC_JACK_MIDI_NFRAMES_CHECK()
   if test "$jackmidi_nframes" = "yes"

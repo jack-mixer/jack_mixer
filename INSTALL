@@ -15,9 +15,7 @@ Runtime requirements (checked be configure script):
 
 Runtime optional things, that will enable you to get full functionality:
  * To get LASH (Linux audio session) support, you need LASH compiled
-   with Python bindings. They are in LASH CVS now but are still not
-   released. Chances are that they will be distributed with tarball
-   faollowing current 0.5.2 release.
+   with Python bindings. This means at least 0.5.3 release.
    For LASH support you also need PyXML (0.8.4 should work)
  * To get balance/panorama functionality for each channel you need
    pyphat. Get it from http://phat.berlios.de/, you want latest SVN

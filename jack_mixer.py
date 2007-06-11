@@ -54,7 +54,7 @@ class jack_mixer(serialized_object):
             lash.lash_event_set_string(lash_event, name)
             lash.lash_send_event(lash_client, lash_event)
 
-        lash.lash_jack_client_name(lash_client, name)
+            lash.lash_jack_client_name(lash_client, name)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(name)

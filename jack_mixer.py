@@ -270,7 +270,7 @@ class jack_mixer(serialized_object):
             return self.main_mix
 
         if name == input_channel_serialization_name():
-            channel = input_channel(self.gui_factory, "", True)
+            channel = input_channel(self.mixer, self.gui_factory, "", True)
             self.unserialized_channels.append(channel)
             return channel
 

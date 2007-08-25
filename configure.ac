@@ -25,6 +25,9 @@ AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
 
+# not real check but hack (because version is not parameter to configure script) to detect development version
+AM_CONDITIONAL(DEV_VERSION, test $VERSION = dev)
+
 AC_SUBST(DATADIR)
 
 # Checks for programs.

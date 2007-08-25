@@ -1,0 +1,6 @@
+Changes since version 5:
+ * Fix building against jack 0.102.20
+ * Handle python prefix different from install prefix
+ * Fix LASH-less operation
+ * Update install instructions after lash-0.5.3 and phat-0.4.1 releases
+ * Apply Markus patch (thanks!) for sr #1698 (can't restore session using LASH)

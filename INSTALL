@@ -18,9 +18,7 @@ Runtime optional things, that will enable you to get full functionality:
    with Python bindings. This means at least 0.5.3 release.
    For LASH support you also need PyXML (0.8.4 should work)
  * To get balance/panorama functionality for each channel you need
-   pyphat. Get it from http://phat.berlios.de/, you want latest SVN
-   version, phat-0.4.0 has some bugs trigered by jack_mixer and misses
-   some functionality (like reset to center).
+   pyphat. Get it from http://phat.berlios.de/, 0.4.1 should work.
  * If you want your settings to be preserved in GConf you need Python
    bindings for GConf, part of the Python bindings for GNOME. Chances
    are that package you need to install is called gnome-python

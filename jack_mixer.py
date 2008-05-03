@@ -183,7 +183,7 @@ class jack_mixer(serialized_object):
             channel = input_channel(self.mixer, self.gui_factory, name, stereo)
             self.add_channel_precreated(channel)
         except Exception:
-            err = gtk.MessageDialog(None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Channel creation failed")
+            err = gtk.MessageDialog(self.window, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Channel creation failed")
             err.run()
             err.destroy()
 

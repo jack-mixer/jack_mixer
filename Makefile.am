@@ -70,5 +70,5 @@ endif
 pacoinstall:
 	test `whoami` == root # test for root
 	-paco -rvB jack_mixer
-	-paco -lE `pwd` -p jack_mixer-`svnversion` "make install"
+	-paco -lE `pwd` -E /etc -p jack_mixer-`svnversion` "make install"
 	-paco -i jack_mixer

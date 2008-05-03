@@ -179,11 +179,15 @@ class jack_mixer(serialized_object):
         self.channel_remove_menu_item.set_sensitive(False)
 
     def add_channel(self, name, stereo):
-        channel = input_channel(self.mixer, self.gui_factory, name, stereo)
-        self.add_channel_precreated(channel)
+        try:
+            channel = input_channel(self.mixer, self.gui_factory, name, stereo)
+            self.add_channel_precreated(channel)
+        except Exception:
+            err = gtk.MessageDialog(None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Channel creation failed")
+            err.run()
+            err.destroy()
 
     def add_channel_precreated(self, channel):
-        self.channels.append(channel)
         frame = gtk.Frame()
         frame.add(channel)
         self.hbox_inputs.pack_start(frame, False)
@@ -192,6 +196,7 @@ class jack_mixer(serialized_object):
         self.channel_remove_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_channel, channel, channel_remove_menu_item)
         self.channel_remove_menu_item.set_sensitive(True)
+        self.channels.append(channel)
 
     def read_meters(self):
         for channel in self.channels:

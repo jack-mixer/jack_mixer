@@ -191,8 +191,10 @@ class input_channel(channel):
         channel.__init__(self, mixer, gui_factory, name, stereo)
 
     def realize(self):
-        channel.realize(self)
         self.channel = jack_mixer_c.add_channel(self.mixer, self.channel_name, self.stereo)
+        if self.channel == None:
+            raise Exception,"Cannot create a channel"
+        channel.realize(self)
         jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
 
         self.on_volume_changed(self.slider_adjustment)

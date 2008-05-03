@@ -261,6 +261,7 @@ void remove_channel(jack_mixer_channel_t channel)
 
 void channel_stereo_meter_read(jack_mixer_channel_t channel, double * left_ptr, double * right_ptr)
 {
+  assert(channel_ptr);
   *left_ptr = value_to_db(channel_ptr->meter_left);
   *right_ptr = value_to_db(channel_ptr->meter_right);
 }
@@ -276,6 +277,7 @@ channel_is_midi_modified(
 {
   bool midi_modified;
 
+  assert(channel_ptr);
   midi_modified = channel_ptr->midi_modified;
   channel_ptr->midi_modified = false;
 
@@ -284,6 +286,7 @@ channel_is_midi_modified(
 
 void channel_volume_write(jack_mixer_channel_t channel, double volume)
 {
+  assert(channel_ptr);
   channel_ptr->volume = db_to_value(volume);
   calc_channel_volumes(channel_ptr);
 }
@@ -292,11 +295,13 @@ double
 channel_volume_read(
   jack_mixer_channel_t channel)
 {
+  assert(channel_ptr);
   return value_to_db(channel_ptr->volume);
 }
 
 void channel_balance_write(jack_mixer_channel_t channel, double balance)
 {
+  assert(channel_ptr);
   channel_ptr->balance = balance;
   calc_channel_volumes(channel_ptr);
 }
@@ -305,11 +310,13 @@ double
 channel_balance_read(
   jack_mixer_channel_t channel)
 {
+  assert(channel_ptr);
   return channel_ptr->balance;
 }
 
 double channel_abspeak_read(jack_mixer_channel_t channel)
 {
+  assert(channel_ptr);
   if (channel_ptr->NaN_detected)
   {
     return sqrt(-1);
@@ -833,7 +840,7 @@ add_channel(
   channel_ptr = malloc(sizeof(struct channel));
   if (channel_ptr == NULL)
   {
-    goto exit;
+    goto fail;
   }
 
   channel_ptr->mixer_ptr = mixer_ctx_ptr;
@@ -841,25 +848,45 @@ add_channel(
   channel_ptr->name = strdup(channel_name);
   if (channel_ptr->name == NULL)
   {
-    goto exit_free_channel;
+    goto fail_free_channel;
   }
 
   if (stereo)
   {
     channel_name_size = strlen(channel_name);
+
     port_name = malloc(channel_name_size + 3);
+    if (port_name == NULL)
+    {
+        goto fail_free_channel_name;
+    }
+
     memcpy(port_name, channel_name, channel_name_size);
     port_name[channel_name_size] = ' ';
     port_name[channel_name_size+1] = 'L';
     port_name[channel_name_size+2] = 0;
+
     channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    if (channel_ptr->port_left == NULL)
+    {
+        goto fail_free_port_name;
+    }
+
     port_name[channel_name_size+1] = 'R';
+
     channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-    free(port_name);
+    if (channel_ptr->port_right == NULL)
+    {
+        goto fail_unregister_left_channel;
+    }
   }
   else
   {
     channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    if (channel_ptr->port_left == NULL)
+    {
+        goto fail_free_channel_name;
+    }
   }
 
   channel_ptr->stereo = stereo;
@@ -914,11 +941,21 @@ add_channel(
     }
   }
 
-  goto exit;
-
-exit_free_channel:
-  free(channel_ptr);
-
-exit:
   return channel_ptr;
+
+fail_unregister_left_channel:
+  jack_port_unregister(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left);
+
+fail_free_port_name:
+  free(port_name);
+
+fail_free_channel_name:
+  free(channel_ptr->name);
+
+fail_free_channel:
+  free(channel_ptr);
+  channel_ptr = NULL;
+
+fail:
+  return NULL;
 }

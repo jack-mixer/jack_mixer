@@ -66,3 +66,9 @@ uninstall-hook:
 	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-uninstall-rule $(srcdir)/$(schema_DATA)
 	rm -vf $(DESTDIR)$(bindir)/jack_mixer
 endif
+
+pacoinstall:
+	test `whoami` == root # test for root
+	-paco -rvB jack_mixer
+	-paco -lE `pwd` -p jack_mixer-`svnversion` "make install"
+	-paco -i jack_mixer

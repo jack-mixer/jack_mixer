@@ -236,6 +236,7 @@ class jack_mixer(serialized_object):
                 f = file(filename, "r")
                 self.load_from_xml(f)
                 f.close()
+                lash.lash_send_event(self.lash_client, event)
             else:
                 print "jack_mixer: Got unhandled LASH event, type " + str(event_type)
                 return True

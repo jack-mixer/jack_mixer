@@ -1,0 +1,15 @@
+/config
+/Makefile.in
+/Makefile
+/.deps
+/config.h
+/libtool
+/stamp-h1
+/autom4te.cache
+/aclocal.m4
+/config.h.in
+/config.log
+/config.status
+/configure
+/jack_mixer_c.py
+/jack_mixer_wrap.c

@@ -134,7 +134,7 @@ class channel(gtk.VBox, serialized_object):
             balance = jack_mixer_c.channel_balance_read(self.channel)
             #print volume, balance
             self.slider_adjustment.set_value_db(volume)
-            self.balance.set_value(balance)
+            self.balance_adjustment.set_value(balance)
 
     def on_scroll(self, widget, event):
         if event.direction == gtk.gdk.SCROLL_DOWN:

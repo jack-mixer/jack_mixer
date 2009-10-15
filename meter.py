@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import gtk
+import cairo
 
 class meter(gtk.DrawingArea):
     def __init__(self, scale):
@@ -79,8 +80,12 @@ class meter(gtk.DrawingArea):
             cairo_ctx.show_text(mark.text)
 
     def draw_value(self, cairo_ctx, value, x, width):
-        #return
-        cairo_ctx.set_source_color(self.color_value)
+        height = self.allocation.height
+        gradient = cairo.LinearGradient(1, 1, width-1, height-1)
+        gradient.add_color_stop_rgb(0, 1, 0, 0)
+        gradient.add_color_stop_rgb(0.2, 1, 1, 0)
+        gradient.add_color_stop_rgb(1, 0, 1, 0)
+        cairo_ctx.set_source(gradient)
         cairo_ctx.rectangle(x, self.height * (1 - value), width, self.height * value)
         cairo_ctx.fill()
 

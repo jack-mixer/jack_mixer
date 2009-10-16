@@ -56,6 +56,8 @@ class jack_mixer(serialized_object):
 
             lash.lash_jack_client_name(lash_client, name)
 
+        gtk.window_set_default_icon_name('jack_mixer')
+
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(name)
 

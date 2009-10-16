@@ -22,6 +22,7 @@
 AC_PREREQ(2.61)
 AC_INIT(jack_mixer, dev)
 AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
 
@@ -34,6 +35,7 @@ AC_SUBST(DATADIR)
 AC_PROG_CC
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
+AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I m4")
 
 # Checks for libraries.
 
@@ -88,8 +90,11 @@ fi
 AC_PATH_PROG(GCONFTOOL, gconftool-2, no)
 AM_GCONF_SOURCE_2
 
-AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+AC_OUTPUT([
+Makefile
+data/Makefile
+data/art/Makefile
+])
 
 AC_MSG_RESULT([])
 AC_MSG_RESULT([**********************************************************************])

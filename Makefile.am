@@ -22,6 +22,8 @@ if DEV_VERSION
 AM_CFLAGS +=  -Werror
 endif
 
+SUBDIRS = data
+
 INCLUDES = $(PYTHON_INCLUDES)
 
 jack_mixerdir = $(pkgdatadir)

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Jack Mixer
+Exec=jack_mixer
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=GTK;GNOME;AudioVideo;Player;Audio;
+Icon=jack_mixer

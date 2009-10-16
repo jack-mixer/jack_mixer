@@ -138,6 +138,7 @@ class widget(gtk.DrawingArea):
         slider_knob_width = self.width * 3 / 4
         slider_knob_height = self.width * 3 / 2
         slider_knob_height -= slider_knob_height % 2
+        slider_knob_height += 1
 
         slider_x = self.width/2
 
@@ -153,25 +154,29 @@ class widget(gtk.DrawingArea):
 
         # slider knob
         slider_y = round(self.slider_rail_up + self.slider_rail_height * (1 - self.adjustment.get_value()))
-        cairo_ctx.rectangle(slider_x - float(slider_knob_width)/2, slider_y - slider_knob_height/2, float(slider_knob_width), slider_knob_height)
+        cairo_ctx.rectangle(slider_x - float(slider_knob_width)/2,
+                            slider_y - slider_knob_height/2,
+                            float(slider_knob_width),
+                            slider_knob_height)
         cairo_ctx.set_source_color(self.style.bg[state])
         cairo_ctx.fill_preserve()
         cairo_ctx.set_source_color(self.style.fg[state])
         cairo_ctx.stroke()
         # slider knob marks
         cairo_ctx.set_source_color(self.style.fg[state])
-        for i in range(int(slider_knob_height/2)):
-            if i % 4 == 0:
+        for i in range(int(slider_knob_height/2))[8:]:
+            if i % 2 == 0:
                 correction = 1.0 + (float(slider_knob_height)/2.0 - float(i)) / 10.0
+                correction *= 2
                 y = slider_y - i
                 w = float(slider_knob_width)/2.0 - correction
                 x1 = slider_x - w
                 x2 = slider_x + w
-                cairo_ctx.move_to(x1, y)
-                cairo_ctx.line_to(x2, y)
+                cairo_ctx.move_to(x1, y+0.5)
+                cairo_ctx.line_to(x2, y+0.5)
                 y = slider_y + i
-                cairo_ctx.move_to(x1, y)
-                cairo_ctx.line_to(x2, y)
+                cairo_ctx.move_to(x1, y-0.5)
+                cairo_ctx.line_to(x2, y-0.5)
         cairo_ctx.set_line_width(1)
         cairo_ctx.stroke()
         # slider knob middle mark

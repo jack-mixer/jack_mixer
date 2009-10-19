@@ -64,9 +64,15 @@ class factory(gobject.GObject):
         #print "GConf default_meter_scale changed"
         scale_id = entry.get_value().get_string()
         scale = lookup_scale(self.meter_scales, scale_id)
+        self.set_default_meter_scale(scale, from_gconf=True)
+
+    def set_default_meter_scale(self, scale, from_gconf=False):
         if scale:
-            self.default_meter_scale = scale
-            self.emit("default-meter-scale-changed", self.default_meter_scale)
+            if gconf and not from_gconf:
+                self.gconf_client.set_string("/apps/jack_mixer/default_meter_scale", scale.scale_id)
+            else:
+                self.default_meter_scale = scale
+                self.emit("default-meter-scale-changed", self.default_meter_scale)
         else:
             print "Ignoring GConf default_meter_scale setting, because \"%s\" scale is not known" % scale_id
 
@@ -74,9 +80,15 @@ class factory(gobject.GObject):
         #print "GConf default_slider_scale changed"
         scale_id = entry.get_value().get_string()
         scale = lookup_scale(self.slider_scales, scale_id)
+        self.set_default_slider_scale(scale, from_gconf=True)
+
+    def set_default_slider_scale(self, scale, from_gconf=False):
         if scale:
-            self.default_slider_scale = scale
-            self.emit("default-slider-scale-changed", self.default_slider_scale)
+            if gconf and not from_gconf:
+                self.gconf_client.set_string("/apps/jack_mixer/default_slider_scale", scale.scale_id)
+            else:
+                self.default_slider_scale = scale
+                self.emit("default-slider-scale-changed", self.default_slider_scale)
         else:
             print "Ignoring GConf default_slider_scale setting, because \"%s\" scale is not known" % scale_id
 
@@ -110,100 +122,6 @@ class factory(gobject.GObject):
             return name_entry.get_text()
         else:
             return None
-
-    def run_dialog_choose_meter_scale(self):
-        dialog = self.glade_xml.get_widget("dialog_choose_scale")
-        dialog.set_title("Choose meter scale")
-        dialog.set_transient_for(self.topwindow)
-
-        available_scales = self.glade_xml.get_widget("available_scales")
-        store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
-        renderer = gtk.CellRendererText()
-
-        column_scale = gtk.TreeViewColumn("Scale", renderer, text=0)
-        column_description = gtk.TreeViewColumn("Description", renderer, text=1)
-
-        available_scales.append_column(column_scale)
-        available_scales.append_column(column_description)
-
-        selection = available_scales.get_selection()
-
-        for scale in self.meter_scales:
-            #print "%s: %s" % (scale.scale_id, scale.description)
-
-            row = scale.scale_id, scale.description, scale
-            current_iter = store.append(row)
-            if scale is self.default_meter_scale:
-                selected_iter = current_iter
-                #print "Selected scale is %s" % scale.scale_id
-
-        available_scales.set_model(store)
-        selection.select_iter(selected_iter)
-
-        dialog.show()
-        while True:
-            ret = dialog.run()
-
-            if ret == gtk.RESPONSE_OK or ret == gtk.RESPONSE_APPLY:
-                scale = store.get(selection.get_selected()[1], 2)[0]
-                if gconf:
-                    # we are setting gconf, and then notified for change
-                    self.gconf_client.set_string("/apps/jack_mixer/default_meter_scale", scale.scale_id)
-                else:
-                    self.default_meter_scale = scale
-                    self.emit("default-meter-scale-changed", self.default_meter_scale)
-
-            if ret == gtk.RESPONSE_OK or ret == gtk.RESPONSE_CANCEL or ret == gtk.RESPONSE_DELETE_EVENT:
-                break
-
-        dialog.hide()
-
-    def run_dialog_choose_slider_scale(self):
-        dialog = self.glade_xml.get_widget("dialog_choose_scale")
-        dialog.set_title("Choose slider scale")
-        dialog.set_transient_for(self.topwindow)
-
-        available_scales = self.glade_xml.get_widget("available_scales")
-        store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
-        renderer = gtk.CellRendererText()
-
-        column_scale = gtk.TreeViewColumn("Scale", renderer, text=0)
-        column_description = gtk.TreeViewColumn("Description", renderer, text=1)
-
-        available_scales.append_column(column_scale)
-        available_scales.append_column(column_description)
-
-        selection = available_scales.get_selection()
-
-        for scale in self.slider_scales:
-            #print "%s: %s" % (scale.scale_id, scale.description)
-
-            row = scale.scale_id, scale.description, scale
-            current_iter = store.append(row)
-            if scale is self.default_slider_scale:
-                selected_iter = current_iter
-                #print "Selected scale is %s" % scale.scale_id
-
-        available_scales.set_model(store)
-        selection.select_iter(selected_iter)
-
-        dialog.show()
-        while True:
-            ret = dialog.run()
-
-            if ret == gtk.RESPONSE_OK or ret == gtk.RESPONSE_APPLY:
-                scale = store.get(selection.get_selected()[1], 2)[0]
-                if gconf:
-                    # we are setting gconf, and then notified for change
-                    self.gconf_client.set_string("/apps/jack_mixer/default_slider_scale", scale.scale_id)
-                else:
-                    self.default_slider_scale = scale
-                    self.emit("default-slider-scale-changed", self.default_slider_scale)
-
-            if ret == gtk.RESPONSE_OK or ret == gtk.RESPONSE_CANCEL or ret == gtk.RESPONSE_DELETE_EVENT:
-                break
-
-        dialog.hide()
 
     def get_default_meter_scale(self):
         return self.default_meter_scale

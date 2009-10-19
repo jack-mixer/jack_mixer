@@ -34,6 +34,8 @@ old_path = sys.path
 sys.path.insert(0, os.path.dirname(sys.argv[0]) + os.sep + ".." + os.sep + "share"+ os.sep + "jack_mixer")
 from channel import *
 import gui
+from preferences import PreferencesDialog
+
 sys.path = old_path
 
 
@@ -43,6 +45,13 @@ if lash:
     from serialization import serialized_object, serializator
 
 class jack_mixer(serialized_object):
+
+    # scales suitable as meter scales
+    meter_scales = [scale.iec_268(), scale.linear_70dB(), scale.iec_268_minimalistic()]
+
+    # scales suitable as volume slider scales
+    slider_scales = [scale.linear_30dB(), scale.linear_70dB()]
+
     def __init__(self, name, lash_client):
         self.mixer = jack_mixer_c.create(name)
         if not self.mixer:
@@ -61,7 +70,7 @@ class jack_mixer(serialized_object):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(name)
 
-        self.gui_factory = gui.factory(glade_xml, self.window, meter_scales, slider_scales)
+        self.gui_factory = gui.factory(glade_xml, self.window, self.meter_scales, self.slider_scales)
 
         self.vbox_top = gtk.VBox()
         self.window.add(self.vbox_top)
@@ -97,13 +106,9 @@ class jack_mixer(serialized_object):
         self.settings_menu = gtk.Menu()
         self.settings_menu_item.set_submenu(self.settings_menu)
 
-        self.settings_choose_meter_scale_menu_item = gtk.MenuItem("_Meter scale")
-        self.settings_choose_meter_scale_menu_item.connect("activate", self.on_choose_meter_scale)
-        self.settings_menu.append(self.settings_choose_meter_scale_menu_item)
-
-        self.settings_choose_slider_scale_menu_item = gtk.MenuItem("_Slider scale")
-        self.settings_choose_slider_scale_menu_item.connect("activate", self.on_choose_slider_scale)
-        self.settings_menu.append(self.settings_choose_slider_scale_menu_item)
+        preferences = gtk.MenuItem('_Preferences')
+        preferences.connect('activate', self.on_preferences_cb)
+        self.settings_menu.append(preferences)
 
         self.hbox_top = gtk.HBox()
         self.vbox_top.pack_start(self.hbox_top, True)
@@ -147,11 +152,12 @@ class jack_mixer(serialized_object):
 
         jack_mixer_c.destroy(self.mixer)
 
-    def on_choose_meter_scale(self, widget):
-        self.gui_factory.run_dialog_choose_meter_scale()
-
-    def on_choose_slider_scale(self, widget):
-        self.gui_factory.run_dialog_choose_slider_scale()
+    preferences_dialog = None
+    def on_preferences_cb(self, widget):
+        if not self.preferences_dialog:
+            self.preferences_dialog = PreferencesDialog(self)
+        self.preferences_dialog.show()
+        self.preferences_dialog.present()
 
     def on_add_channel(self, widget):
         result = self.gui_factory.run_dialog_add_channel()
@@ -364,12 +370,6 @@ if not os.path.isfile(glade_file):
 #print 'Loading glade from "%s"' % glade_file
 
 glade_xml = gtk.glade.XML(glade_file)
-
-# scales suitable as meter scales
-meter_scales = [scale.iec_268(), scale.linear_70dB(), scale.iec_268_minimalistic()]
-
-# scales suitable as volume slider scales
-slider_scales = [scale.linear_30dB(), scale.linear_70dB()]
 
 if __name__ == "__main__":
     main()

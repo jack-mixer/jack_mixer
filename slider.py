@@ -67,3 +67,18 @@ class widget(gtk.VScale):
         gtk.VScale.__init__(self, adjustment)
         self.set_draw_value(False)
         self.set_inverted(True)
+
+        # HACK: we want the behaviour you get with the middle button, so we
+        # mangle the events. Clicking with other buttons moves the slider in
+        # step increments, clicking with the middle button moves the slider
+        # to the location of the click.
+        self.connect('button-press-event', self.button_press_event)
+        self.connect('button-release-event', self.button_release_event)
+
+    def button_press_event(self, widget, event):
+        event.button = 2
+        return False
+
+    def button_release_event(self, widget, event):
+        event.button = 2
+        return False

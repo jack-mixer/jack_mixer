@@ -31,10 +31,14 @@ class meter(gtk.DrawingArea):
         self.connect("size_allocate", self.on_size_allocate)
 
         self.color_bg = gtk.gdk.Color(0,0,0)
-        self.color_value = gtk.gdk.Color(int(65535 * 0.8), int(65535 * 0.7), 0)
+        self.color_value = None
         self.color_mark = gtk.gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
         self.width = 0
         self.height = 0
+
+    def set_color(self, color):
+        self.color_value = color
+        self.invalidate_all()
 
     def on_expose(self, widget, event):
         cairo_ctx = widget.window.cairo_create()
@@ -80,12 +84,15 @@ class meter(gtk.DrawingArea):
             cairo_ctx.show_text(mark.text)
 
     def draw_value(self, cairo_ctx, value, x, width):
-        height = self.allocation.height
-        gradient = cairo.LinearGradient(1, 1, width-1, height-1)
-        gradient.add_color_stop_rgb(0, 1, 0, 0)
-        gradient.add_color_stop_rgb(0.2, 1, 1, 0)
-        gradient.add_color_stop_rgb(1, 0, 1, 0)
-        cairo_ctx.set_source(gradient)
+        if self.color_value is not None:
+            cairo_ctx.set_source_color(self.color_value)
+        else:
+            height = self.allocation.height
+            gradient = cairo.LinearGradient(1, 1, width-1, height-1)
+            gradient.add_color_stop_rgb(0, 1, 0, 0)
+            gradient.add_color_stop_rgb(0.2, 1, 1, 0)
+            gradient.add_color_stop_rgb(1, 0, 1, 0)
+            cairo_ctx.set_source(gradient)
         cairo_ctx.rectangle(x, self.height * (1 - value), width, self.height * value)
         cairo_ctx.fill()
 

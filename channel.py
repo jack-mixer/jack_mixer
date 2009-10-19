@@ -60,11 +60,14 @@ class channel(gtk.VBox, serialized_object):
             self.meter = meter.stereo(self.meter_scale)
         else:
             self.meter = meter.mono(self.meter_scale)
+        self.on_vumeter_color_changed(self.gui_factory)
 
         self.meter.set_events(gtk.gdk.SCROLL_MASK)
 
         self.gui_factory.connect("default-meter-scale-changed", self.on_default_meter_scale_changed)
         self.gui_factory.connect("default-slider-scale-changed", self.on_default_slider_scale_changed)
+        self.gui_factory.connect('vumeter-color-changed', self.on_vumeter_color_changed)
+        self.gui_factory.connect('vumeter-color-scheme-changed', self.on_vumeter_color_changed)
 
         self.abspeak = abspeak.widget()
         self.abspeak.connect("reset", self.on_abspeak_reset)
@@ -90,6 +93,14 @@ class channel(gtk.VBox, serialized_object):
         self.slider_scale = scale
         self.slider_adjustment.set_scale(scale)
         jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
+
+    def on_vumeter_color_changed(self, gui_factory, *args):
+        color = gui_factory.get_vumeter_color()
+        color_scheme = gui_factory.get_vumeter_color_scheme()
+        if color_scheme != 'solid':
+            self.meter.set_color(None)
+        else:
+            self.meter.set_color(gtk.gdk.color_parse(color))
 
     def on_abspeak_adjust(self, abspeak, adjust):
         #print "abspeak adjust %f" % adjust

@@ -59,15 +59,25 @@ class PreferencesDialog(gtk.Dialog):
         self.custom_widgets_checkbutton = gtk.CheckButton('Use custom widgets')
         self.custom_widgets_checkbutton.set_sensitive(False) # XXX
         interface_vbox.pack_start(self.custom_widgets_checkbutton)
-        self.slider_color_checkbutton = gtk.CheckButton('Use default slide colors')
-        self.slider_color_checkbutton.set_sensitive(False) # XXX
-        interface_vbox.pack_start(self.slider_color_checkbutton)
+
+        self.vumeter_color_checkbutton = gtk.CheckButton('Use custom vumeter color')
+        self.vumeter_color_checkbutton.set_active(
+                        self.app.gui_factory.get_vumeter_color_scheme() == 'solid')
+        self.vumeter_color_checkbutton.connect('toggled',
+                        self.on_vumeter_color_change)
+        interface_vbox.pack_start(self.vumeter_color_checkbutton)
         hbox = gtk.HBox()
         interface_vbox.pack_start(hbox)
+        self.custom_color_box = hbox
+        self.custom_color_box.set_sensitive(
+                        self.vumeter_color_checkbutton.get_active() == True)
         hbox.pack_start(gtk.Label('Custom color:'))
-        self.slider_color_picker = gtk.ColorButton()
-        self.slider_color_picker.set_sensitive(False) # XXX
-        hbox.pack_start(self.slider_color_picker)
+        self.vumeter_color_picker = gtk.ColorButton()
+        self.vumeter_color_picker.set_color(gtk.gdk.color_parse(
+                                self.app.gui_factory.get_vumeter_color()))
+        self.vumeter_color_picker.connect('color-set',
+                        self.on_vumeter_color_change)
+        hbox.pack_start(self.vumeter_color_picker)
         vbox.pack_start(self.create_frame('Interface', interface_vbox))
 
         table = gtk.Table(2, 2, False)
@@ -140,3 +150,14 @@ class PreferencesDialog(gtk.Dialog):
         scale = self.slider_store.get(active_iter, 1)[0]
         self.app.gui_factory.set_default_slider_scale(scale)
 
+    def on_vumeter_color_change(self, *args):
+        color_scheme = 'default'
+        if self.vumeter_color_checkbutton.get_active():
+            color_scheme = 'solid'
+        self.app.gui_factory.set_vumeter_color_scheme(color_scheme)
+
+        color = self.vumeter_color_picker.get_color().to_string()
+        self.app.gui_factory.set_vumeter_color(color)
+
+        self.custom_color_box.set_sensitive(
+                        self.vumeter_color_checkbutton.get_active() == True)

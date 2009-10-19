@@ -260,9 +260,8 @@ class input_channel(channel):
             self.balance.set_default_value(0)
             self.balance.set_adjustment(self.balance_adjustment)
             self.pack_start(self.balance, False)
-        elif hasattr(gtk.HScale, 'add_mark'):
+        else:
             self.balance = gtk.HScale(self.balance_adjustment)
-            self.balance.add_mark(0, gtk.POS_TOP, None)
             self.balance.set_draw_value(False)
             self.pack_start(self.balance, False)
 
@@ -371,9 +370,8 @@ class main_mix(channel):
             self.balance.set_default_value(0)
             self.balance.set_adjustment(self.balance_adjustment)
             self.pack_start(self.balance, False)
-        elif hasattr(gtk.HScale, 'add_mark'):
+        else:
             self.balance = gtk.HScale(self.balance_adjustment)
-            self.balance.add_mark(0, gtk.POS_TOP, None)
             self.balance.set_draw_value(False)
             self.pack_start(self.balance, False)
 

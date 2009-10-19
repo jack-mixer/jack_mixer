@@ -57,7 +57,10 @@ class PreferencesDialog(gtk.Dialog):
 
         interface_vbox = gtk.VBox()
         self.custom_widgets_checkbutton = gtk.CheckButton('Use custom widgets')
-        self.custom_widgets_checkbutton.set_sensitive(False) # XXX
+        self.custom_widgets_checkbutton.set_active(
+                        self.app.gui_factory.get_use_custom_widgets())
+        self.custom_widgets_checkbutton.connect('toggled',
+                        self.on_custom_widget_toggled)
         interface_vbox.pack_start(self.custom_widgets_checkbutton)
 
         self.vumeter_color_checkbutton = gtk.CheckButton('Use custom vumeter color')
@@ -161,3 +164,7 @@ class PreferencesDialog(gtk.Dialog):
 
         self.custom_color_box.set_sensitive(
                         self.vumeter_color_checkbutton.get_active() == True)
+
+    def on_custom_widget_toggled(self, *args):
+        self.app.gui_factory.set_use_custom_widgets(
+                        self.custom_widgets_checkbutton.get_active())

@@ -60,6 +60,9 @@ class factory(gobject.GObject):
             if not self.vumeter_color:
                 self.vumeter_color = '#ccb300'
 
+            self.use_custom_widgets = self.gconf_client.get_bool(
+                            '/apps/jack_mixer/use_custom_widgets')
+
             self.gconf_client.add_dir("/apps/jack_mixer", gconf.CLIENT_PRELOAD_NONE)
             self.gconf_client.notify_add("/apps/jack_mixer/default_meter_scale", self.on_gconf_default_meter_scale_changed)
             self.gconf_client.notify_add("/apps/jack_mixer/default_slider_scale", self.on_gconf_default_slider_scale_changed)
@@ -67,11 +70,14 @@ class factory(gobject.GObject):
                             self.on_gconf_vumeter_color_change)
             self.gconf_client.notify_add('/apps/jack_mixer/vumeter_color_scheme',
                             self.on_gconf_vumeter_color_scheme_change)
+            self.gconf_client.notify_add('/apps/jack_mixer/use_custom_widgets',
+                            self.on_gconf_use_custom_widgets_change)
         else:
             self.default_meter_scale = meter_scales[0]
             self.default_slider_scale = slider_scales[0]
             self.vumeter_color = '#ccb300'
             self.vumeter_color_scheme = 'default'
+            self.use_custom_widgets = False
 
     def on_gconf_default_meter_scale_changed(self, client, connection_id, entry, args):
         #print "GConf default_meter_scale changed"
@@ -127,6 +133,17 @@ class factory(gobject.GObject):
         color_scheme = entry.get_value().get_string()
         self.set_vumeter_color_scheme(color_scheme, from_gconf=True)
 
+    def set_use_custom_widgets(self, use_custom, from_gconf=False):
+        if gconf and not from_gconf:
+            self.gconf_client.set_bool('/apps/jack_mixer/use_custom_widgets', use_custom)
+        else:
+            self.use_custom_widgets = use_custom
+            self.emit('use-custom-widgets-changed', self.use_custom_widgets)
+
+    def on_gconf_use_custom_widgets_change(self, client, connection_id, entry, args):
+        use_custom = entry.get_value().get_bool()
+        self.set_use_custom_widgets(use_custom, from_gconf=True)
+
     def run_dialog_add_channel(self):
         dialog = self.glade_xml.get_widget("dialog_add_channel")
         name_entry = self.glade_xml.get_widget("new_channel_name")
@@ -170,6 +187,9 @@ class factory(gobject.GObject):
     def get_vumeter_color_scheme(self):
         return self.vumeter_color_scheme
 
+    def get_use_custom_widgets(self):
+        return self.use_custom_widgets
+
 gobject.signal_new("default-meter-scale-changed", factory, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
 gobject.signal_new("default-slider-scale-changed", factory, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
 gobject.signal_new('vumeter-color-changed', factory,
@@ -178,3 +198,6 @@ gobject.signal_new('vumeter-color-changed', factory,
 gobject.signal_new('vumeter-color-scheme-changed', factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [str])
+gobject.signal_new('use-custom-widgets-changed', factory,
+                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
+                gobject.TYPE_NONE, [bool])

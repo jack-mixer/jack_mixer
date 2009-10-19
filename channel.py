@@ -54,7 +54,8 @@ class channel(gtk.VBox, serialized_object):
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
         self.balance_adjustment.connect("value-changed", self.on_balance_changed)
 
-        self.slider = slider.widget(self.slider_adjustment)
+        self.slider = None
+        self.create_slider_widget()
 
         if self.stereo:
             self.meter = meter.stereo(self.meter_scale)
@@ -68,6 +69,7 @@ class channel(gtk.VBox, serialized_object):
         self.gui_factory.connect("default-slider-scale-changed", self.on_default_slider_scale_changed)
         self.gui_factory.connect('vumeter-color-changed', self.on_vumeter_color_changed)
         self.gui_factory.connect('vumeter-color-scheme-changed', self.on_vumeter_color_changed)
+        self.gui_factory.connect('use-custom-widgets-changed', self.on_custom_widgets_changed)
 
         self.abspeak = abspeak.widget()
         self.abspeak.connect("reset", self.on_abspeak_reset)
@@ -83,6 +85,31 @@ class channel(gtk.VBox, serialized_object):
     def unrealize(self):
         #print "Unrealizing channel \"%s\"" % self.channel_name
         pass
+
+    def create_balance_widget(self):
+        if self.gui_factory.use_custom_widgets and phat:
+            self.balance = phat.HFanSlider()
+            self.balance.set_default_value(0)
+            self.balance.set_adjustment(self.balance_adjustment)
+        else:
+            self.balance = gtk.HScale(self.balance_adjustment)
+            self.balance.set_draw_value(False)
+        self.pack_start(self.balance, False)
+        self.balance.show()
+
+    def create_slider_widget(self):
+        parent = None
+        if self.slider:
+            parent = self.slider.get_parent()
+            self.slider.destroy()
+        if self.gui_factory.use_custom_widgets:
+            self.slider = slider.CustomSliderWidget(self.slider_adjustment)
+        else:
+            self.slider = slider.GtkSlider(self.slider_adjustment)
+        if parent:
+            parent.pack_start(self.slider)
+            parent.reorder_child(self.slider, 0)
+        self.slider.show()
 
     def on_default_meter_scale_changed(self, gui_factory, scale):
         #print "Default meter scale change detected."
@@ -101,6 +128,11 @@ class channel(gtk.VBox, serialized_object):
             self.meter.set_color(None)
         else:
             self.meter.set_color(gtk.gdk.color_parse(color))
+
+    def on_custom_widgets_changed(self, gui_factory, value):
+        self.balance.destroy()
+        self.create_balance_widget()
+        self.create_slider_widget()
 
     def on_abspeak_adjust(self, abspeak, adjust):
         #print "abspeak adjust %f" % adjust
@@ -266,15 +298,7 @@ class input_channel(channel):
         self.volume_digits.set_size_request(0, -1)
         self.pack_start(self.volume_digits, False)
 
-        if phat:
-            self.balance = phat.HFanSlider()
-            self.balance.set_default_value(0)
-            self.balance.set_adjustment(self.balance_adjustment)
-            self.pack_start(self.balance, False)
-        else:
-            self.balance = gtk.HScale(self.balance_adjustment)
-            self.balance.set_draw_value(False)
-            self.pack_start(self.balance, False)
+        self.create_balance_widget()
 
     def unrealize(self):
         channel.unrealize(self)
@@ -376,15 +400,7 @@ class main_mix(channel):
         self.volume_digits.set_size_request(0, -1)
         self.pack_start(self.volume_digits, False)
 
-        if phat:
-            self.balance = phat.HFanSlider()
-            self.balance.set_default_value(0)
-            self.balance.set_adjustment(self.balance_adjustment)
-            self.pack_start(self.balance, False)
-        else:
-            self.balance = gtk.HScale(self.balance_adjustment)
-            self.balance.set_draw_value(False)
-            self.pack_start(self.balance, False)
+        self.create_balance_widget()
 
     def unrealize(self):
         channel.unrealize(self)

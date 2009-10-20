@@ -2,6 +2,7 @@
 /Makefile.in
 /Makefile
 /.deps
+/.libs
 /config.h
 /libtool
 /stamp-h1
@@ -13,3 +14,9 @@
 /configure
 /jack_mixer_c.py
 /jack_mixer_wrap.c
+/data/Makefile
+/data/Makefile.in
+/data/art/Makefile
+/data/art/Makefile.in
+*.lo
+*.la

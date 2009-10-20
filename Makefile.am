@@ -34,7 +34,7 @@ _jack_mixer_c_la_LDFLAGS = -module -avoid-version
 
 _jack_mixer_c_la_LIBADD = @JACK_LIBS@
 
-dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py jack_mixer.glade
+dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py jack_mixer.glade preferences.py
 
 jack_mixer_c.py jack_mixer_wrap.c: $(top_srcdir)/jack_mixer.h
 	swig -o jack_mixer_wrap.c -I$(top_srcdir) -python $(top_srcdir)/jack_mixer.h

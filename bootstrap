@@ -29,7 +29,7 @@ then
 else
   set -x
   mkdir -p config
-  aclocal -I config
+  aclocal -I config -I m4 $ACLOCAL_FLAGS
   libtoolize --copy --force
   autoheader
   automake --foreign --add-missing --copy

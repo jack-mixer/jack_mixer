@@ -81,9 +81,11 @@ bool
 channel_is_stereo(
   jack_mixer_channel_t channel);
 
-bool
-channel_is_midi_modified(
-  jack_mixer_channel_t channel);
+void
+channel_set_midi_change_callback(
+  jack_mixer_channel_t channel,
+  void (*midi_change_callback) (void*),
+  void *user_data);
 
 /* volume is in dBFS */
 void

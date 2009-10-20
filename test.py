@@ -19,28 +19,24 @@
 
 import jack_mixer_c
 
-mixer = jack_mixer_c.create("test")
+mixer = jack_mixer_c.Mixer("test")
 
-print "Channels count: %u" % jack_mixer_c.get_channels_count(mixer)
+print "Channels count: %u" % mixer.channels_count
+channel = mixer.add_channel("Channel 1", True)
 
-channel = jack_mixer_c.add_channel(mixer, "Channel 1", True)
-
-if jack_mixer_c.channel_is_stereo(channel):
+if channel.is_stereo:
     channel_type = "Stereo"
 else:
     channel_type = "Mono"
 
-channel_name = jack_mixer_c.channel_get_name(channel)
+channel_name = channel.name
 
 print "%s channel \"%s\"" % (channel_type, channel_name)
 
-print "Channel stereo read %s" % repr(jack_mixer_c.channel_stereo_meter_read(channel))
-print "Channel mono read %s" % repr(jack_mixer_c.channel_mono_meter_read(channel))
+print "Channel meter read %s" % repr(channel.meter)
+print "Channels count: %u" % mixer.channels_count
 
-print "Channels count: %u" % jack_mixer_c.get_channels_count(mixer)
+channel.remove()
 
-jack_mixer_c.remove_channel(channel)
+print "Channels count: %u" % mixer.channels_count
 
-print "Channels count: %u" % jack_mixer_c.get_channels_count(mixer)
-
-jack_mixer_c.destroy(mixer)

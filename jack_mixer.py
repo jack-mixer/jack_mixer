@@ -53,7 +53,7 @@ class jack_mixer(serialized_object):
     slider_scales = [scale.linear_30dB(), scale.linear_70dB()]
 
     def __init__(self, name, lash_client):
-        self.mixer = jack_mixer_c.create(name)
+        self.mixer = jack_mixer_c.Mixer(name)
         if not self.mixer:
             return
 
@@ -140,8 +140,6 @@ class jack_mixer(serialized_object):
         if lash_client:
             gobject.timeout_add(1000, self.lash_check_events)
 
-        gobject.timeout_add(100, self.midi_change_check)
-
     def cleanup(self):
         print "Cleaning jack_mixer"
         if not self.mixer:
@@ -149,8 +147,6 @@ class jack_mixer(serialized_object):
 
         for channel in self.channels:
             channel.unrealize()
-
-        jack_mixer_c.destroy(self.mixer)
 
     preferences_dialog = None
     def on_preferences_cb(self, widget):
@@ -210,12 +206,6 @@ class jack_mixer(serialized_object):
         for channel in self.channels:
             channel.read_meter()
         self.main_mix.read_meter()
-        return True
-
-    def midi_change_check(self):
-        for channel in self.channels:
-            channel.midi_change_check()
-        self.main_mix.midi_change_check()
         return True
 
     def lash_check_events(self):
@@ -349,6 +339,7 @@ def main():
     if not name:
         name = "jack_mixer-%u" % os.getpid()
 
+    gtk.gdk.threads_init()
     mixer = jack_mixer(name, lash_client)
 
     mixer.main()

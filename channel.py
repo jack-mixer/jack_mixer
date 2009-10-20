@@ -18,11 +18,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import gtk
+import gobject
 import scale
 import slider
 import meter
 import abspeak
-import jack_mixer_c
 import math
 import random
 from serialization import serialized_object
@@ -53,6 +53,7 @@ class channel(gtk.VBox, serialized_object):
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
         self.balance_adjustment.connect("value-changed", self.on_balance_changed)
+        self.connect('midi-event-received', self.on_midi_event_received)
 
         self.slider = None
         self.create_slider_widget()
@@ -119,7 +120,7 @@ class channel(gtk.VBox, serialized_object):
         #print "Default slider scale change detected."
         self.slider_scale = scale
         self.slider_adjustment.set_scale(scale)
-        jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
+        self.channel.set_midi_scale(self.slider_scale.scale)
 
     def on_vumeter_color_changed(self, gui_factory, *args):
         color = gui_factory.get_vumeter_color()
@@ -137,12 +138,12 @@ class channel(gtk.VBox, serialized_object):
     def on_abspeak_adjust(self, abspeak, adjust):
         #print "abspeak adjust %f" % adjust
         self.slider_adjustment.set_value_db(self.slider_adjustment.get_value_db() + adjust)
-        jack_mixer_c.channel_abspeak_reset(self.channel)
+        self.channel.abspeak = None
         #self.update_volume(False)   # We want to update gui even if actual decibels have not changed (scale wrap for example)
 
     def on_abspeak_reset(self, abspeak):
         #print "abspeak reset"
-        jack_mixer_c.channel_abspeak_reset(self.channel)
+        self.channel.abspeak = None
 
     def on_volume_digits_key_pressed(self, widget, event):
         if (event.keyval == gtk.keysyms.Return or event.keyval == gtk.keysyms.KP_Enter):
@@ -164,20 +165,12 @@ class channel(gtk.VBox, serialized_object):
 
     def read_meter(self):
         if self.stereo:
-            meter_left, meter_right = jack_mixer_c.channel_stereo_meter_read(self.channel)
+            meter_left, meter_right = self.channel.meter
             self.meter.set_values(meter_left, meter_right)
         else:
-            self.meter.set_value(jack_mixer_c.channel_mono_meter_read(self.channel))
+            self.meter.set_value(self.channel.meter[0])
 
-        self.abspeak.set_peak(jack_mixer_c.channel_abspeak_read(self.channel))
-
-    def midi_change_check(self):
-        if jack_mixer_c.channel_is_midi_modified(self.channel):
-            volume = jack_mixer_c.channel_volume_read(self.channel)
-            balance = jack_mixer_c.channel_balance_read(self.channel)
-            #print volume, balance
-            self.slider_adjustment.set_value_db(volume)
-            self.balance_adjustment.set_value(balance)
+        self.abspeak.set_peak(self.channel.abspeak)
 
     def on_scroll(self, widget, event):
         if event.direction == gtk.gdk.SCROLL_DOWN:
@@ -194,7 +187,7 @@ class channel(gtk.VBox, serialized_object):
 
         if update_engine:
             #print "Setting engine volume to " + db_text
-            jack_mixer_c.channel_volume_write(self.channel, db)
+            self.channel.volume = db
 
     def on_volume_changed(self, adjustment):
         self.update_volume(True)
@@ -202,7 +195,7 @@ class channel(gtk.VBox, serialized_object):
     def on_balance_changed(self, adjustment):
         balance = self.balance_adjustment.get_value()
         #print "%s balance: %f" % (self.channel_name, balance)
-        jack_mixer_c.channel_balance_write(self.channel, balance)
+        self.channel.balance = balance
 
     def on_key_pressed(self, widget, event):
         if (event.keyval == gtk.keysyms.Up):
@@ -229,16 +222,30 @@ class channel(gtk.VBox, serialized_object):
             return True
         return False
 
+    def on_midi_event_received(self, *args):
+        self.slider_adjustment.set_value_db(self.channel.volume)
+        self.balance_adjustment.set_value(self.channel.balance)
+
+    def midi_change_callback(self, *args):
+        # the changes are not applied directly to the widgets as they
+        # absolutely have to be done from the gtk thread.
+        self.emit('midi-event-received')
+
+gobject.signal_new('midi-event-received', channel,
+                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
+                gobject.TYPE_NONE, ())
+
 class input_channel(channel):
     def __init__(self, mixer, gui_factory, name, stereo):
         channel.__init__(self, mixer, gui_factory, name, stereo)
 
     def realize(self):
-        self.channel = jack_mixer_c.add_channel(self.mixer, self.channel_name, self.stereo)
+        self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
         if self.channel == None:
             raise Exception,"Cannot create a channel"
         channel.realize(self)
-        jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
+        self.channel.midi_scale = self.slider_scale.scale
+        self.channel.midi_change_callback = self.midi_change_callback
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
@@ -266,13 +273,13 @@ class input_channel(channel):
 
         self.mute = gtk.ToggleButton()
         self.mute.set_label("M")
-        self.mute.set_active(jack_mixer_c.channel_is_muted(self.channel))
+        self.mute.set_active(self.channel.mute)
         self.mute.connect("toggled", self.on_mute_toggled)
         self.hbox_mutesolo.pack_start(self.mute, True)
 
         self.solo = gtk.ToggleButton()
         self.solo.set_label("S")
-        self.solo.set_active(jack_mixer_c.channel_is_soloed(self.channel))
+        self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
         self.hbox_mutesolo.pack_start(self.solo, True)
 
@@ -302,7 +309,7 @@ class input_channel(channel):
 
     def unrealize(self):
         channel.unrealize(self)
-        jack_mixer_c.remove_channel(self.channel)
+        self.channel.remove()
         self.channel = False
 
     def on_rename_channel(self):
@@ -311,7 +318,7 @@ class input_channel(channel):
             #print "renaming to \"%s\"" % result
             self.channel_name = result
             self.label_name.set_text(self.channel_name)
-            jack_mixer_c.channel_rename(self.channel, self.channel_name)
+            self.channel.name = self.channel_name
 
     def on_label_mouse(self, widget, event):
         if event.type == gtk.gdk._2BUTTON_PRESS:
@@ -319,20 +326,10 @@ class input_channel(channel):
                 self.on_rename_channel()
 
     def on_mute_toggled(self, button):
-        if self.mute.get_active():
-            #print "muted"
-            jack_mixer_c.channel_mute(self.channel)
-        else:
-            #print "unmuted"
-            jack_mixer_c.channel_unmute(self.channel)
+        self.channel.mute = self.mute.get_active()
 
     def on_solo_toggled(self, button):
-        if self.solo.get_active():
-            #print "soloed"
-            jack_mixer_c.channel_solo(self.channel)
-        else:
-            #print "unsoloed"
-            jack_mixer_c.channel_unsolo(self.channel)
+        self.channel.solo = self.solo.get_active()
 
     def serialization_name(self):
         return input_channel_serialization_name()
@@ -367,8 +364,9 @@ class main_mix(channel):
 
     def realize(self):
         channel.realize(self)
-        self.channel = jack_mixer_c.get_main_mix_channel(self.mixer)
-        jack_mixer_c.channel_set_midi_scale(self.channel, self.slider_scale.scale)
+        self.channel = self.mixer.main_mix_channel
+        self.channel.midi_scale = self.slider_scale.scale
+        self.channel.midi_change_callback = self.midi_change_callback
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)

@@ -34,24 +34,24 @@ class base:
         self.marks = []
         self.scale_id = scale_id
         self.description = description
-        self.scale = jack_mixer_c.scale_create()
+        self.scale = jack_mixer_c.Scale()
 
     def add_threshold(self, db, scale, is_mark):
-        jack_mixer_c.scale_add_threshold(self.scale, db, scale)
+        self.scale.add_threshold(db, scale)
         if is_mark:
             self.marks.append(mark(db, scale))
 
     def calculate_coefficients(self):
-        jack_mixer_c.scale_calculate_coefficients(self.scale)
+        self.scale.calculate_coefficients()
 
     def db_to_scale(self, db):
         '''Convert dBFS value to number in range 0.0-1.0 used in GUI'''
         #print "db_to_scale(%f)" % db
-        return jack_mixer_c.scale_db_to_scale(self.scale, db)
+        return self.scale.db_to_scale(db)
 
     def scale_to_db(self, scale):
         '''Convert number in range 0.0-1.0 used in GUI to dBFS value'''
-        return jack_mixer_c.scale_scale_to_db(self.scale, scale)
+        return self.scale.scale_to_db(scale)
 
     def add_mark(self, db):
         self.marks.append(mark(db, -1.0))

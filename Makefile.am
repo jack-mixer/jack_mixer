@@ -28,28 +28,22 @@ INCLUDES = $(PYTHON_INCLUDES)
 
 jack_mixerdir = $(pkgdatadir)
 pkgpyexecdir = $(pythondir)
-pkgpyexec_LTLIBRARIES = _jack_mixer_c.la
+pkgpyexec_LTLIBRARIES = jack_mixer_c.la
 
-_jack_mixer_c_la_LDFLAGS = -module -avoid-version
+jack_mixer_c_la_LDFLAGS = -module -avoid-version
 
-_jack_mixer_c_la_LIBADD = @JACK_LIBS@
+jack_mixer_c_la_LIBADD = @JACK_LIBS@
+
+jack_mixer_c_la_SOURCES = \
+	jack_mixer.c jack_mixer.h list.h memory_atomic.c memory_atomic.h log.h log.c scale.c jack_compat.h \
+	jack_mixer_c.c
 
 dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py jack_mixer.glade preferences.py
 
-jack_mixer_c.py jack_mixer_wrap.c: $(top_srcdir)/jack_mixer.h
-	swig -o jack_mixer_wrap.c -I$(top_srcdir) -python $(top_srcdir)/jack_mixer.h
-
-pkgpyexec_SCRIPTS = jack_mixer_c.py
-
-CLEANFILES = jack_mixer_c.py jack_mixer_wrap.c *.pyc
-EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py jack_mixer_c.py CHANGES
-
-_jack_mixer_c_la_SOURCES = jack_mixer.c jack_mixer.h list.h jack_mixer_wrap.c memory_atomic.c memory_atomic.h log.h log.c scale.c jack_compat.h
+CLEANFILES = *.pyc
+EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py CHANGES
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
-
-_jack_mixer_c.so: _jack_mixer_c.la
-	ln -nfs .libs/_jack_mixer_c.so
 
 test: _jack_mixer_c.so
 	@./test.py
@@ -74,3 +68,5 @@ pacoinstall:
 	-paco -rvB jack_mixer
 	-paco -lE `pwd` -E /etc -p jack_mixer-`svnversion` "make install"
 	-paco -i jack_mixer
+
+

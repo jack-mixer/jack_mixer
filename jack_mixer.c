@@ -74,7 +74,8 @@ struct channel
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
 
-  bool midi_modified;
+  void (*midi_change_callback) (void*);
+  void *midi_change_callback_data;
 
   jack_mixer_scale_t midi_scale;
 };
@@ -271,19 +272,6 @@ void channel_mono_meter_read(jack_mixer_channel_t channel, double * mono_ptr)
   *mono_ptr = value_to_db(channel_ptr->meter_left);
 }
 
-bool
-channel_is_midi_modified(
-  jack_mixer_channel_t channel)
-{
-  bool midi_modified;
-
-  assert(channel_ptr);
-  midi_modified = channel_ptr->midi_modified;
-  channel_ptr->midi_modified = false;
-
-  return midi_modified;
-}
-
 void channel_volume_write(jack_mixer_channel_t channel, double volume)
 {
   assert(channel_ptr);
@@ -397,6 +385,16 @@ channel_set_midi_scale(
   jack_mixer_scale_t scale)
 {
   channel_ptr->midi_scale = scale;
+}
+
+void
+channel_set_midi_change_callback(
+  jack_mixer_channel_t channel,
+  void (*midi_change_callback) (void*),
+  void *user_data)
+{
+  channel_ptr->midi_change_callback = midi_change_callback;
+  channel_ptr->midi_change_callback_data = user_data;
 }
 
 #undef channel_ptr
@@ -595,6 +593,7 @@ process(jack_nframes_t nframes, void * context)
 
   offset = 0;
 
+
 #if defined(HAVE_JACK_MIDI)
   midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
   event_count = jack_midi_get_event_count(midi_buffer);
@@ -652,7 +651,9 @@ process(jack_nframes_t nframes, void * context)
 
       calc_channel_volumes(channel_ptr);
 
-      channel_ptr->midi_modified = true;
+      if (channel_ptr->midi_change_callback)
+        channel_ptr->midi_change_callback(channel_ptr->midi_change_callback_data);
+
     }
 
   }
@@ -760,7 +761,8 @@ create(
   mixer_ptr->main_mix_channel.peak_frames = 0;
 
   mixer_ptr->main_mix_channel.NaN_detected = false;
-  mixer_ptr->main_mix_channel.midi_modified = false;
+  mixer_ptr->main_mix_channel.midi_change_callback = NULL;
+  mixer_ptr->main_mix_channel.midi_change_callback_data = NULL;
 
   mixer_ptr->main_mix_channel.midi_scale = NULL;
 
@@ -904,7 +906,8 @@ add_channel(
   channel_ptr->peak_frames = 0;
 
   channel_ptr->NaN_detected = false;
-  channel_ptr->midi_modified = false;
+  channel_ptr->midi_change_callback = NULL;
+  channel_ptr->midi_change_callback_data = NULL;
 
   channel_ptr->midi_scale = NULL;
 

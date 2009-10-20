@@ -104,13 +104,15 @@ class mono(meter):
     def __init__(self, scale):
         meter.__init__(self, scale)
         self.value = 0.0
+        self.raw_value = 0.0
 
     def draw(self, cairo_ctx):
         self.draw_background(cairo_ctx)
         self.draw_value(cairo_ctx, self.value, self.width/4.0, self.width/2.0)
 
     def set_value(self, value):
-        if value != self.value:
+        if value != self.raw_value:
+            self.raw_value = value
             self.value = self.scale.db_to_scale(value)
             self.invalidate_all()
 
@@ -120,13 +122,18 @@ class stereo(meter):
         self.left = 0.0
         self.right = 0.0
 
+        self.raw_left = 0.0
+        self.raw_right = 0.0
+
     def draw(self, cairo_ctx):
         self.draw_background(cairo_ctx)
         self.draw_value(cairo_ctx, self.left, self.width/5.0, self.width/5.0)
         self.draw_value(cairo_ctx, self.right, self.width/5.0 * 3.0, self.width/5.0)
 
     def set_values(self, left, right):
-        if left != self.left or right != self.right:
+        if left != self.raw_left or right != self.raw_right:
+            self.raw_left = left
+            self.raw_right = right
             self.left = self.scale.db_to_scale(left)
             self.right = self.scale.db_to_scale(right)
             self.invalidate_all()

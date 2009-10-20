@@ -29,5 +29,39 @@
         </long>
       </locale>
     </schema>
+    <schema>
+      <key>/schemas/apps/jack_mixer/vumeter_color_scheme</key>
+      <applyto>/apps/jack_mixer/vumeter_color_scheme</applyto>
+      <owner>jack_mixer</owner>
+      <type>string</type>
+      <default>gradient</default>
+      <locale name="C">
+        <short>Scheme used for the coloring of vumeters</short>
+        <long>Gradient (default) or solid.</long>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/jack_mixer/vumeter_color</key>
+      <applyto>/apps/jack_mixer/vumeter_color</applyto>
+      <owner>jack_mixer</owner>
+      <type>string</type>
+      <default>#ccb300</default>
+      <locale name="C">
+        <short>Color for vumeters</short>
+        <long>Color to be used in vumeters when configured to display a solid
+        color.</long>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/jack_mixer/use_custom_widgets</key>
+      <applyto>/apps/jack_mixer/use_custom_widgets</applyto>
+      <owner>jack_mixer</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Use custom widgets</short>
+        <long>Whether to use custom widgets for the slider and balance.</long>
+      </locale>
+    </schema>
   </schemalist>
 </gconfschemafile>

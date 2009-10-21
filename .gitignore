@@ -3,6 +3,7 @@
 /Makefile
 /.deps
 /.libs
+/jack_mixer_c.so
 /config.h
 /libtool
 /stamp-h1
@@ -20,3 +21,4 @@
 /data/art/Makefile.in
 *.lo
 *.la
+*.pyc

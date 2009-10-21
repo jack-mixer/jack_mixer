@@ -45,6 +45,9 @@ EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py CHANGES
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 
+_jack_mixer_c.so: _jack_mixer_c.la
+	ln -nfs .libs/_jack_mixer_c.so
+
 test: _jack_mixer_c.so
 	@./test.py
 

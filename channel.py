@@ -41,12 +41,25 @@ class channel(gtk.VBox, serialized_object):
         gtk.VBox.__init__(self)
         self.mixer = mixer
         self.gui_factory = gui_factory
-        self.channel_name = name
+        self._channel_name = name
         self.stereo = stereo
         self.meter_scale = gui_factory.get_default_meter_scale()
         self.slider_scale = gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.adjustment_dBFS(self.slider_scale, 0.0)
         self.balance_adjustment = gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
+
+    def get_channel_name(self):
+        return self._channel_name
+
+    label_name = None
+    channel = None
+    def set_channel_name(self, name):
+        self._channel_name = name
+        if self.label_name:
+            self.label_name.set_text(name)
+        if self.channel:
+            self.channel.name = name
+    channel_name = property(get_channel_name, set_channel_name)
 
     def realize(self):
         #print "Realizing channel \"%s\"" % self.channel_name
@@ -312,18 +325,17 @@ class input_channel(channel):
         self.channel.remove()
         self.channel = False
 
-    def on_rename_channel(self):
-        result = self.gui_factory.run_dialog_rename_channel(self.channel_name)
-        if result != None:
-            #print "renaming to \"%s\"" % result
-            self.channel_name = result
-            self.label_name.set_text(self.channel_name)
-            self.channel.name = self.channel_name
+    channel_properties_dialog = None
+    def on_channel_properties(self):
+        if not self.channel_properties_dialog:
+            self.channel_properties_dialog = ChannelPropertiesDialog(self)
+        self.channel_properties_dialog.show()
+        self.channel_properties_dialog.present()
 
     def on_label_mouse(self, widget, event):
         if event.type == gtk.gdk._2BUTTON_PRESS:
             if event.button == 1:
-                self.on_rename_channel()
+                self.on_channel_properties()
 
     def on_mute_toggled(self, button):
         self.channel.mute = self.mute.get_active()
@@ -409,3 +421,67 @@ class main_mix(channel):
 
 def main_mix_serialization_name():
     return "main_mix_channel"
+
+
+class ChannelPropertiesDialog(gtk.Dialog):
+    def __init__(self, parent):
+        self.channel = parent
+        gtk.Dialog.__init__(self,
+                        'Channel "%s" Properties' % self.channel.channel_name,
+                        self.channel.gui_factory.topwindow)
+        self.create_ui()
+        self.connect('response', self.on_response_cb)
+        self.connect('delete-event', self.on_response_cb)
+
+    def create_frame(self, label, child):
+        frame = gtk.Frame('')
+        frame.set_border_width(3)
+        frame.set_shadow_type(gtk.SHADOW_NONE)
+        frame.get_label_widget().set_markup('<b>%s</b>' % label)
+
+        alignment = gtk.Alignment()
+        alignment.set_padding(0, 0, 12, 0)
+        frame.add(alignment)
+        alignment.add(child)
+
+        return frame
+
+
+    def create_ui(self):
+        vbox = gtk.VBox()
+        self.vbox.add(vbox)
+
+        table = gtk.Table(2, 3, False)
+        vbox.pack_start(self.create_frame('Properties', table))
+        table.set_row_spacings(5)
+        table.set_col_spacings(5)
+
+        table.attach(gtk.Label('Name'), 0, 1, 0, 1)
+        self.entry_name = gtk.Entry()
+        self.entry_name.set_text(self.channel.channel_name)
+        table.attach(self.entry_name, 1, 2, 0, 1)
+
+
+        table = gtk.Table(3, 2, False)
+        vbox.pack_start(self.create_frame('MIDI Channels', table))
+        table.set_row_spacings(5)
+        table.set_col_spacings(5)
+
+
+        table.attach(gtk.Label('MIDI Channel for Balance'), 0, 1, 0, 1)
+        table.attach(gtk.Label('xxx'), 1, 2, 0, 1)
+
+        table.attach(gtk.Label('MIDI Channel for Volume'), 0, 1, 1, 2)
+        table.attach(gtk.Label('xxx'), 1, 2, 1, 2)
+
+        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+
+        self.vbox.show_all()
+
+    def on_response_cb(self, dlg, response_id, *args):
+        self.channel.preferences_dialog = None
+        self.destroy()
+        if response_id == gtk.RESPONSE_APPLY:
+            name = self.entry_name.get_text()
+            self.channel.channel_name = name

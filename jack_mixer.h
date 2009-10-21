@@ -54,6 +54,10 @@ unsigned int
 get_channels_count(
   jack_mixer_t mixer);
 
+unsigned int
+get_last_midi_channel(
+  jack_mixer_t mixer);
+
 jack_mixer_channel_t
 add_channel(
   jack_mixer_t mixer,

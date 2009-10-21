@@ -90,6 +90,7 @@ struct jack_mixer
   unsigned int soloed_channels_count;
 
   jack_port_t * port_midi_in;
+  unsigned int last_midi_channel;
 
   struct
   {
@@ -618,6 +619,7 @@ process(jack_nframes_t nframes, void * context)
       (unsigned int)in_event.buffer[1],
       (unsigned int)in_event.buffer[2]);
 
+    mixer_ptr->last_midi_channel = (unsigned int)in_event.buffer[1];
     channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]].channel_ptr;
 
     /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
@@ -692,6 +694,8 @@ create(
 
   mixer_ptr->channels_count = 0;
   mixer_ptr->soloed_channels_count = 0;
+
+  mixer_ptr->last_midi_channel = 0;
 
   for (i = 0 ; i < 128 ; i++)
   {
@@ -826,6 +830,13 @@ get_channels_count(
   jack_mixer_t mixer)
 {
   return mixer_ctx_ptr->channels_count;
+}
+
+unsigned int
+get_last_midi_channel(
+  jack_mixer_t mixer)
+{
+  return mixer_ctx_ptr->last_midi_channel;
 }
 
 jack_mixer_channel_t

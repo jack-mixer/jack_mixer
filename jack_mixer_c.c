@@ -551,9 +551,18 @@ Mixer_get_channels_count(MixerObject *self, void *closure)
 	return PyInt_FromLong(get_channels_count(self->mixer));
 }
 
+static PyObject*
+Mixer_get_last_midi_channel(MixerObject *self, void *closure)
+{
+	return PyInt_FromLong(get_last_midi_channel(self->mixer));
+}
+
+
 static PyGetSetDef Mixer_getseters[] = {
 	{"channels_count", (getter)Mixer_get_channels_count, NULL,
 		"channels count", NULL},
+	{"last_midi_channel", (getter)Mixer_get_last_midi_channel, NULL,
+		"last midi channel", NULL},
 	{NULL}
 };
 

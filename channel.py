@@ -463,16 +463,16 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
 
         table = gtk.Table(3, 2, False)
-        vbox.pack_start(self.create_frame('MIDI Channels', table))
+        vbox.pack_start(self.create_frame('MIDI Control Channels', table))
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
 
-        table.attach(gtk.Label('MIDI Channel for Balance'), 0, 1, 0, 1)
-        table.attach(gtk.Label('xxx'), 1, 2, 0, 1)
+        table.attach(gtk.Label('Balance'), 0, 1, 0, 1)
+        table.attach(gtk.Label('%s' % self.channel.channel.balance_midi_cc), 1, 2, 0, 1)
 
-        table.attach(gtk.Label('MIDI Channel for Volume'), 0, 1, 1, 2)
-        table.attach(gtk.Label('xxx'), 1, 2, 1, 2)
+        table.attach(gtk.Label('Volume'), 0, 1, 1, 2)
+        table.attach(gtk.Label('%s' % self.channel.channel.volume_midi_cc), 1, 2, 1, 2)
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)

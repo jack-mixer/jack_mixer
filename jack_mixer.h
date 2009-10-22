@@ -111,6 +111,14 @@ double
 channel_balance_read(
   jack_mixer_channel_t channel);
 
+unsigned int
+channel_get_balance_midi_cc(
+  jack_mixer_channel_t channel);
+
+unsigned int
+channel_get_volume_midi_cc(
+  jack_mixer_channel_t channel);
+
 void
 remove_channel(
   jack_mixer_channel_t channel);

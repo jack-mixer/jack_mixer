@@ -68,8 +68,8 @@ struct channel
 
   bool NaN_detected;
 
-  struct channel ** cc_map_volume_ptr_ptr;
-  struct channel ** cc_map_balance_ptr_ptr;
+  int midi_cc_volume_index;
+  int midi_cc_balance_index;
 
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
@@ -92,11 +92,7 @@ struct jack_mixer
   jack_port_t * port_midi_in;
   unsigned int last_midi_channel;
 
-  struct
-  {
-    bool balance;               /* volume or balance is controlled by this mapping */
-    struct channel * channel_ptr;
-  } midi_cc_map[128];
+  struct channel* midi_cc_map[128];
 };
 
 float value_to_db(float value)
@@ -233,6 +229,16 @@ bool channel_is_stereo(jack_mixer_channel_t channel)
   return channel_ptr->stereo;
 }
 
+unsigned int channel_get_balance_midi_cc(jack_mixer_channel_t channel)
+{
+  return channel_ptr->midi_cc_balance_index;
+}
+
+unsigned int channel_get_volume_midi_cc(jack_mixer_channel_t channel)
+{
+  return channel_ptr->midi_cc_volume_index;
+}
+
 void remove_channel(jack_mixer_channel_t channel)
 {
   list_del(&channel_ptr->siblings);
@@ -246,16 +252,16 @@ void remove_channel(jack_mixer_channel_t channel)
 
   channel_ptr->mixer_ptr->channels_count--;
 
-  if (channel_ptr->cc_map_volume_ptr_ptr != NULL)
+  if (channel_ptr->midi_cc_volume_index != 0)
   {
-    assert(*(channel_ptr->cc_map_volume_ptr_ptr) == channel_ptr);
-    *(channel_ptr->cc_map_volume_ptr_ptr) = NULL;
+    assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_volume_index] == channel_ptr);
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_volume_index] = NULL;
   }
 
-  if (channel_ptr->cc_map_balance_ptr_ptr != NULL)
+  if (channel_ptr->midi_cc_balance_index != 0)
   {
-    assert(*(channel_ptr->cc_map_balance_ptr_ptr) == channel_ptr);
-    *(channel_ptr->cc_map_balance_ptr_ptr) = NULL;
+    assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] == channel_ptr);
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
   }
 
   free(channel_ptr);
@@ -620,7 +626,7 @@ process(jack_nframes_t nframes, void * context)
       (unsigned int)in_event.buffer[2]);
 
     mixer_ptr->last_midi_channel = (unsigned int)in_event.buffer[1];
-    channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]].channel_ptr;
+    channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]];
 
     /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
     if (channel_ptr != NULL && channel_ptr->midi_scale != NULL)
@@ -633,7 +639,7 @@ process(jack_nframes_t nframes, void * context)
         offset = in_event.time;
       }
 
-      if (mixer_ptr->midi_cc_map[in_event.buffer[1]].balance)
+      if (channel_ptr->midi_cc_balance_index == (unsigned int)in_event.buffer[1])
       {
         byte = in_event.buffer[2];
         if (byte == 0)
@@ -699,16 +705,14 @@ create(
 
   for (i = 0 ; i < 128 ; i++)
   {
-    mixer_ptr->midi_cc_map[i].channel_ptr = NULL;
+    mixer_ptr->midi_cc_map[i] = NULL;
   }
 
-  mixer_ptr->midi_cc_map[7].channel_ptr = &mixer_ptr->main_mix_channel;
-  mixer_ptr->midi_cc_map[7].balance = false;
-  mixer_ptr->main_mix_channel.cc_map_volume_ptr_ptr = &mixer_ptr->midi_cc_map[7].channel_ptr;
+  mixer_ptr->main_mix_channel.midi_cc_volume_index = 7;
+  mixer_ptr->midi_cc_map[7] = &mixer_ptr->main_mix_channel;
 
-  mixer_ptr->midi_cc_map[8].channel_ptr = &mixer_ptr->main_mix_channel;
-  mixer_ptr->midi_cc_map[8].balance = true;
-  mixer_ptr->main_mix_channel.cc_map_balance_ptr_ptr = &mixer_ptr->midi_cc_map[8].channel_ptr;
+  mixer_ptr->main_mix_channel.midi_cc_balance_index = 8;
+  mixer_ptr->midi_cc_map[8] = &mixer_ptr->main_mix_channel;
 
   LOG_DEBUG("Initializing JACK");
   mixer_ptr->jack_client = jack_client_new(jack_client_name_ptr);
@@ -765,6 +769,9 @@ create(
   mixer_ptr->main_mix_channel.peak_frames = 0;
 
   mixer_ptr->main_mix_channel.NaN_detected = false;
+
+  mixer_ptr->main_mix_channel.midi_cc_volume_index = 0;
+  mixer_ptr->main_mix_channel.midi_cc_balance_index = 0;
   mixer_ptr->main_mix_channel.midi_change_callback = NULL;
   mixer_ptr->main_mix_channel.midi_change_callback_data = NULL;
 
@@ -917,6 +924,9 @@ add_channel(
   channel_ptr->peak_frames = 0;
 
   channel_ptr->NaN_detected = false;
+
+  channel_ptr->midi_cc_volume_index = 0;
+  channel_ptr->midi_cc_balance_index = 0;
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
 
@@ -929,11 +939,10 @@ add_channel(
 
   for (i = 11 ; i < 128 ; i++)
   {
-    if (mixer_ctx_ptr->midi_cc_map[i].channel_ptr == NULL)
+    if (mixer_ctx_ptr->midi_cc_map[i] == NULL)
     {
-      mixer_ctx_ptr->midi_cc_map[i].channel_ptr = channel_ptr;
-      mixer_ctx_ptr->midi_cc_map[i].balance = false;
-      channel_ptr->cc_map_volume_ptr_ptr = &mixer_ctx_ptr->midi_cc_map[i].channel_ptr;
+      mixer_ctx_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_cc_volume_index = i;
 
       LOG_NOTICE("New channel \"%s\" volume mapped to CC#%i", channel_name, i);
 
@@ -943,11 +952,10 @@ add_channel(
 
   for (; i < 128 ; i++)
   {
-    if (mixer_ctx_ptr->midi_cc_map[i].channel_ptr == NULL)
+    if (mixer_ctx_ptr->midi_cc_map[i] == NULL)
     {
-      mixer_ctx_ptr->midi_cc_map[i].channel_ptr = channel_ptr;
-      mixer_ctx_ptr->midi_cc_map[i].balance = true;
-      channel_ptr->cc_map_balance_ptr_ptr = &mixer_ctx_ptr->midi_cc_map[i].channel_ptr;
+      mixer_ctx_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_cc_balance_index = i;
 
       LOG_NOTICE("New channel \"%s\" balance mapped to CC#%i", channel_name, i);
 

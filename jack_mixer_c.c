@@ -383,6 +383,17 @@ Channel_set_name(ChannelObject *self, PyObject *value, void *closure)
 	return 0;
 }
 
+static PyObject*
+Channel_get_balance_midi_cc(ChannelObject *self, void *closure)
+{
+	return PyInt_FromLong(channel_get_balance_midi_cc(self->channel));
+}
+
+static PyObject*
+Channel_get_volume_midi_cc(ChannelObject *self, void *closure)
+{
+	return PyInt_FromLong(channel_get_volume_midi_cc(self->channel));
+}
 
 static PyGetSetDef Channel_getseters[] = {
 	{"is_stereo", 
@@ -417,6 +428,14 @@ static PyGetSetDef Channel_getseters[] = {
 		(getter)Channel_get_name,
 		(setter)Channel_set_name,
 		"name", NULL},
+	{"balance_midi_cc",
+		(getter)Channel_get_balance_midi_cc,
+		NULL,
+		"Balance MIDI CC", NULL},
+	{"volume_midi_cc",
+		(getter)Channel_get_volume_midi_cc,
+		NULL,
+		"Volume MIDI CC", NULL},
 	{NULL}
 };
 

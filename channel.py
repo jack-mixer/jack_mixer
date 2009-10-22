@@ -19,6 +19,7 @@
 
 import gtk
 import gobject
+import glib
 import scale
 import slider
 import meter
@@ -451,7 +452,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         vbox = gtk.VBox()
         self.vbox.add(vbox)
 
-        table = gtk.Table(2, 3, False)
+        table = gtk.Table(1, 2, False)
         vbox.pack_start(self.create_frame('Properties', table))
         table.set_row_spacings(5)
         table.set_col_spacings(5)
@@ -462,7 +463,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         table.attach(self.entry_name, 1, 2, 0, 1)
 
 
-        table = gtk.Table(3, 2, False)
+        table = gtk.Table(2, 3, False)
         vbox.pack_start(self.create_frame('MIDI Control Channels', table))
         table.set_row_spacings(5)
         table.set_col_spacings(5)
@@ -473,6 +474,10 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_volume_cc.set_width_chars(2)
         self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
+        self.button_sense_midi_volume = gtk.Button('Autoset')
+        self.button_sense_midi_volume.connect('clicked',
+                        self.on_sense_midi_volume_clicked)
+        table.attach(self.button_sense_midi_volume, 2, 3, 0, 1)
 
         table.attach(gtk.Label('Balance'), 0, 1, 1, 2)
         self.entry_balance_cc = gtk.Entry()
@@ -480,11 +485,47 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_balance_cc.set_editable(False)
         self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
+        self.button_sense_midi_balance = gtk.Button('Autoset')
+        self.button_sense_midi_balance.connect('clicked',
+                        self.on_sense_midi_balance_clicked)
+        table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
 
         self.vbox.show_all()
+
+    def sense_popup_dialog(self, entry):
+        window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        window.set_destroy_with_parent(True)
+        window.set_transient_for(self)
+        window.set_decorated(False)
+        window.set_modal(True)
+        window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+        window.set_border_width(10)
+
+        vbox = gtk.VBox(10)
+        window.add(vbox)
+        window.timeout = 5
+        vbox.pack_start(gtk.Label('Please move the MIDI control you want to use for this function.'))
+        timeout_label = gtk.Label('This window will close in 5 seconds')
+        vbox.pack_start(timeout_label)
+        def close_sense_timeout(window, entry):
+            window.timeout -= 1
+            timeout_label.set_text('This window will close in %d seconds.' % window.timeout)
+            if window.timeout == 0:
+                window.destroy()
+                entry.set_text('%s' % self.channel.mixer.last_midi_channel)
+                return False
+            return True
+        window.show_all()
+        glib.timeout_add_seconds(1, close_sense_timeout, window, entry)
+
+    def on_sense_midi_volume_clicked(self, *args):
+        self.sense_popup_dialog(self.entry_volume_cc)
+
+    def on_sense_midi_balance_clicked(self, *args):
+        self.sense_popup_dialog(self.entry_balance_cc)
 
     def on_response_cb(self, dlg, response_id, *args):
         self.channel.preferences_dialog = None

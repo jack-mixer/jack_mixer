@@ -467,12 +467,19 @@ class ChannelPropertiesDialog(gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
+        table.attach(gtk.Label('Volume'), 0, 1, 0, 1)
+        self.entry_volume_cc = gtk.Entry()
+        self.entry_volume_cc.set_editable(False)
+        self.entry_volume_cc.set_width_chars(2)
+        self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
+        table.attach(self.entry_volume_cc, 1, 2, 0, 1)
 
-        table.attach(gtk.Label('Balance'), 0, 1, 0, 1)
-        table.attach(gtk.Label('%s' % self.channel.channel.balance_midi_cc), 1, 2, 0, 1)
-
-        table.attach(gtk.Label('Volume'), 0, 1, 1, 2)
-        table.attach(gtk.Label('%s' % self.channel.channel.volume_midi_cc), 1, 2, 1, 2)
+        table.attach(gtk.Label('Balance'), 0, 1, 1, 2)
+        self.entry_balance_cc = gtk.Entry()
+        self.entry_balance_cc.set_width_chars(2)
+        self.entry_balance_cc.set_editable(False)
+        self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
+        table.attach(self.entry_balance_cc, 1, 2, 1, 2)
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)

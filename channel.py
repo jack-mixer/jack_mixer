@@ -452,7 +452,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         vbox = gtk.VBox()
         self.vbox.add(vbox)
 
-        table = gtk.Table(1, 2, False)
+        table = gtk.Table(2, 2, False)
         vbox.pack_start(self.create_frame('Properties', table))
         table.set_row_spacings(5)
         table.set_col_spacings(5)
@@ -462,6 +462,18 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_name.set_text(self.channel.channel_name)
         table.attach(self.entry_name, 1, 2, 0, 1)
 
+        table.attach(gtk.Label('Mode'), 0, 1, 1, 2)
+        mode_hbox = gtk.HBox()
+        table.attach(mode_hbox, 1, 2, 1, 2)
+        self.mono = gtk.RadioButton(label='Mono')
+        self.stereo = gtk.RadioButton(label='Stereo', group=self.mono)
+        mode_hbox.set_sensitive(False)
+        if self.channel.channel.is_stereo:
+            self.stereo.set_active(True)
+        else:
+            self.mono.set_active(True)
+        mode_hbox.pack_start(self.mono)
+        mode_hbox.pack_start(self.stereo)
 
         table = gtk.Table(2, 3, False)
         vbox.pack_start(self.create_frame('MIDI Control Channels', table))

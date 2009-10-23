@@ -27,7 +27,6 @@ import os
 try:
     import lash
 except:
-    print "Cannot load LASH python bindings, you want LASH unless you enjoy manual jack plumbing each time you use this app"
     lash = None
 
 old_path = sys.path
@@ -41,8 +40,14 @@ sys.path = old_path
 
 # no need for serialization if there is no LASH available
 if lash:
-    from serialization_xml import xml_serialization
-    from serialization import serialized_object, serializator
+    try:
+        from serialization_xml import xml_serialization
+        from serialization import serialized_object, serializator
+    except ImportError:
+        lash = None
+
+if lash is None:
+    print >> sys.stderr, "Cannot load LASH python bindings or python-xml, you want them unless you enjoy manual jack plumbing each time you use this app"
 
 class jack_mixer(serialized_object):
 

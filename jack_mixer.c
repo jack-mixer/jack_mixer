@@ -234,9 +234,57 @@ unsigned int channel_get_balance_midi_cc(jack_mixer_channel_t channel)
   return channel_ptr->midi_cc_balance_index;
 }
 
+unsigned int channel_set_balance_midi_cc(jack_mixer_channel_t channel, unsigned int new_cc)
+{
+  if (new_cc > 127) {
+    return 2; /* error: over limit CC */
+  }
+  if (channel_ptr->midi_cc_balance_index == new_cc) {
+    /* no change */
+    return 0;
+  }
+  if (new_cc == 0) {
+    /* 0 is special, it removes the link */
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
+    channel_ptr->midi_cc_balance_index = 0;
+  } else {
+    if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
+      return 1; /* error: cc in use */
+    }
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
+    channel_ptr->mixer_ptr->midi_cc_map[new_cc] = channel_ptr;
+    channel_ptr->midi_cc_balance_index = new_cc;
+  }
+  return 0;
+}
+
 unsigned int channel_get_volume_midi_cc(jack_mixer_channel_t channel)
 {
   return channel_ptr->midi_cc_volume_index;
+}
+
+unsigned int channel_set_volume_midi_cc(jack_mixer_channel_t channel, unsigned int new_cc)
+{
+  if (new_cc > 127) {
+    return 2; /* error: over limit CC */
+  }
+  if (channel_ptr->midi_cc_volume_index == new_cc) {
+    /* no change */
+    return 0;
+  }
+  if (new_cc == 0) {
+    /* 0 is special, it removes the link */
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_volume_index] = NULL;
+    channel_ptr->midi_cc_volume_index = 0;
+  } else {
+    if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
+      return 1; /* error: cc in use */
+    }
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_volume_index] = NULL;
+    channel_ptr->mixer_ptr->midi_cc_map[new_cc] = channel_ptr;
+    channel_ptr->midi_cc_volume_index = new_cc;
+  }
+  return 0;
 }
 
 void remove_channel(jack_mixer_channel_t channel)

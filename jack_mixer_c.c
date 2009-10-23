@@ -389,10 +389,48 @@ Channel_get_balance_midi_cc(ChannelObject *self, void *closure)
 	return PyInt_FromLong(channel_get_balance_midi_cc(self->channel));
 }
 
+static int
+Channel_set_balance_midi_cc(ChannelObject *self, PyObject *value, void *closure)
+{
+	unsigned int new_cc;
+	unsigned int result;
+
+	new_cc = PyInt_AsLong(value);
+	result = channel_set_balance_midi_cc(self->channel, new_cc);
+	if (result == 0) {
+		return 0;
+	}
+	if (result == 1) {
+		PyErr_SetString(PyExc_RuntimeError, "value already in use");
+	} else if (result == 2) {
+		PyErr_SetString(PyExc_RuntimeError, "value out of range");
+	}
+	return -1;
+}
+
 static PyObject*
 Channel_get_volume_midi_cc(ChannelObject *self, void *closure)
 {
 	return PyInt_FromLong(channel_get_volume_midi_cc(self->channel));
+}
+
+static int
+Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
+{
+	unsigned int new_cc;
+	unsigned int result;
+
+	new_cc = PyInt_AsLong(value);
+	result = channel_set_volume_midi_cc(self->channel, new_cc);
+	if (result == 0) {
+		return 0;
+	}
+	if (result == 1) {
+		PyErr_SetString(PyExc_RuntimeError, "value already in use");
+	} else if (result == 2) {
+		PyErr_SetString(PyExc_RuntimeError, "value out of range");
+	}
+	return -1;
 }
 
 static PyGetSetDef Channel_getseters[] = {
@@ -430,11 +468,11 @@ static PyGetSetDef Channel_getseters[] = {
 		"name", NULL},
 	{"balance_midi_cc",
 		(getter)Channel_get_balance_midi_cc,
-		NULL,
+		(setter)Channel_set_balance_midi_cc,
 		"Balance MIDI CC", NULL},
 	{"volume_midi_cc",
 		(getter)Channel_get_volume_midi_cc,
-		NULL,
+		(setter)Channel_set_volume_midi_cc,
 		"Volume MIDI CC", NULL},
 	{NULL}
 };

@@ -471,7 +471,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         table.attach(gtk.Label('Volume'), 0, 1, 0, 1)
         self.entry_volume_cc = gtk.Entry()
         self.entry_volume_cc.set_editable(False)
-        self.entry_volume_cc.set_width_chars(2)
+        self.entry_volume_cc.set_width_chars(3)
         self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
         self.button_sense_midi_volume = gtk.Button('Autoset')
@@ -481,7 +481,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         table.attach(gtk.Label('Balance'), 0, 1, 1, 2)
         self.entry_balance_cc = gtk.Entry()
-        self.entry_balance_cc.set_width_chars(2)
+        self.entry_balance_cc.set_width_chars(3)
         self.entry_balance_cc.set_editable(False)
         self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
@@ -528,8 +528,10 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.sense_popup_dialog(self.entry_balance_cc)
 
     def on_response_cb(self, dlg, response_id, *args):
-        self.channel.preferences_dialog = None
+        self.channel.channel_properties_dialog = None
         self.destroy()
         if response_id == gtk.RESPONSE_APPLY:
             name = self.entry_name.get_text()
             self.channel.channel_name = name
+            self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
+            self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())

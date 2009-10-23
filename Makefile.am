@@ -38,7 +38,7 @@ jack_mixer_c_la_SOURCES = \
 	jack_mixer.c jack_mixer.h list.h memory_atomic.c memory_atomic.h log.h log.c scale.c jack_compat.h \
 	jack_mixer_c.c
 
-dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py jack_mixer.glade preferences.py
+dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py preferences.py
 
 CLEANFILES = *.pyc
 EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py CHANGES

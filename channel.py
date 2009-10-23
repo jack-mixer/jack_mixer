@@ -427,10 +427,16 @@ def main_mix_serialization_name():
 class ChannelPropertiesDialog(gtk.Dialog):
     def __init__(self, parent):
         self.channel = parent
+        self.mixer = self.channel.mixer
         gtk.Dialog.__init__(self,
                         'Channel "%s" Properties' % self.channel.channel_name,
                         self.channel.gui_factory.topwindow)
         self.create_ui()
+        self.fill_ui()
+
+        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+
         self.connect('response', self.on_response_cb)
         self.connect('delete-event', self.on_response_cb)
 
@@ -447,7 +453,6 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         return frame
 
-
     def create_ui(self):
         vbox = gtk.VBox()
         self.vbox.add(vbox)
@@ -459,21 +464,15 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         table.attach(gtk.Label('Name'), 0, 1, 0, 1)
         self.entry_name = gtk.Entry()
-        self.entry_name.set_text(self.channel.channel_name)
         table.attach(self.entry_name, 1, 2, 0, 1)
 
         table.attach(gtk.Label('Mode'), 0, 1, 1, 2)
-        mode_hbox = gtk.HBox()
-        table.attach(mode_hbox, 1, 2, 1, 2)
+        self.mode_hbox = gtk.HBox()
+        table.attach(self.mode_hbox, 1, 2, 1, 2)
         self.mono = gtk.RadioButton(label='Mono')
         self.stereo = gtk.RadioButton(label='Stereo', group=self.mono)
-        mode_hbox.set_sensitive(False)
-        if self.channel.channel.is_stereo:
-            self.stereo.set_active(True)
-        else:
-            self.mono.set_active(True)
-        mode_hbox.pack_start(self.mono)
-        mode_hbox.pack_start(self.stereo)
+        self.mode_hbox.pack_start(self.mono)
+        self.mode_hbox.pack_start(self.stereo)
 
         table = gtk.Table(2, 3, False)
         vbox.pack_start(self.create_frame('MIDI Control Channels', table))
@@ -484,7 +483,6 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_volume_cc = gtk.Entry()
         self.entry_volume_cc.set_editable(False)
         self.entry_volume_cc.set_width_chars(3)
-        self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
         self.button_sense_midi_volume = gtk.Button('Autoset')
         self.button_sense_midi_volume.connect('clicked',
@@ -495,17 +493,23 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_balance_cc = gtk.Entry()
         self.entry_balance_cc.set_width_chars(3)
         self.entry_balance_cc.set_editable(False)
-        self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
         self.button_sense_midi_balance = gtk.Button('Autoset')
         self.button_sense_midi_balance.connect('clicked',
                         self.on_sense_midi_balance_clicked)
         table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
 
-        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
-
         self.vbox.show_all()
+
+    def fill_ui(self):
+        self.entry_name.set_text(self.channel.channel_name)
+        if self.channel.channel.is_stereo:
+            self.stereo.set_active(True)
+        else:
+            self.mono.set_active(True)
+        self.mode_hbox.set_sensitive(False)
+        self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
+        self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
 
     def sense_popup_dialog(self, entry):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -527,7 +531,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
             timeout_label.set_text('This window will close in %d seconds.' % window.timeout)
             if window.timeout == 0:
                 window.destroy()
-                entry.set_text('%s' % self.channel.mixer.last_midi_channel)
+                entry.set_text('%s' % self.mixer.last_midi_channel)
                 return False
             return True
         window.show_all()
@@ -547,3 +551,22 @@ class ChannelPropertiesDialog(gtk.Dialog):
             self.channel.channel_name = name
             self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
             self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
+
+
+class NewChannelDialog(ChannelPropertiesDialog):
+    def __init__(self, parent, mixer):
+        gtk.Dialog.__init__(self, 'New Channel', parent)
+        self.mixer = mixer
+        self.create_ui()
+
+        self.stereo.set_active(True) # default to stereo
+
+        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+
+    def get_result(self):
+        return {'name': self.entry_name.get_text(),
+                'stereo': self.stereo.get_active(),
+                'volume_cc': self.entry_volume_cc.get_text(),
+                'balance_cc': self.entry_balance_cc.get_text()
+               }

@@ -21,7 +21,6 @@ import gtk
 import gobject
 import jack_mixer_c
 import sys
-import gtk.glade
 import os
 
 try:
@@ -75,7 +74,7 @@ class jack_mixer(serialized_object):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(name)
 
-        self.gui_factory = gui.factory(glade_xml, self.window, self.meter_scales, self.slider_scales)
+        self.gui_factory = gui.factory(self.window, self.meter_scales, self.slider_scales)
 
         self.vbox_top = gtk.VBox()
         self.window.add(self.vbox_top)
@@ -161,9 +160,15 @@ class jack_mixer(serialized_object):
         self.preferences_dialog.present()
 
     def on_add_channel(self, widget):
-        result = self.gui_factory.run_dialog_add_channel()
-        if result:
-            self.add_channel(result['name'], result['stereo'])
+        dialog = NewChannelDialog(parent=self.window, mixer=self.mixer)
+        dialog.set_transient_for(self.window)
+        dialog.show()
+        ret = dialog.run()
+        dialog.hide()
+
+        if ret == gtk.RESPONSE_OK:
+            result = dialog.get_result()
+            self.add_channel(**result)
             self.window.show_all()
 
     def on_remove_channel(self, widget, channel, channel_remove_menu_item):
@@ -187,14 +192,23 @@ class jack_mixer(serialized_object):
         self.channel_remove_menu_item.set_submenu(self.channel_remove_menu)
         self.channel_remove_menu_item.set_sensitive(False)
 
-    def add_channel(self, name, stereo):
+    def add_channel(self, name, stereo, volume_cc, balance_cc):
         try:
             channel = input_channel(self.mixer, self.gui_factory, name, stereo)
             self.add_channel_precreated(channel)
         except Exception:
-            err = gtk.MessageDialog(self.window, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Channel creation failed")
+            err = gtk.MessageDialog(self.window,
+                            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                            gtk.MESSAGE_ERROR,
+                            gtk.BUTTONS_OK,
+                            "Channel creation failed")
             err.run()
             err.destroy()
+        else:
+            if volume_cc:
+                channel.channel.volume_midi_cc = int(volume_cc)
+            if balance_cc:
+                channel.channel.balance_midi_cc = int(balance_cc)
 
     def add_channel_precreated(self, channel):
         frame = gtk.Frame()
@@ -350,22 +364,6 @@ def main():
     mixer.main()
 
     mixer.cleanup()
-
-glade_dir = os.path.dirname(sys.argv[0])
-
-# since ppl tend to run "python jack_mixer.py", lets assume that it is in current directory
-# "python ./jack_mixer.py" and "./jack_mixer.py" will work anyway.
-if not glade_dir:
-    glade_dir = "."
-
-glade_file = glade_dir + os.sep + "jack_mixer.glade"
-
-if not os.path.isfile(glade_file):
-    glade_file = glade_dir + os.sep + ".." + os.sep + "share"+ os.sep + "jack_mixer" + os.sep + "jack_mixer.glade"
-
-#print 'Loading glade from "%s"' % glade_file
-
-glade_xml = gtk.glade.XML(glade_file)
 
 if __name__ == "__main__":
     main()

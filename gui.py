@@ -33,9 +33,8 @@ def lookup_scale(scales, scale_id):
     return None
 
 class factory(gobject.GObject):
-    def __init__(self, glade_xml, topwindow, meter_scales, slider_scales):
+    def __init__(self, topwindow, meter_scales, slider_scales):
         gobject.GObject.__init__(self)
-        self.glade_xml = glade_xml
         self.topwindow = topwindow
         self.meter_scales = meter_scales
         self.slider_scales = slider_scales
@@ -143,37 +142,6 @@ class factory(gobject.GObject):
     def on_gconf_use_custom_widgets_change(self, client, connection_id, entry, args):
         use_custom = entry.get_value().get_bool()
         self.set_use_custom_widgets(use_custom, from_gconf=True)
-
-    def run_dialog_add_channel(self):
-        dialog = self.glade_xml.get_widget("dialog_add_channel")
-        name_entry = self.glade_xml.get_widget("new_channel_name")
-        name_entry.set_text("")
-        dialog.set_transient_for(self.topwindow)
-        dialog.show()
-        ret = dialog.run()
-        dialog.hide()
-
-        if ret == gtk.RESPONSE_OK:
-            result = {
-                'name': name_entry.get_text(),
-                'stereo': self.glade_xml.get_widget("new_channel_stereo").get_active()
-                }
-            return result
-        else:
-            return None
-
-    def run_dialog_rename_channel(self, name):
-        dialog = self.glade_xml.get_widget("dialog_rename_channel")
-        name_entry = self.glade_xml.get_widget("channel_name")
-        name_entry.set_text(name)
-        dialog.set_transient_for(self.topwindow)
-        dialog.show()
-        ret = dialog.run()
-        dialog.hide()
-        if ret == gtk.RESPONSE_OK:
-            return name_entry.get_text()
-        else:
-            return None
 
     def get_default_meter_scale(self):
         return self.default_meter_scale

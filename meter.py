@@ -115,6 +115,13 @@ class mono(meter):
             self.raw_value = value
             self.value = self.scale.db_to_scale(value)
             self.invalidate_all()
+        if value == self.raw_value:
+            return
+        self.raw_value = value
+        old_vlaue = self.value
+        self.value = self.scale.db_to_scale(value)
+        if (abs(old_value-self.value) * self.height) > 1:
+            self.invalidate_all()
 
 class stereo(meter):
     def __init__(self, scale):
@@ -131,9 +138,13 @@ class stereo(meter):
         self.draw_value(cairo_ctx, self.right, self.width/5.0 * 3.0, self.width/5.0)
 
     def set_values(self, left, right):
-        if left != self.raw_left or right != self.raw_right:
-            self.raw_left = left
-            self.raw_right = right
-            self.left = self.scale.db_to_scale(left)
-            self.right = self.scale.db_to_scale(right)
+        if left == self.raw_left and right == self.raw_right:
+            return
+        self.raw_left = left
+        self.raw_right = right
+        old_left = self.left
+        old_right = self.right
+        self.left = self.scale.db_to_scale(left)
+        self.right = self.scale.db_to_scale(right)
+        if (abs(old_left-self.left) * self.height) > 1 or (abs(old_right-self.right) * self.height) > 1:
             self.invalidate_all()

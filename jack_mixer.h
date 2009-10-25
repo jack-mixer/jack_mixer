@@ -35,6 +35,7 @@
 
 typedef void * jack_mixer_t;
 typedef void * jack_mixer_channel_t;
+typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_scale_t;
 typedef void * jack_mixer_threshold_t;
 
@@ -202,5 +203,21 @@ scale_scale_to_db(
 void
 scale_destroy(
   jack_mixer_scale_t scale);
+
+jack_mixer_output_channel_t
+add_output_channel(
+  jack_mixer_t mixer,
+  const char * channel_name,
+  bool stereo,
+  bool system);
+
+void
+remove_output_channel(
+  jack_mixer_output_channel_t output_channel);
+
+void
+output_channel_add_channel(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel);
 
 #endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

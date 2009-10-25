@@ -204,11 +204,14 @@ class jack_mixer(serialized_object):
                             "Channel creation failed")
             err.run()
             err.destroy()
-        else:
-            if volume_cc:
-                channel.channel.volume_midi_cc = int(volume_cc)
-            if balance_cc:
-                channel.channel.balance_midi_cc = int(balance_cc)
+            return
+        if volume_cc:
+            channel.channel.volume_midi_cc = int(volume_cc)
+        if balance_cc:
+            channel.channel.balance_midi_cc = int(balance_cc)
+        channel.output_channel = self.mixer.add_output_channel(name + ' Out', stereo, True)
+        channel.output_channel.volume = 0
+        channel.output_channel.add_channel(channel.channel)
 
     def add_channel_precreated(self, channel):
         frame = gtk.Frame()

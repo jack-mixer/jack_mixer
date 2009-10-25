@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-AM_CFLAGS = @JACK_CFLAGS@ -D_GNU_SOURCE -Wall -fno-strict-aliasing
+AM_CFLAGS = $(JACKMIXER_CFLAGS) -D_GNU_SOURCE -Wall -fno-strict-aliasing
 if DEV_VERSION
 AM_CFLAGS +=  -Werror
 endif
@@ -32,7 +32,7 @@ pkgpyexec_LTLIBRARIES = jack_mixer_c.la
 
 jack_mixer_c_la_LDFLAGS = -module -avoid-version
 
-jack_mixer_c_la_LIBADD = @JACK_LIBS@
+jack_mixer_c_la_LIBADD = $(JACKMIXER_LIBS)
 
 jack_mixer_c_la_SOURCES = \
 	jack_mixer.c jack_mixer.h list.h memory_atomic.c memory_atomic.h log.h log.c scale.c jack_compat.h \

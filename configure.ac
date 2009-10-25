@@ -39,7 +39,7 @@ AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I m4")
 
 # Checks for libraries.
 
-PKG_CHECK_MODULES(JACK, jack)
+PKG_CHECK_MODULES(JACKMIXER, [glib-2.0 jack])
 
 # JACK MIDI
 have_jackmidi="unknown"

@@ -33,8 +33,9 @@
 #include <assert.h>
 #include <pthread.h>
 
+#include <glib.h>
+
 #include "jack_mixer.h"
-#include "list.h"
 //#define LOG_LEVEL LOG_LEVEL_DEBUG
 #include "log.h"
 
@@ -46,7 +47,6 @@
 
 struct channel
 {
-  struct list_head siblings;
   struct jack_mixer * mixer_ptr;
   char * name;
   bool stereo;
@@ -84,7 +84,7 @@ struct jack_mixer
 {
   pthread_mutex_t mutex;
   jack_client_t * jack_client;
-  struct list_head channels_list;
+  GSList *channels_list;
   struct channel main_mix_channel;
   unsigned int channels_count;
   unsigned int soloed_channels_count;
@@ -151,12 +151,12 @@ void
 calc_all_channel_volumes(
   struct jack_mixer * mixer_ptr)
 {
-  struct list_head * node_ptr;
   struct channel * channel_ptr;
+  GSList *list_ptr;
 
-  list_for_each(node_ptr, &mixer_ptr->channels_list)
+  for (list_ptr = mixer_ptr->channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
   {
-    channel_ptr = list_entry(node_ptr, struct channel, siblings);
+    channel_ptr = list_ptr->data;
     calc_channel_volumes(channel_ptr);
   }
 }
@@ -289,7 +289,8 @@ unsigned int channel_set_volume_midi_cc(jack_mixer_channel_t channel, unsigned i
 
 void remove_channel(jack_mixer_channel_t channel)
 {
-  list_del(&channel_ptr->siblings);
+  channel_ptr->mixer_ptr->channels_list = g_slist_remove(
+                  channel_ptr->mixer_ptr->channels_list, channel_ptr);
   free(channel_ptr->name);
 
   jack_port_unregister(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left);
@@ -464,14 +465,14 @@ mix(
   jack_nframes_t end)           /* index of sample to stop processing before */
 {
   jack_nframes_t i;
-  struct list_head * node_ptr;
+  GSList *node_ptr;
   struct channel * channel_ptr;
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
 
-  list_for_each(node_ptr, &mixer_ptr->channels_list)
+  for (node_ptr = mixer_ptr->channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
-    channel_ptr = list_entry(node_ptr, struct channel, siblings);
+    channel_ptr = node_ptr->data;
 
     for (i = start ; i < end ; i++)
     {
@@ -621,7 +622,7 @@ int
 process(jack_nframes_t nframes, void * context)
 {
   jack_nframes_t i;
-  struct list_head * node_ptr;
+  GSList *node_ptr;
   struct channel * channel_ptr;
 #if defined(HAVE_JACK_MIDI)
   jack_nframes_t event_count;
@@ -633,9 +634,9 @@ process(jack_nframes_t nframes, void * context)
 
   update_channel_buffers(&mixer_ptr->main_mix_channel, nframes);
 
-  list_for_each(node_ptr, &mixer_ptr->channels_list)
+  for (node_ptr = mixer_ptr->channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
-    channel_ptr = list_entry(node_ptr, struct channel, siblings);
+    channel_ptr = node_ptr->data;
 
     update_channel_buffers(channel_ptr, nframes);
   }
@@ -744,7 +745,7 @@ create(
     goto exit_free;
   }
 
-  INIT_LIST_HEAD(&mixer_ptr->channels_list);
+  mixer_ptr->channels_list = NULL;
 
   mixer_ptr->channels_count = 0;
   mixer_ptr->soloed_channels_count = 0;
@@ -982,7 +983,8 @@ add_channel(
 
   calc_channel_volumes(channel_ptr);
 
-  list_add_tail(&channel_ptr->siblings, &channel_ptr->mixer_ptr->channels_list);
+  channel_ptr->mixer_ptr->channels_list = g_slist_prepend(
+                  channel_ptr->mixer_ptr->channels_list, channel_ptr);
   channel_ptr->mixer_ptr->channels_count++;
 
   for (i = 11 ; i < 128 ; i++)

@@ -118,7 +118,7 @@ class mono(meter):
         if value == self.raw_value:
             return
         self.raw_value = value
-        old_vlaue = self.value
+        old_value = self.value
         self.value = self.scale.db_to_scale(value)
         if (abs(old_value-self.value) * self.height) > 1:
             self.invalidate_all()

@@ -131,6 +131,10 @@ channel_set_volume_midi_cc(
   unsigned int new_cc);
 
 void
+channel_autoset_midi_cc(
+  jack_mixer_channel_t channel);
+
+void
 remove_channel(
   jack_mixer_channel_t channel);
 

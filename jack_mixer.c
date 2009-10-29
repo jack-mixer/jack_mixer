@@ -296,6 +296,42 @@ unsigned int channel_set_volume_midi_cc(jack_mixer_channel_t channel, unsigned i
   return 0;
 }
 
+void
+channel_autoset_midi_cc(jack_mixer_channel_t channel)
+{
+  struct jack_mixer *mixer_ptr;
+  int i;
+
+  mixer_ptr = channel_ptr->mixer_ptr;
+
+  for (i = 11 ; i < 128 ; i++)
+  {
+    if (mixer_ptr->midi_cc_map[i] == NULL)
+    {
+      mixer_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_cc_volume_index = i;
+
+      LOG_NOTICE("New channel \"%s\" volume mapped to CC#%i", channel_ptr->name, i);
+
+      break;
+    }
+  }
+
+  for (; i < 128 ; i++)
+  {
+    if (mixer_ptr->midi_cc_map[i] == NULL)
+    {
+      mixer_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_cc_balance_index = i;
+
+      LOG_NOTICE("New channel \"%s\" balance mapped to CC#%i", channel_ptr->name, i);
+
+      break;
+    }
+  }
+}
+
+
 void remove_channel(jack_mixer_channel_t channel)
 {
   channel_ptr->mixer_ptr->channels_list = g_slist_remove(
@@ -963,7 +999,6 @@ add_channel(
   struct channel * channel_ptr;
   char * port_name;
   size_t channel_name_size;
-  int i;
 
   channel_ptr = malloc(sizeof(struct channel));
   if (channel_ptr == NULL)
@@ -1045,32 +1080,6 @@ add_channel(
   channel_ptr->mixer_ptr->channels_list = g_slist_prepend(
                   channel_ptr->mixer_ptr->channels_list, channel_ptr);
   channel_ptr->mixer_ptr->channels_count++;
-
-  for (i = 11 ; i < 128 ; i++)
-  {
-    if (mixer_ctx_ptr->midi_cc_map[i] == NULL)
-    {
-      mixer_ctx_ptr->midi_cc_map[i] = channel_ptr;
-      channel_ptr->midi_cc_volume_index = i;
-
-      LOG_NOTICE("New channel \"%s\" volume mapped to CC#%i", channel_name, i);
-
-      break;
-    }
-  }
-
-  for (; i < 128 ; i++)
-  {
-    if (mixer_ctx_ptr->midi_cc_map[i] == NULL)
-    {
-      mixer_ctx_ptr->midi_cc_map[i] = channel_ptr;
-      channel_ptr->midi_cc_balance_index = i;
-
-      LOG_NOTICE("New channel \"%s\" balance mapped to CC#%i", channel_name, i);
-
-      break;
-    }
-  }
 
   return channel_ptr;
 

@@ -227,7 +227,7 @@ class jack_mixer(serialized_object):
 
         if ret == gtk.RESPONSE_OK:
             result = dialog.get_result()
-            self.add_channel(**result)
+            channel = self.add_channel(**result)
             self.window.show_all()
 
     def on_remove_channel(self, widget, channel, channel_remove_menu_item):
@@ -268,9 +268,12 @@ class jack_mixer(serialized_object):
             channel.channel.volume_midi_cc = int(volume_cc)
         if balance_cc:
             channel.channel.balance_midi_cc = int(balance_cc)
+        if not (volume_cc or balance_cc):
+            channel.channel.autoset_midi_cc()
         channel.output_channel = self.mixer.add_output_channel(name + ' Out', stereo, True)
         channel.output_channel.volume = 0
         channel.output_channel.add_channel(channel.channel)
+        return channel
 
     def add_channel_precreated(self, channel):
         frame = gtk.Frame()

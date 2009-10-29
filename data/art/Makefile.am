@@ -42,6 +42,6 @@ EXTRA_DIST = \
 	$(svgicon_DATA) \
 	16x16/jack_mixer.svg \
 	22x22/jack_mixer.svg \
-	24x24/jack_mixer.svg \
-	32x32/jack_mixer.svg
+	32x32/jack_mixer.svg \
+	48x48/jack_mixer.svg
 

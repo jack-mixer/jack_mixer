@@ -36,16 +36,13 @@ from preferences import PreferencesDialog
 
 sys.path = old_path
 
+try:
+    from serialization_xml import xml_serialization
+    from serialization import serialized_object, serializator
+except ImportError:
+    xml_serialization = None
 
-# no need for serialization if there is no LASH available
-if lash:
-    try:
-        from serialization_xml import xml_serialization
-        from serialization import serialized_object, serializator
-    except ImportError:
-        lash = None
-
-if lash is None:
+if lash is None or xml_serialization is None:
     print >> sys.stderr, "Cannot load LASH python bindings or python-xml, you want them unless you enjoy manual jack plumbing each time you use this app"
 
 class jack_mixer(serialized_object):
@@ -55,6 +52,9 @@ class jack_mixer(serialized_object):
 
     # scales suitable as volume slider scales
     slider_scales = [scale.linear_30dB(), scale.linear_70dB()]
+
+    # name of settngs file that is currently open
+    current_filename = None
 
     def __init__(self, name, lash_client):
         self.mixer = jack_mixer_c.Mixer(name)
@@ -82,37 +82,55 @@ class jack_mixer(serialized_object):
         self.menubar = gtk.MenuBar()
         self.vbox_top.pack_start(self.menubar, False)
 
-        self.channels_menu_item = gtk.MenuItem("_Channel")
-        self.menubar.append(self.channels_menu_item)
-
-        self.settings_menu_item = gtk.MenuItem("_Settings")
-        self.menubar.append(self.settings_menu_item)
+        mixer_menu_item = gtk.MenuItem("_Mixer")
+        self.menubar.append(mixer_menu_item)
+        edit_menu_item = gtk.MenuItem('_Edit')
+        self.menubar.append(edit_menu_item)
 
         self.window.set_size_request(120,300)
 
-        self.channels_menu = gtk.Menu()
-        self.channels_menu_item.set_submenu(self.channels_menu)
+        mixer_menu = gtk.Menu()
+        mixer_menu_item.set_submenu(mixer_menu)
 
-        self.channel_add_menu_item = gtk.ImageMenuItem(gtk.STOCK_ADD)
-        self.channels_menu.append(self.channel_add_menu_item)
-        self.channel_add_menu_item.connect("activate", self.on_add_channel)
+        add_input_channel = gtk.ImageMenuItem('New _Input Channel')
+        mixer_menu.append(add_input_channel)
+        add_input_channel.connect("activate", self.on_add_input_channel)
+
+        if lash_client is None and xml_serialization is not None:
+            mixer_menu.append(gtk.SeparatorMenuItem())
+            open = gtk.ImageMenuItem(gtk.STOCK_OPEN)
+            mixer_menu.append(open)
+            open.connect('activate', self.on_open_cb)
+            save = gtk.ImageMenuItem(gtk.STOCK_SAVE)
+            mixer_menu.append(save)
+            save.connect('activate', self.on_save_cb)
+            save_as = gtk.ImageMenuItem(gtk.STOCK_SAVE_AS)
+            mixer_menu.append(save_as)
+            save_as.connect('activate', self.on_save_as_cb)
+
+        mixer_menu.append(gtk.SeparatorMenuItem())
+
+        quit = gtk.ImageMenuItem(gtk.STOCK_QUIT)
+        mixer_menu.append(quit)
+        quit.connect('activate', self.on_quit_cb)
+
+        edit_menu = gtk.Menu()
+        edit_menu_item.set_submenu(edit_menu)
 
         self.channel_remove_menu_item = gtk.ImageMenuItem(gtk.STOCK_REMOVE)
-        self.channels_menu.append(self.channel_remove_menu_item)
-
+        edit_menu.append(self.channel_remove_menu_item)
         self.channel_remove_menu = gtk.Menu()
         self.channel_remove_menu_item.set_submenu(self.channel_remove_menu)
 
-        self.channel_remove_all_menu_item = gtk.ImageMenuItem(gtk.STOCK_CLEAR)
-        self.channels_menu.append(self.channel_remove_all_menu_item)
-        self.channel_remove_all_menu_item.connect("activate", self.on_channels_clear)
+        channel_remove_all_menu_item = gtk.ImageMenuItem(gtk.STOCK_CLEAR)
+        edit_menu.append(channel_remove_all_menu_item)
+        channel_remove_all_menu_item.connect("activate", self.on_channels_clear)
 
-        self.settings_menu = gtk.Menu()
-        self.settings_menu_item.set_submenu(self.settings_menu)
+        edit_menu.append(gtk.SeparatorMenuItem())
 
-        preferences = gtk.MenuItem('_Preferences')
+        preferences = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES)
         preferences.connect('activate', self.on_preferences_cb)
-        self.settings_menu.append(preferences)
+        edit_menu.append(preferences)
 
         self.hbox_top = gtk.HBox()
         self.vbox_top.pack_start(self.hbox_top, True)
@@ -152,6 +170,47 @@ class jack_mixer(serialized_object):
         for channel in self.channels:
             channel.unrealize()
 
+    def on_open_cb(self, *args):
+        dlg = gtk.FileChooserDialog(title='Open', parent=self.window,
+                        action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dlg.set_default_response(gtk.RESPONSE_OK)
+        if dlg.run() == gtk.RESPONSE_OK:
+            filename = dlg.get_filename()
+            try:
+                f = file(filename, 'r')
+                self.load_from_xml(f)
+            except:
+                # TODO: display error in a dialog box
+                print >> sys.stderr, 'Failed to read', filename
+            else:
+                self.current_filename = filename
+            finally:
+                f.close()
+        dlg.destroy()
+
+    def on_save_cb(self, *args):
+        if not self.current_filename:
+            return self.on_save_as_cb()
+        f = file(self.current_filename, 'w')
+        self.save_to_xml(f)
+        f.close()
+
+    def on_save_as_cb(self, *args):
+        dlg = gtk.FileChooserDialog(title='Save', parent=self.window,
+                        action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                 gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        dlg.set_default_response(gtk.RESPONSE_OK)
+        if dlg.run() == gtk.RESPONSE_OK:
+            self.current_filename = dlg.get_filename()
+            self.on_save_cb()
+        dlg.destroy()
+
+    def on_quit_cb(self, *args):
+        gtk.main_quit()
+
     preferences_dialog = None
     def on_preferences_cb(self, widget):
         if not self.preferences_dialog:
@@ -159,7 +218,7 @@ class jack_mixer(serialized_object):
         self.preferences_dialog.show()
         self.preferences_dialog.present()
 
-    def on_add_channel(self, widget):
+    def on_add_input_channel(self, widget):
         dialog = NewChannelDialog(parent=self.window, mixer=self.mixer)
         dialog.set_transient_for(self.window)
         dialog.show()
@@ -330,7 +389,6 @@ def main():
         lash_client = lash.init(sys.argv, "jack_mixer", lash.LASH_Config_File)
     else:
         lash_client = None
-
     # check arguments
     args = sys.argv[1:]
     i = len(args)

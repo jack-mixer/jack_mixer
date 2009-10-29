@@ -388,6 +388,84 @@ class input_channel(channel):
 def input_channel_serialization_name():
     return "input_channel"
 
+
+class output_channel(channel):
+    def __init__(self, mixer, gui_factory, name, stereo):
+        channel.__init__(self, mixer, gui_factory, name, stereo)
+
+    def realize(self):
+        channel.realize(self)
+        self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
+        if self.channel == None:
+            raise Exception,"Cannot create a channel"
+        channel.realize(self)
+
+        self.channel.midi_scale = self.slider_scale.scale
+        self.channel.midi_change_callback = self.midi_change_callback
+
+        self.on_volume_changed(self.slider_adjustment)
+        self.on_balance_changed(self.balance_adjustment)
+
+        # vbox child at upper part
+        self.vbox = gtk.VBox()
+        self.pack_start(self.vbox, False)
+        self.label_name = gtk.Label()
+        self.label_name.set_text(self.channel_name)
+        self.label_name.set_size_request(0, -1)
+        self.vbox.pack_start(self.label_name, False)
+        frame = gtk.Frame()
+        frame.set_shadow_type(gtk.SHADOW_IN)
+        frame.add(self.abspeak);
+        self.vbox.pack_start(frame, False)
+
+        # hbox child at lower part
+        self.hbox = gtk.HBox()
+        self.hbox.pack_start(self.slider, True)
+        frame = gtk.Frame()
+        frame.set_shadow_type(gtk.SHADOW_IN)
+        frame.add(self.meter);
+        self.hbox.pack_start(frame, True)
+        frame = gtk.Frame()
+        frame.set_shadow_type(gtk.SHADOW_IN)
+        frame.add(self.hbox);
+        self.pack_start(frame, True)
+
+        self.volume_digits.set_size_request(0, -1)
+        self.pack_start(self.volume_digits, False)
+
+        self.create_balance_widget()
+
+    def unrealize(self):
+        channel.unrealize(self)
+        self.channel = False
+
+    def serialization_name(self):
+        return output_channel_serialization_name()
+
+    def serialize(self, object_backend):
+        object_backend.add_property("name", self.channel_name)
+        if self.stereo:
+            object_backend.add_property("type", "stereo")
+        else:
+            object_backend.add_property("type", "mono")
+        channel.serialize(self, object_backend)
+
+    def unserialize_property(self, name, value):
+        if name == "name":
+            self.channel_name = str(value)
+            return True
+        if name == "type":
+            if value == "stereo":
+                self.stereo = True
+                return True
+            if value == "mono":
+                self.stereo = False
+                return True
+        return channel.unserialize_property(self, name, value)
+
+def output_channel_serialization_name():
+    return "output_channel"
+
 class main_mix(channel):
     def __init__(self, mixer, gui_factory):
         channel.__init__(self, mixer, gui_factory, "MAIN", True)
@@ -576,6 +654,27 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.mixer = mixer
         self.create_ui()
 
+        self.stereo.set_active(True) # default to stereo
+
+        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+
+    def get_result(self):
+        return {'name': self.entry_name.get_text(),
+                'stereo': self.stereo.get_active(),
+                'volume_cc': self.entry_volume_cc.get_text(),
+                'balance_cc': self.entry_balance_cc.get_text()
+               }
+
+class NewOutputChannelDialog(ChannelPropertiesDialog):
+    def __init__(self, parent, mixer):
+        gtk.Dialog.__init__(self, 'New Output Channel', parent)
+        self.mixer = mixer
+        self.create_ui()
+
+        # TODO: disable mode for output channels as mono output channels may
+        # not be correctly handled yet.
+        self.mode_hbox.set_sensitive(False)
         self.stereo.set_active(True) # default to stereo
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)

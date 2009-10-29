@@ -96,6 +96,10 @@ class jack_mixer(serialized_object):
         mixer_menu.append(add_input_channel)
         add_input_channel.connect("activate", self.on_add_input_channel)
 
+        add_output_channel = gtk.ImageMenuItem('New _Output Channel')
+        mixer_menu.append(add_output_channel)
+        add_output_channel.connect("activate", self.on_add_output_channel)
+
         if lash_client is None and xml_serialization is not None:
             mixer_menu.append(gtk.SeparatorMenuItem())
             open = gtk.ImageMenuItem(gtk.STOCK_OPEN)
@@ -144,15 +148,20 @@ class jack_mixer(serialized_object):
         self.hbox_top.set_spacing(0)
         self.hbox_top.set_border_width(0)
         self.channels = []
+        self.output_channels = []
 
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
         self.main_mix = main_mix(self.mixer, self.gui_factory)
         self.main_mix.realize()
+        self.hbox_outputs = gtk.HBox()
+        self.hbox_outputs.set_spacing(0)
+        self.hbox_outputs.set_border_width(0)
         frame = gtk.Frame()
         frame.add(self.main_mix)
-        self.hbox_top.pack_start(frame, False)
+        self.hbox_outputs.pack_start(frame, False)
+        self.hbox_top.pack_start(self.hbox_outputs, False)
 
         self.window.connect("destroy", gtk.main_quit)
 
@@ -230,6 +239,18 @@ class jack_mixer(serialized_object):
             channel = self.add_channel(**result)
             self.window.show_all()
 
+    def on_add_output_channel(self, widget):
+        dialog = NewOutputChannelDialog(parent=self.window, mixer=self.mixer)
+        dialog.set_transient_for(self.window)
+        dialog.show()
+        ret = dialog.run()
+        dialog.hide()
+
+        if ret == gtk.RESPONSE_OK:
+            result = dialog.get_result()
+            channel = self.add_output_channel(**result)
+            self.window.show_all()
+
     def on_remove_channel(self, widget, channel, channel_remove_menu_item):
         print 'Removing channel "%s"' % channel.channel_name
         self.channel_remove_menu.remove(channel_remove_menu_item)
@@ -292,6 +313,38 @@ class jack_mixer(serialized_object):
         self.main_mix.read_meter()
         return True
 
+    def add_output_channel(self, name, stereo, volume_cc, balance_cc):
+        try:
+            channel = output_channel(self.mixer, self.gui_factory, name, stereo)
+            self.add_output_channel_precreated(channel)
+        except Exception:
+            raise
+            err = gtk.MessageDialog(self.window,
+                            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                            gtk.MESSAGE_ERROR,
+                            gtk.BUTTONS_OK,
+                            "Channel creation failed")
+            err.run()
+            err.destroy()
+            return
+        if volume_cc:
+            channel.channel.volume_midi_cc = int(volume_cc)
+        if balance_cc:
+            channel.channel.balance_midi_cc = int(balance_cc)
+        return channel
+
+    def add_output_channel_precreated(self, channel):
+        frame = gtk.Frame()
+        frame.add(channel)
+        self.hbox_outputs.pack_start(frame, False)
+        channel.realize()
+        # XXX: handle deletion of output channels
+        #channel_remove_menu_item = gtk.MenuItem(channel.channel_name)
+        #self.channel_remove_menu.append(channel_remove_menu_item)
+        #channel_remove_menu_item.connect("activate", self.on_remove_channel, channel, channel_remove_menu_item)
+        #self.channel_remove_menu_item.set_sensitive(True)
+        self.output_channels.append(channel)
+
     def lash_check_events(self):
         while lash.lash_get_pending_event_count(self.lash_client):
             event = lash.lash_get_event(self.lash_client)
@@ -343,7 +396,10 @@ class jack_mixer(serialized_object):
         s = serializator()
         s.unserialize(self, b)
         for channel in self.unserialized_channels:
-            self.add_channel_precreated(channel)
+            if isinstance(channel, input_channel):
+                self.add_channel_precreated(channel)
+            else:
+                self.add_output_channel_precreated(channel)
         del self.unserialized_channels
         self.window.show_all()
 
@@ -362,9 +418,14 @@ class jack_mixer(serialized_object):
             self.unserialized_channels.append(channel)
             return channel
 
+        if name == output_channel_serialization_name():
+            channel = output_channel(self.mixer, self.gui_factory, "", True)
+            self.unserialized_channels.append(channel)
+            return channel
+
     def serialization_get_childs(self):
         '''Get child objects tha required and support serialization'''
-        childs = self.channels[:]
+        childs = self.channels[:] + self.output_channels[:]
         childs.append(self.main_mix)
         return childs
 

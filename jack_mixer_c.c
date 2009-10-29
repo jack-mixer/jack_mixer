@@ -639,6 +639,7 @@ OutputChannel_New(jack_mixer_output_channel_t output_channel)
 	OutputChannelObject *self;
 	self = (OutputChannelObject*)PyObject_NEW(OutputChannelObject, &OutputChannelType);
 	if (self != NULL) {
+		self->midi_change_callback = NULL;
 		self->output_channel = output_channel;
 	}
 	return (PyObject*)self;

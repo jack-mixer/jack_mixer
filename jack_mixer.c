@@ -1102,7 +1102,6 @@ add_output_channel(
   struct output_channel * output_channel_ptr;
   char * port_name;
   size_t channel_name_size;
-  int i;
 
   output_channel_ptr = malloc(sizeof(struct output_channel));
   channel_ptr = (struct channel*)output_channel_ptr;
@@ -1182,32 +1181,6 @@ add_output_channel(
 
   channel_ptr->mixer_ptr->output_channels_list = g_slist_prepend(
                   channel_ptr->mixer_ptr->output_channels_list, channel_ptr);
-
-  for (i = 11 ; i < 128 ; i++)
-  {
-    if (mixer_ctx_ptr->midi_cc_map[i] == NULL)
-    {
-      mixer_ctx_ptr->midi_cc_map[i] = channel_ptr;
-      channel_ptr->midi_cc_volume_index = i;
-
-      LOG_NOTICE("New output channel \"%s\" volume mapped to CC#%i", channel_name, i);
-
-      break;
-    }
-  }
-
-  for (; i < 128 ; i++)
-  {
-    if (mixer_ctx_ptr->midi_cc_map[i] == NULL)
-    {
-      mixer_ctx_ptr->midi_cc_map[i] = channel_ptr;
-      channel_ptr->midi_cc_balance_index = i;
-
-      LOG_NOTICE("New output channel \"%s\" balance mapped to CC#%i", channel_name, i);
-
-      break;
-    }
-  }
 
   output_channel_ptr->channels_list = NULL;
   output_channel_ptr->soloed_channels = NULL;

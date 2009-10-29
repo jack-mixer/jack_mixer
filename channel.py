@@ -48,6 +48,8 @@ class channel(gtk.VBox, serialized_object):
         self.slider_scale = gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.adjustment_dBFS(self.slider_scale, 0.0)
         self.balance_adjustment = gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
+        self.future_volume_midi_cc = None
+        self.future_balance_midi_cc = None
 
     def get_channel_name(self):
         return self._channel_name
@@ -227,12 +229,23 @@ class channel(gtk.VBox, serialized_object):
         object_backend.add_property("volume", "%f" % self.slider_adjustment.get_value_db())
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
 
+        if self.channel.volume_midi_cc:
+            object_backend.add_property('volume_midi_cc', str(self.channel.volume_midi_cc))
+        if self.channel.balance_midi_cc:
+            object_backend.add_property('balance_midi_cc', str(self.channel.balance_midi_cc))
+
     def unserialize_property(self, name, value):
         if name == "volume":
             self.slider_adjustment.set_value_db(float(value))
             return True
         if name == "balance":
             self.balance_adjustment.set_value(float(value))
+            return True
+        if name == 'volume_midi_cc':
+            self.future_volume_midi_cc = int(value)
+            return True
+        if name == 'balance_midi_cc':
+            self.future_balance_midi_cc = int(value)
             return True
         return False
 
@@ -258,6 +271,10 @@ class input_channel(channel):
         if self.channel == None:
             raise Exception,"Cannot create a channel"
         channel.realize(self)
+        if self.future_volume_midi_cc:
+            self.channel.volume_midi_cc = self.future_volume_midi_cc
+        if self.future_balance_midi_cc:
+            self.channel.balance_midi_cc = self.future_balance_midi_cc
         self.channel.midi_scale = self.slider_scale.scale
         self.channel.midi_change_callback = self.midi_change_callback
 

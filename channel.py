@@ -412,7 +412,10 @@ class output_channel(channel):
         self.label_name = gtk.Label()
         self.label_name.set_text(self.channel_name)
         self.label_name.set_size_request(0, -1)
-        self.vbox.pack_start(self.label_name, False)
+        self.label_name_event_box = gtk.EventBox()
+        self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
+        self.label_name_event_box.add(self.label_name)
+        self.vbox.pack_start(self.label_name_event_box, True)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
         frame.add(self.abspeak);
@@ -434,6 +437,18 @@ class output_channel(channel):
         self.pack_start(self.volume_digits, False)
 
         self.create_balance_widget()
+
+    channel_properties_dialog = None
+    def on_channel_properties(self):
+        if not self.channel_properties_dialog:
+            self.channel_properties_dialog = ChannelPropertiesDialog(self)
+        self.channel_properties_dialog.show()
+        self.channel_properties_dialog.present()
+
+    def on_label_mouse(self, widget, event):
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            if event.button == 1:
+                self.on_channel_properties()
 
     def unrealize(self):
         channel.unrealize(self)

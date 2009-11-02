@@ -89,7 +89,7 @@ class jack_mixer(serialized_object):
         edit_menu_item = gtk.MenuItem('_Edit')
         self.menubar.append(edit_menu_item)
 
-        self.window.set_size_request(120,300)
+        self.window.set_default_size(120,300)
 
         mixer_menu = gtk.Menu()
         mixer_menu_item.set_submenu(mixer_menu)
@@ -479,6 +479,7 @@ def main():
         f = file(options.config)
         mixer.current_filename = options.config
         mixer.load_from_xml(f)
+        mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)),300)
         f.close()
 
     mixer.main()

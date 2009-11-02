@@ -155,7 +155,7 @@ class jack_mixer(serialized_object):
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
-        self.main_mix = main_mix(self.mixer, self.gui_factory)
+        self.main_mix = main_mix(self)
         self.main_mix.realize()
         self.hbox_outputs = gtk.HBox()
         self.hbox_outputs.set_spacing(0)
@@ -276,7 +276,7 @@ class jack_mixer(serialized_object):
 
     def add_channel(self, name, stereo, volume_cc, balance_cc):
         try:
-            channel = input_channel(self.mixer, self.gui_factory, name, stereo)
+            channel = input_channel(self, name, stereo)
             self.add_channel_precreated(channel)
         except Exception:
             err = gtk.MessageDialog(self.window,
@@ -320,7 +320,7 @@ class jack_mixer(serialized_object):
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc):
         try:
-            channel = output_channel(self.mixer, self.gui_factory, name, stereo)
+            channel = output_channel(self, name, stereo)
             self.add_output_channel_precreated(channel)
         except Exception:
             raise
@@ -423,12 +423,12 @@ class jack_mixer(serialized_object):
             return self.main_mix
 
         if name == input_channel_serialization_name():
-            channel = input_channel(self.mixer, self.gui_factory, "", True)
+            channel = input_channel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
 
         if name == output_channel_serialization_name():
-            channel = output_channel(self.mixer, self.gui_factory, "", True)
+            channel = output_channel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
 

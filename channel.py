@@ -38,14 +38,15 @@ import fpconst
 
 class channel(gtk.VBox, serialized_object):
     '''Widget with slider and meter used as base class for more specific channel widgets'''
-    def __init__(self, mixer, gui_factory, name, stereo):
+    def __init__(self, app, name, stereo):
         gtk.VBox.__init__(self)
-        self.mixer = mixer
-        self.gui_factory = gui_factory
+        self.app = app
+        self.mixer = app.mixer
+        self.gui_factory = app.gui_factory
         self._channel_name = name
         self.stereo = stereo
-        self.meter_scale = gui_factory.get_default_meter_scale()
-        self.slider_scale = gui_factory.get_default_slider_scale()
+        self.meter_scale = self.gui_factory.get_default_meter_scale()
+        self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.adjustment_dBFS(self.slider_scale, 0.0)
         self.balance_adjustment = gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
         self.future_volume_midi_cc = None
@@ -263,8 +264,8 @@ gobject.signal_new('midi-event-received', channel,
                 gobject.TYPE_NONE, ())
 
 class input_channel(channel):
-    def __init__(self, mixer, gui_factory, name, stereo):
-        channel.__init__(self, mixer, gui_factory, name, stereo)
+    def __init__(self, app, name, stereo):
+        channel.__init__(self, app, name, stereo)
 
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
@@ -407,8 +408,8 @@ available_colours = [
 class output_channel(channel):
     colours = available_colours[:]
 
-    def __init__(self, mixer, gui_factory, name, stereo):
-        channel.__init__(self, mixer, gui_factory, name, stereo)
+    def __init__(self, app, name, stereo):
+        channel.__init__(self, app, name, stereo)
 
     def realize(self):
         channel.realize(self)
@@ -465,7 +466,7 @@ class output_channel(channel):
     channel_properties_dialog = None
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
-            self.channel_properties_dialog = ChannelPropertiesDialog(self)
+            self.channel_properties_dialog = OutputChannelPropertiesDialog(self)
         self.channel_properties_dialog.show()
         self.channel_properties_dialog.present()
 
@@ -506,8 +507,8 @@ def output_channel_serialization_name():
     return "output_channel"
 
 class main_mix(channel):
-    def __init__(self, mixer, gui_factory):
-        channel.__init__(self, mixer, gui_factory, "MAIN", True)
+    def __init__(self, app):
+        channel.__init__(self, app, "MAIN", True)
 
     def realize(self):
         channel.realize(self)
@@ -577,10 +578,10 @@ class ChannelPropertiesDialog(gtk.Dialog):
     def create_frame(self, label, child):
         frame = gtk.Frame('')
         frame.set_border_width(3)
-        frame.set_shadow_type(gtk.SHADOW_NONE)
+        #frame.set_shadow_type(gtk.SHADOW_NONE)
         frame.get_label_widget().set_markup('<b>%s</b>' % label)
 
-        alignment = gtk.Alignment()
+        alignment = gtk.Alignment(0, 0, 1, 1)
         alignment.set_padding(0, 0, 12, 0)
         frame.add(alignment)
         alignment.add(child)
@@ -704,6 +705,57 @@ class NewChannelDialog(ChannelPropertiesDialog):
                 'volume_cc': self.entry_volume_cc.get_text(),
                 'balance_cc': self.entry_balance_cc.get_text()
                }
+
+class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
+    def create_ui(self):
+        ChannelPropertiesDialog.create_ui(self)
+
+        vbox = gtk.VBox()
+        self.vbox.pack_start(self.create_frame('Channels', vbox))
+
+
+        table = gtk.Table(1, 2, False)
+        vbox.pack_start(table)
+        table.set_row_spacings(5)
+        table.set_col_spacings(5)
+
+        table.attach(gtk.Label('Follows'), 0, 1, 0, 1)
+
+        follows = gtk.combo_box_new_text()
+        follows.append_text('None')
+        follows.append_text('Main Mix')
+        for output_channel in self.channel.app.output_channels:
+            if output_channel is not self.channel:
+                follows.append_text(output_channel.channel.name)
+
+        table.attach(follows, 1, 2, 0, 1)
+
+        sclwin = gtk.ScrolledWindow()
+        sclwin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
+        table.attach(sclwin, 0, 2, 1, 2)
+
+        model = gtk.ListStore(str, bool)
+        for channel in self.channel.app.channels:
+            model.append((channel.channel.name, True))
+
+        treeview = gtk.TreeView(model)
+        treeview.set_size_request(-1, 100)
+        treeview.set_headers_visible(True)
+        sclwin.add(treeview)
+
+        renderer = gtk.CellRendererToggle()
+        renderer.set_property('mode', gtk.CELL_RENDERER_MODE_EDITABLE)
+        tv_col = gtk.TreeViewColumn('Enabled', renderer, active=1)
+        tv_col.set_expand(False)
+        treeview.append_column(tv_col)
+
+        renderer = gtk.CellRendererText()
+        tv_col = gtk.TreeViewColumn('', renderer, text=0)
+        tv_col.set_expand(True)
+        treeview.append_column(tv_col)
+
+        self.vbox.show_all()
+
 
 class NewOutputChannelDialog(ChannelPropertiesDialog):
     def __init__(self, parent, mixer):

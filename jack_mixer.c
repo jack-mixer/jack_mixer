@@ -737,7 +737,9 @@ process(jack_nframes_t nframes, void * context)
     for (i = 0 ; i < nframes ; i++)
     {
       channel_ptr->left_buffer_ptr[i] = 0.0;
-      channel_ptr->right_buffer_ptr[i] = 0.0;
+      if (channel_ptr->stereo) {
+        channel_ptr->right_buffer_ptr[i] = 0.0;
+      }
     }
   }
 

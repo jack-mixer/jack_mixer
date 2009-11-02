@@ -309,6 +309,9 @@ class jack_mixer(serialized_object):
         self.channel_remove_menu_item.set_sensitive(True)
         self.channels.append(channel)
 
+        for outputchannel in self.output_channels:
+            channel.add_control_group(outputchannel)
+
     def read_meters(self):
         for channel in self.channels:
             channel.read_meter()

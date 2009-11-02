@@ -338,6 +338,11 @@ class input_channel(channel):
 
         self.create_balance_widget()
 
+    def add_control_group(self, channel):
+        control_group = ControlGroup(channel)
+        control_group.show_all()
+        self.pack_start(control_group, False)
+
     def unrealize(self):
         channel.unrealize(self)
         self.channel.remove()
@@ -389,7 +394,19 @@ def input_channel_serialization_name():
     return "input_channel"
 
 
+available_colours = [
+    gtk.gdk.color_parse('#cc0000'),
+    gtk.gdk.color_parse('#3465a4'),
+    gtk.gdk.color_parse('#73d216'),
+    gtk.gdk.color_parse('#edd400'),
+    gtk.gdk.color_parse('#f57900'),
+    gtk.gdk.color_parse('#c17d11'),
+    gtk.gdk.color_parse('#75507b'),
+]
+
 class output_channel(channel):
+    colours = available_colours[:]
+
     def __init__(self, mixer, gui_factory, name, stereo):
         channel.__init__(self, mixer, gui_factory, name, stereo)
 
@@ -415,6 +432,13 @@ class output_channel(channel):
         self.label_name_event_box = gtk.EventBox()
         self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
+        if not self.colours:
+            self.colours = available_colours[:]
+        for color in self.colours:
+            self.color = color
+            self.colours.remove(color)
+            break
+        self.label_name_event_box.modify_bg(gtk.STATE_NORMAL, self.color)
         self.vbox.pack_start(self.label_name_event_box, True)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
@@ -701,3 +725,26 @@ class NewOutputChannelDialog(ChannelPropertiesDialog):
                 'volume_cc': self.entry_volume_cc.get_text(),
                 'balance_cc': self.entry_balance_cc.get_text()
                }
+
+
+class ControlGroup(gtk.HBox):
+    def __init__(self, output_channel):
+        self.output_channel = output_channel
+        gtk.HBox.__init__(self)
+
+        mute = gtk.ToggleButton()
+        mute.set_label("M")
+        #mute.set_active(self.channel.mute)
+        #mute.connect("toggled", self.on_mute_toggled)
+        self.pack_start(mute, True)
+
+        solo = gtk.ToggleButton()
+        solo.set_label("S")
+        #solo.set_active(self.channel.solo)
+        #solo.connect("toggled", self.on_solo_toggled)
+        self.pack_start(solo, True)
+
+        mute.modify_bg(gtk.STATE_NORMAL, output_channel.color)
+        solo.modify_bg(gtk.STATE_NORMAL, output_channel.color)
+
+

@@ -347,6 +347,10 @@ class jack_mixer(serialized_object):
         #self.channel_remove_menu_item.set_sensitive(True)
         self.output_channels.append(channel)
 
+        # add group controls to the input channels
+        for inputchannel in self.channels:
+            inputchannel.add_control_group(channel)
+
     def lash_check_events(self):
         while lash.lash_get_pending_event_count(self.lash_client):
             event = lash.lash_get_event(self.lash_client)

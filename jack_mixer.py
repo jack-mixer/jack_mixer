@@ -17,6 +17,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from optparse import OptionParser
+
 import gtk
 import gobject
 import jack_mixer_c
@@ -453,22 +455,10 @@ def main():
         lash_client = lash.init(sys.argv, "jack_mixer", lash.LASH_Config_File)
     else:
         lash_client = None
-    # check arguments
-    args = sys.argv[1:]
-    i = len(args)
-    for arg in reversed(args):
-        i -= 1
-        if len(arg) != 0 and arg[0] == '-':
-            if arg == "--help":
-                help()
-                return
-            else:
-                print 'Unknown option "%s"' % args[i]
-                help()
-                return
-            del args[i]
-    #    else:
-    #        print 'Non option argument "%s"' % args[i]
+
+    parser = OptionParser()
+    parser.add_option('-c', '--config', dest='config')
+    options, args = parser.parse_args()
 
     # Yeah , this sounds stupid, we connected earlier, but we dont want to show this if we got --help option
     # This issue should be fixed in pylash, there is a reason for having two functions for initialization after all
@@ -485,6 +475,11 @@ def main():
 
     gtk.gdk.threads_init()
     mixer = jack_mixer(name, lash_client)
+    if options.config:
+        f = file(options.config)
+        mixer.current_filename = options.config
+        mixer.load_from_xml(f)
+        f.close()
 
     mixer.main()
 

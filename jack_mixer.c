@@ -65,6 +65,9 @@ struct channel
   float peak_left;
   float peak_right;
 
+  jack_default_audio_sample_t * frames_left;
+  jack_default_audio_sample_t * frames_right;
+
   bool NaN_detected;
 
   int midi_cc_volume_index;
@@ -498,87 +501,17 @@ mix_one(
 
     for (i = start ; i < end ; i++)
     {
-      if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
-      {
-        channel_ptr->NaN_detected = true;
+      frame_left = channel_ptr->frames_left[i-start];
+      if (frame_left == NAN)
         break;
-      }
+      frame_right = channel_ptr->frames_right[i-start];
+      if (frame_right == NAN)
+        break;
 
-      frame_left = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_left;
       mix_channel->left_buffer_ptr[i] += frame_left;
-
-      if (channel_ptr->stereo)
-      {
-        if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i]))
-        {
-          channel_ptr->NaN_detected = true;
-          break;
-        }
-
-        frame_right = channel_ptr->right_buffer_ptr[i] * channel_ptr->volume_right;
-      }
-      else
-      {
-        frame_right = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_right;
-      }
-
       mix_channel->right_buffer_ptr[i] += frame_right;
-
-      if (channel_ptr->stereo)
-      {
-        frame_left = fabsf(frame_left);
-        frame_right = fabsf(frame_right);
-
-        if (channel_ptr->peak_left < frame_left)
-        {
-          channel_ptr->peak_left = frame_left;
-
-          if (frame_left > channel_ptr->abspeak)
-          {
-            channel_ptr->abspeak = frame_left;
-          }
-        }
-
-        if (channel_ptr->peak_right < frame_right)
-        {
-          channel_ptr->peak_right = frame_right;
-
-          if (frame_right > channel_ptr->abspeak)
-          {
-            channel_ptr->abspeak = frame_right;
-          }
-        }
-      }
-      else
-      {
-        frame_left = (fabsf(frame_left) + fabsf(frame_right)) / 2;
-
-        if (channel_ptr->peak_left < frame_left)
-        {
-          channel_ptr->peak_left = frame_left;
-
-          if (frame_left > channel_ptr->abspeak)
-          {
-            channel_ptr->abspeak = frame_left;
-          }
-        }
-      }
-
-      channel_ptr->peak_frames++;
-      if (channel_ptr->peak_frames >= PEAK_FRAMES_CHUNK)
-      {
-        channel_ptr->meter_left = channel_ptr->peak_left;
-        channel_ptr->peak_left = 0.0;
-
-        if (channel_ptr->stereo)
-        {
-          channel_ptr->meter_right = channel_ptr->peak_right;
-          channel_ptr->peak_right = 0.0;
-        }
-
-        channel_ptr->peak_frames = 0;
-      }
     }
+
   }
 
   /* process main mix channel */
@@ -626,6 +559,109 @@ mix_one(
 static
 inline
 void
+calc_channel_frames(
+  struct channel *channel_ptr,
+  jack_nframes_t start,
+  jack_nframes_t end)
+{
+  jack_nframes_t i;
+  jack_default_audio_sample_t frame_left;
+  jack_default_audio_sample_t frame_right;
+
+  channel_ptr->frames_left = calloc(end-start, sizeof(jack_default_audio_sample_t));
+  channel_ptr->frames_right = calloc(end-start, sizeof(jack_default_audio_sample_t));
+
+  for (i = start ; i < end ; i++)
+  {
+    if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
+    {
+      channel_ptr->NaN_detected = true;
+      channel_ptr->frames_left[i-start] = NAN;
+      break;
+    }
+
+    frame_left = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_left;
+
+    if (channel_ptr->stereo)
+    {
+      if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i]))
+      {
+        channel_ptr->NaN_detected = true;
+        channel_ptr->frames_right[i-start] = NAN;
+        break;
+      }
+
+      frame_right = channel_ptr->right_buffer_ptr[i] * channel_ptr->volume_right;
+    }
+    else
+    {
+      frame_right = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_right;
+    }
+
+    channel_ptr->frames_left[i-start] = frame_left;
+    channel_ptr->frames_right[i-start] = frame_right;
+
+    if (channel_ptr->stereo)
+    {
+      frame_left = fabsf(frame_left);
+      frame_right = fabsf(frame_right);
+
+      if (channel_ptr->peak_left < frame_left)
+      {
+        channel_ptr->peak_left = frame_left;
+
+        if (frame_left > channel_ptr->abspeak)
+        {
+          channel_ptr->abspeak = frame_left;
+        }
+      }
+
+      if (channel_ptr->peak_right < frame_right)
+      {
+        channel_ptr->peak_right = frame_right;
+
+        if (frame_right > channel_ptr->abspeak)
+        {
+          channel_ptr->abspeak = frame_right;
+        }
+      }
+    }
+    else
+    {
+      frame_left = (fabsf(frame_left) + fabsf(frame_right)) / 2;
+
+      if (channel_ptr->peak_left < frame_left)
+      {
+        channel_ptr->peak_left = frame_left;
+
+        if (frame_left > channel_ptr->abspeak)
+        {
+          channel_ptr->abspeak = frame_left;
+        }
+      }
+    }
+
+    channel_ptr->peak_frames++;
+    if (channel_ptr->peak_frames >= PEAK_FRAMES_CHUNK)
+    {
+      channel_ptr->meter_left = channel_ptr->peak_left;
+      channel_ptr->peak_left = 0.0;
+
+      if (channel_ptr->stereo)
+      {
+        channel_ptr->meter_right = channel_ptr->peak_right;
+        channel_ptr->peak_right = 0.0;
+      }
+
+      channel_ptr->peak_frames = 0;
+    }
+  }
+
+}
+
+static
+inline
+void
 mix(
   struct jack_mixer * mixer_ptr,
   jack_nframes_t start,         /* index of first sample to process */
@@ -634,6 +670,12 @@ mix(
   GSList *node_ptr;
   struct output_channel * output_channel_ptr;
   struct channel *channel_ptr;
+
+  for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
+  {
+    channel_ptr = (struct channel*)node_ptr->data;
+    calc_channel_frames(channel_ptr, start, end);
+  }
 
   mix_one((struct output_channel*)mixer_ptr->main_mix_channel, mixer_ptr->input_channels_list, start, end);
 
@@ -657,6 +699,13 @@ mix(
     }
 
     mix_one(output_channel_ptr, mixer_ptr->input_channels_list, start, end);
+  }
+
+  for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
+  {
+    channel_ptr = (struct channel*)node_ptr->data;
+    free(channel_ptr->frames_left);
+    free(channel_ptr->frames_right);
   }
 }
 

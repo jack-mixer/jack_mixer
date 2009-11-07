@@ -396,13 +396,13 @@ def input_channel_serialization_name():
 
 
 available_colours = [
-    gtk.gdk.color_parse('#cc0000'),
-    gtk.gdk.color_parse('#3465a4'),
-    gtk.gdk.color_parse('#73d216'),
-    gtk.gdk.color_parse('#edd400'),
-    gtk.gdk.color_parse('#f57900'),
-    gtk.gdk.color_parse('#c17d11'),
-    gtk.gdk.color_parse('#75507b'),
+    ('#ef2929', '#cc0000', '#a40000'),
+    ('#729fcf', '#3465a4', '#204a87'),
+    ('#8aa234', '#73d216', '#4e9a06'),
+    ('#fce84f', '#edd400', '#c4a000'),
+    ('#fcaf3e', '#f57900', '#ce5c00'),
+    ('#e9b96e', '#c17d11', '#8f5902'),
+    ('#ad7fa8', '#75507b', '#5c3566'),
 ]
 
 class output_channel(channel):
@@ -436,10 +436,10 @@ class output_channel(channel):
         if not self.colours:
             self.colours = available_colours[:]
         for color in self.colours:
-            self.color = color
+            self.color_tuple = [gtk.gdk.color_parse(color[x]) for x in range(3)]
             self.colours.remove(color)
             break
-        self.label_name_event_box.modify_bg(gtk.STATE_NORMAL, self.color)
+        self.label_name_event_box.modify_bg(gtk.STATE_NORMAL, self.color_tuple[1])
         self.vbox.pack_start(self.label_name_event_box, True)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
@@ -796,7 +796,11 @@ class ControlGroup(gtk.HBox):
         #solo.connect("toggled", self.on_solo_toggled)
         self.pack_start(solo, True)
 
-        mute.modify_bg(gtk.STATE_NORMAL, output_channel.color)
-        solo.modify_bg(gtk.STATE_NORMAL, output_channel.color)
+        mute.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
+        mute.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
+        mute.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
+        solo.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
+        solo.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
+        solo.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
 
 

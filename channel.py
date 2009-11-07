@@ -407,6 +407,7 @@ available_colours = [
 
 class output_channel(channel):
     colours = available_colours[:]
+    display_solo_buttons = False
 
     def __init__(self, app, name, stereo):
         channel.__init__(self, app, name, stereo)
@@ -711,53 +712,15 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         ChannelPropertiesDialog.create_ui(self)
 
         vbox = gtk.VBox()
-        self.vbox.pack_start(self.create_frame('Channels', vbox))
+        self.vbox.pack_start(self.create_frame('Input Channels', vbox))
 
-
-        table = gtk.Table(1, 2, False)
-        vbox.pack_start(table)
-        table.set_row_spacings(5)
-        table.set_col_spacings(5)
-
-        table.attach(gtk.Label('Follows'), 0, 1, 0, 1)
-
-        follows = gtk.combo_box_new_text()
-        follows.append_text('None')
-        follows.append_text('Main Mix')
-        for output_channel in self.channel.app.output_channels:
-            if output_channel is not self.channel:
-                follows.append_text(output_channel.channel.name)
-
-        table.attach(follows, 1, 2, 0, 1)
-
-        sclwin = gtk.ScrolledWindow()
-        sclwin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
-        table.attach(sclwin, 0, 2, 1, 2)
-
-        model = gtk.ListStore(str, bool)
-        for channel in self.channel.app.channels:
-            model.append((channel.channel.name, True))
-
-        treeview = gtk.TreeView(model)
-        treeview.set_size_request(-1, 100)
-        treeview.set_headers_visible(True)
-        sclwin.add(treeview)
-
-        renderer = gtk.CellRendererToggle()
-        renderer.set_property('mode', gtk.CELL_RENDERER_MODE_EDITABLE)
-        tv_col = gtk.TreeViewColumn('Enabled', renderer, active=1)
-        tv_col.set_expand(False)
-        treeview.append_column(tv_col)
-
-        renderer = gtk.CellRendererText()
-        tv_col = gtk.TreeViewColumn('', renderer, text=0)
-        tv_col.set_expand(True)
-        treeview.append_column(tv_col)
+        self.display_solo_buttons = gtk.CheckButton('Display solo buttons')
+        vbox.pack_start(self.display_solo_buttons)
 
         self.vbox.show_all()
 
 
-class NewOutputChannelDialog(ChannelPropertiesDialog):
+class NewOutputChannelDialog(OutputChannelPropertiesDialog):
     def __init__(self, parent, mixer):
         gtk.Dialog.__init__(self, 'New Output Channel', parent)
         self.mixer = mixer
@@ -775,26 +738,31 @@ class NewOutputChannelDialog(ChannelPropertiesDialog):
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': self.entry_volume_cc.get_text(),
-                'balance_cc': self.entry_balance_cc.get_text()
+                'balance_cc': self.entry_balance_cc.get_text(),
+                'display_solo_buttons': self.display_solo_buttons.get_active(),
                }
 
 
-class ControlGroup(gtk.HBox):
+class ControlGroup(gtk.Alignment):
     def __init__(self, output_channel):
+        gtk.Alignment.__init__(self, 0.5, 0.5, 0, 0)
         self.output_channel = output_channel
-        gtk.HBox.__init__(self)
+
+        hbox = gtk.HBox()
+        self.add(hbox)
 
         mute = gtk.ToggleButton()
         mute.set_label("M")
         #mute.set_active(self.channel.mute)
         #mute.connect("toggled", self.on_mute_toggled)
-        self.pack_start(mute, True)
+        hbox.pack_start(mute, False)
 
         solo = gtk.ToggleButton()
         solo.set_label("S")
         #solo.set_active(self.channel.solo)
         #solo.connect("toggled", self.on_solo_toggled)
-        self.pack_start(solo, True)
+        if self.output_channel.display_solo_buttons:
+            hbox.pack_start(solo, True)
 
         mute.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
         mute.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])

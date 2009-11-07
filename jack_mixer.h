@@ -220,8 +220,15 @@ remove_output_channel(
   jack_mixer_output_channel_t output_channel);
 
 void
-output_channel_add_channel(
+output_channel_set_solo(
   jack_mixer_output_channel_t output_channel,
-  jack_mixer_channel_t channel);
+  jack_mixer_channel_t channel,
+  bool solo_value);
+
+void
+output_channel_set_muted(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel,
+  bool muted_value);
 
 #endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

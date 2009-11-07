@@ -573,21 +573,43 @@ OutputChannel_remove(OutputChannelObject *self, PyObject *args)
 }
 
 static PyObject*
-OutputChannel_add_channel(OutputChannelObject *self, PyObject *args)
+OutputChannel_set_solo(OutputChannelObject *self, PyObject *args)
 {
 	PyObject *channel;
+	int solo;
 
-	if (! PyArg_ParseTuple(args, "O", &channel)) return NULL;
+	if (! PyArg_ParseTuple(args, "Ob", &channel, &solo)) return NULL;
 
-	output_channel_add_channel(self->output_channel, ((ChannelObject*)channel)->channel);
+	output_channel_set_solo(self->output_channel,
+			((ChannelObject*)channel)->channel,
+			solo);
 
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
+static PyObject*
+OutputChannel_set_muted(OutputChannelObject *self, PyObject *args)
+{
+	PyObject *channel;
+	int muted;
+
+	if (! PyArg_ParseTuple(args, "Ob", &channel, &muted)) return NULL;
+
+	output_channel_set_muted(self->output_channel,
+			((ChannelObject*)channel)->channel,
+			muted);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+
 static PyMethodDef output_channel_methods[] = {
 	{"remove", (PyCFunction)OutputChannel_remove, METH_VARARGS, "Remove"},
-	{"add_channel", (PyCFunction)OutputChannel_add_channel, METH_VARARGS, "Add channel"},
+	{"set_solo", (PyCFunction)OutputChannel_set_solo, METH_VARARGS, "Set a channel as solo"},
+	{"set_muted", (PyCFunction)OutputChannel_set_muted, METH_VARARGS, "Set a channel as muted"},
 	{NULL}
 };
 

@@ -295,7 +295,7 @@ class jack_mixer(serialized_object):
             channel.channel.autoset_midi_cc()
         channel.output_channel = self.mixer.add_output_channel(name + ' Out', stereo, True)
         channel.output_channel.volume = 0
-        channel.output_channel.add_channel(channel.channel)
+        channel.output_channel.set_solo(channel.channel, True)
         return channel
 
     def add_channel_precreated(self, channel):

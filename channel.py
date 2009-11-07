@@ -320,7 +320,7 @@ class input_channel(channel):
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
         frame.add(self.abspeak);
-        self.vbox.pack_start(frame, False)
+        self.pack_start(frame, False)
 
         # hbox child at lower part
         self.hbox = gtk.HBox()
@@ -342,7 +342,7 @@ class input_channel(channel):
     def add_control_group(self, channel):
         control_group = ControlGroup(channel)
         control_group.show_all()
-        self.pack_start(control_group, False)
+        self.vbox.pack_start(control_group, False)
 
     def unrealize(self):
         channel.unrealize(self)

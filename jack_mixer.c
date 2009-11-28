@@ -504,12 +504,17 @@ mix_one(
       frame_left = channel_ptr->frames_left[i-start];
       if (frame_left == NAN)
         break;
-      frame_right = channel_ptr->frames_right[i-start];
-      if (frame_right == NAN)
-        break;
-
       mix_channel->left_buffer_ptr[i] += frame_left;
-      mix_channel->right_buffer_ptr[i] += frame_right;
+
+      if (mix_channel->stereo)
+      {
+        frame_right = channel_ptr->frames_right[i-start];
+        if (frame_right == NAN)
+          break;
+
+        mix_channel->right_buffer_ptr[i] += frame_right;
+      }
+
     }
 
   }
@@ -518,7 +523,10 @@ mix_one(
   for (i = start ; i < end ; i++)
   {
     mix_channel->left_buffer_ptr[i] *= mix_channel->volume_left;
-    mix_channel->right_buffer_ptr[i] *= mix_channel->volume_right;
+    if (mix_channel->stereo)
+    {
+      mix_channel->right_buffer_ptr[i] *= mix_channel->volume_right;
+    }
 
     frame_left = fabsf(mix_channel->left_buffer_ptr[i]);
     if (mix_channel->peak_left < frame_left)
@@ -531,14 +539,17 @@ mix_one(
       }
     }
 
-    frame_right = fabsf(mix_channel->right_buffer_ptr[i]);
-    if (mix_channel->peak_right < frame_right)
+    if (mix_channel->stereo)
     {
-      mix_channel->peak_right = frame_right;
-
-      if (frame_right > mix_channel->abspeak)
+      frame_right = fabsf(mix_channel->right_buffer_ptr[i]);
+      if (mix_channel->peak_right < frame_right)
       {
-        mix_channel->abspeak = frame_right;
+        mix_channel->peak_right = frame_right;
+  
+        if (frame_right > mix_channel->abspeak)
+        {
+          mix_channel->abspeak = frame_right;
+        }
       }
     }
 
@@ -548,8 +559,11 @@ mix_one(
       mix_channel->meter_left = mix_channel->peak_left;
       mix_channel->peak_left = 0.0;
 
-      mix_channel->meter_right = mix_channel->peak_right;
-      mix_channel->peak_right = 0.0;
+      if (mix_channel->stereo)
+      {
+        mix_channel->meter_right = mix_channel->peak_right;
+        mix_channel->peak_right = 0.0;
+      }
 
       mix_channel->peak_frames = 0;
     }

@@ -1021,10 +1021,10 @@ add_channel(
     goto fail_free_channel;
   }
 
+  channel_name_size = strlen(channel_name);
+
   if (stereo)
   {
-    channel_name_size = strlen(channel_name);
-
     port_name = malloc(channel_name_size + 3);
     if (port_name == NULL)
     {

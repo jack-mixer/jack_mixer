@@ -711,6 +711,8 @@ Mixer_init(MixerObject *self, PyObject *args, PyObject *kwds)
 	
 	self->mixer = create(name);
 	if (self->mixer == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"error creating mixer, see above for diagnostics");
 		return -1;
 	}
 

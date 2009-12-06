@@ -89,6 +89,7 @@ fi
 
 AC_PATH_PROG(GCONFTOOL, gconftool-2, no)
 AM_GCONF_SOURCE_2
+AM_CONDITIONAL([GCONF_SCHEMAS_INSTALL], [test "x$ac_cv_path_GCONFTOOL" != "xno"])
 
 AC_OUTPUT([
 Makefile

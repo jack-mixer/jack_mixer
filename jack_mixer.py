@@ -479,7 +479,18 @@ def main():
         name = "jack_mixer-%u" % os.getpid()
 
     gtk.gdk.threads_init()
-    mixer = jack_mixer(name, lash_client)
+    try:
+        mixer = jack_mixer(name, lash_client)
+    except Exception, e:
+        err = gtk.MessageDialog(None,
+                            gtk.DIALOG_MODAL,
+                            gtk.MESSAGE_ERROR,
+                            gtk.BUTTONS_OK,
+                            "Mixer creation failed (%s)" % str(e))
+        err.run()
+        err.destroy()
+        sys.exit(1)
+
     if options.config:
         f = file(options.config)
         mixer.current_filename = options.config

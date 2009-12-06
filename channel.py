@@ -600,6 +600,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         table.attach(gtk.Label('Name'), 0, 1, 0, 1)
         self.entry_name = gtk.Entry()
+        self.entry_name.set_activates_default(True)
         table.attach(self.entry_name, 1, 2, 0, 1)
 
         table.attach(gtk.Label('Mode'), 0, 1, 1, 2)
@@ -617,6 +618,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         table.attach(gtk.Label('Volume'), 0, 1, 0, 1)
         self.entry_volume_cc = gtk.Entry()
+        self.entry_volume_cc.set_activates_default(True)
         self.entry_volume_cc.set_editable(False)
         self.entry_volume_cc.set_width_chars(3)
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
@@ -627,6 +629,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         table.attach(gtk.Label('Balance'), 0, 1, 1, 2)
         self.entry_balance_cc = gtk.Entry()
+        self.entry_balance_cc.set_activates_default(True)
         self.entry_balance_cc.set_width_chars(3)
         self.entry_balance_cc.set_editable(False)
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
@@ -699,6 +702,7 @@ class NewChannelDialog(ChannelPropertiesDialog):
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.set_default_response(gtk.RESPONSE_OK);
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
@@ -733,6 +737,7 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.set_default_response(gtk.RESPONSE_OK);
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),

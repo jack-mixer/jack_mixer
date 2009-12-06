@@ -895,7 +895,7 @@ create(
   }
 
   LOG_DEBUG("Initializing JACK");
-  mixer_ptr->jack_client = jack_client_new(jack_client_name_ptr);
+  mixer_ptr->jack_client = jack_client_open(jack_client_name_ptr, 0, NULL);
   if (mixer_ptr->jack_client == NULL)
   {
     LOG_ERROR("Cannot create JACK client.");

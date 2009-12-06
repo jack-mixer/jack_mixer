@@ -756,6 +756,11 @@ Mixer_add_channel(MixerObject *self, PyObject *args)
 
 	channel = add_channel(self->mixer, name, (bool)stereo);
 
+	if (channel == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "error adding channel");
+		return NULL;
+	}
+
 	return Channel_New(channel);
 }
 

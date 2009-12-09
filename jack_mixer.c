@@ -1085,7 +1085,7 @@ add_channel(
   // for monitoring etc.
   output_channel_name = malloc(channel_name_size + 5);
   sprintf(output_channel_name, "%s Out", channel_name);
-  channel_ptr->output = add_output_channel(mixer, output_channel_name, stereo, 0);
+  channel_ptr->output = add_output_channel(mixer, output_channel_name, stereo, true);
   free(output_channel_name);
 
   channel_ptr->mixer_ptr->input_channels_list = g_slist_prepend(

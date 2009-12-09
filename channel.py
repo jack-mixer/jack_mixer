@@ -344,6 +344,12 @@ class input_channel(channel):
         control_group.show_all()
         self.vbox.pack_start(control_group, False)
 
+    def update_control_group(self, channel):
+        for control_group in self.vbox.get_children():
+            if isinstance(control_group, ControlGroup):
+                if control_group.output_channel is channel:
+                    control_group.update()
+
     def unrealize(self):
         channel.unrealize(self)
         self.channel.remove()
@@ -407,10 +413,21 @@ available_colours = [
 
 class output_channel(channel):
     colours = available_colours[:]
-    display_solo_buttons = False
+    _display_solo_buttons = False
 
     def __init__(self, app, name, stereo):
         channel.__init__(self, app, name, stereo)
+
+    def get_display_solo_buttons(self):
+        return self._display_solo_buttons
+
+    def set_display_solo_buttons(self, value):
+        self._display_solo_buttons = value
+        # notifying control groups
+        for inputchannel in self.app.channels:
+            inputchannel.update_control_group(self)
+
+    display_solo_buttons = property(get_display_solo_buttons, set_display_solo_buttons)
 
     def realize(self):
         channel.realize(self)
@@ -489,6 +506,8 @@ class output_channel(channel):
             object_backend.add_property("type", "stereo")
         else:
             object_backend.add_property("type", "mono")
+        if self.display_solo_buttons:
+            object_backend.add_property("solo-buttons", "true")
         channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
@@ -502,6 +521,9 @@ class output_channel(channel):
             if value == "mono":
                 self.stereo = False
                 return True
+        if name == "solo-buttons":
+            if value == "true":
+                self.display_solo_buttons = True
         return channel.unserialize_property(self, name, value)
 
 def output_channel_serialization_name():
@@ -728,6 +750,15 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
 
         self.vbox.show_all()
 
+    def fill_ui(self):
+        ChannelPropertiesDialog.fill_ui(self)
+        self.display_solo_buttons.set_active(self.channel.display_solo_buttons)
+
+    def on_response_cb(self, dlg, response_id, *args):
+        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
+        if response_id == gtk.RESPONSE_APPLY:
+            self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
+
 
 class NewOutputChannelDialog(OutputChannelPropertiesDialog):
     def __init__(self, parent, mixer):
@@ -760,6 +791,7 @@ class ControlGroup(gtk.Alignment):
         self.output_channel = output_channel
 
         hbox = gtk.HBox()
+        self.hbox = hbox
         self.add(hbox)
 
         mute = gtk.ToggleButton()
@@ -769,6 +801,7 @@ class ControlGroup(gtk.Alignment):
         hbox.pack_start(mute, False)
 
         solo = gtk.ToggleButton()
+        self.solo = solo
         solo.set_label("S")
         #solo.set_active(self.channel.solo)
         #solo.connect("toggled", self.on_solo_toggled)
@@ -782,4 +815,11 @@ class ControlGroup(gtk.Alignment):
         solo.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
         solo.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
 
-
+    def update(self):
+        if self.output_channel.display_solo_buttons:
+            if not self.solo in self.hbox.get_children():
+                self.hbox.pack_start(self.solo, True)
+                self.solo.show()
+        else:
+            if self.solo in self.hbox.get_children():
+                self.hbox.remove(self.solo)

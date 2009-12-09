@@ -340,7 +340,7 @@ class input_channel(channel):
         self.create_balance_widget()
 
     def add_control_group(self, channel):
-        control_group = ControlGroup(channel)
+        control_group = ControlGroup(channel, self)
         control_group.show_all()
         self.vbox.pack_start(control_group, False)
 
@@ -786,9 +786,10 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
 
 
 class ControlGroup(gtk.Alignment):
-    def __init__(self, output_channel):
+    def __init__(self, output_channel, input_channel):
         gtk.Alignment.__init__(self, 0.5, 0.5, 0, 0)
         self.output_channel = output_channel
+        self.input_channel = input_channel
 
         hbox = gtk.HBox()
         self.hbox = hbox
@@ -797,14 +798,14 @@ class ControlGroup(gtk.Alignment):
         mute = gtk.ToggleButton()
         mute.set_label("M")
         #mute.set_active(self.channel.mute)
-        #mute.connect("toggled", self.on_mute_toggled)
+        mute.connect("toggled", self.on_mute_toggled)
         hbox.pack_start(mute, False)
 
         solo = gtk.ToggleButton()
         self.solo = solo
         solo.set_label("S")
         #solo.set_active(self.channel.solo)
-        #solo.connect("toggled", self.on_solo_toggled)
+        solo.connect("toggled", self.on_solo_toggled)
         if self.output_channel.display_solo_buttons:
             hbox.pack_start(solo, True)
 
@@ -823,3 +824,9 @@ class ControlGroup(gtk.Alignment):
         else:
             if self.solo in self.hbox.get_children():
                 self.hbox.remove(self.solo)
+
+    def on_mute_toggled(self, button):
+        self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())
+
+    def on_solo_toggled(self, button):
+        self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())

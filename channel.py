@@ -567,11 +567,12 @@ class ChannelPropertiesDialog(gtk.Dialog):
         gtk.Dialog.__init__(self,
                         'Channel "%s" Properties' % self.channel.channel_name,
                         self.channel.gui_factory.topwindow)
-        self.create_ui()
-        self.fill_ui()
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+        self.ok_button = self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+
+        self.create_ui()
+        self.fill_ui()
 
         self.connect('response', self.on_response_cb)
         self.connect('delete-event', self.on_response_cb)
@@ -601,6 +602,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         table.attach(gtk.Label('Name'), 0, 1, 0, 1)
         self.entry_name = gtk.Entry()
         self.entry_name.set_activates_default(True)
+        self.entry_name.connect('changed', self.on_entry_name_changed)
         table.attach(self.entry_name, 1, 2, 0, 1)
 
         table.attach(gtk.Label('Mode'), 0, 1, 1, 2)
@@ -691,6 +693,8 @@ class ChannelPropertiesDialog(gtk.Dialog):
             self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
             self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
 
+    def on_entry_name_changed(self, entry):
+        self.ok_button.set_sensitive(len(entry.get_text()))
 
 class NewChannelDialog(ChannelPropertiesDialog):
     def __init__(self, parent, mixer):
@@ -701,7 +705,8 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.stereo.set_active(True) # default to stereo
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.ok_button = self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.ok_button.set_sensitive(False)
         self.set_default_response(gtk.RESPONSE_OK);
 
     def get_result(self):
@@ -736,7 +741,8 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.stereo.set_active(True) # default to stereo
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.ok_button = self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.ok_button.set_sensitive(False)
         self.set_default_response(gtk.RESPONSE_OK);
 
     def get_result(self):

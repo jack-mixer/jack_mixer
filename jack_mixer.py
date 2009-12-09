@@ -313,6 +313,8 @@ class jack_mixer(serialized_object):
         for channel in self.channels:
             channel.read_meter()
         self.main_mix.read_meter()
+        for channel in self.output_channels:
+            channel.read_meter()
         return True
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, display_solo_buttons):

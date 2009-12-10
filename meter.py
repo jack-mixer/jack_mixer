@@ -35,9 +35,11 @@ class meter(gtk.DrawingArea):
         self.color_mark = gtk.gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
         self.width = 0
         self.height = 0
+        self.cache_surface = None
 
     def set_color(self, color):
         self.color_value = color
+        self.cache_surface = None
         self.invalidate_all()
 
     def on_expose(self, widget, event):
@@ -56,6 +58,7 @@ class meter(gtk.DrawingArea):
         self.width = float(allocation.width)
         self.height = float(allocation.height)
         self.font_size = 10
+        self.cache_surface = None
 
     def on_size_request(self, widget, requisition):
         #print "size-request, %u x %u" % (requisition.width, requisition.height)
@@ -66,22 +69,33 @@ class meter(gtk.DrawingArea):
         self.queue_draw_area(0, 0, int(self.width), int(self.height))
 
     def draw_background(self, cairo_ctx):
-        cairo_ctx.set_source_color(self.color_bg)
-        cairo_ctx.rectangle(0, 0, self.width, self.height)
-        cairo_ctx.fill()
+        if not self.cache_surface:
+            print 'creating cache surface'
+            self.cache_surface = cairo.Surface.create_similar(
+                            cairo_ctx.get_target(),
+                            cairo.CONTENT_COLOR,
+                            self.width,
+                            self.height)
+            cache_cairo_ctx = cairo.Context(self.cache_surface)
 
-        cairo_ctx.set_source_color(self.color_mark)
-        cairo_ctx.select_font_face("Fixed")
-        cairo_ctx.set_font_size(self.font_size)
-        glyph_width = self.font_size * 3 / 5 # avarage glyph ratio
-        for mark in self.scale.get_marks():
-            mark_position = int(self.height * (1 - mark.scale))
-            cairo_ctx.move_to(0, mark_position)
-            cairo_ctx.line_to(self.width, mark_position)
-            cairo_ctx.stroke()
-            x_correction = self.width / 2 - glyph_width * len(mark.text) / 2
-            cairo_ctx.move_to(x_correction, mark_position - 2)
-            cairo_ctx.show_text(mark.text)
+            cache_cairo_ctx.set_source_rgba(0, 0, 0, 0)
+            cache_cairo_ctx.rectangle(0, 0, self.width, self.height)
+            cache_cairo_ctx.fill()
+
+            cache_cairo_ctx.set_source_rgba(0.2, 0.2, 0.2, 1)
+            cache_cairo_ctx.select_font_face("Fixed")
+            cache_cairo_ctx.set_font_size(self.font_size)
+            glyph_width = self.font_size * 3 / 5 # avarage glyph ratio
+            for mark in self.scale.get_marks():
+                mark_position = int(self.height * (1 - mark.scale))
+                cache_cairo_ctx.move_to(0, mark_position)
+                cache_cairo_ctx.line_to(self.width, mark_position)
+                cache_cairo_ctx.stroke()
+                x_correction = self.width / 2 - glyph_width * len(mark.text) / 2
+                cache_cairo_ctx.move_to(x_correction, mark_position - 2)
+                cache_cairo_ctx.show_text(mark.text)
+        cairo_ctx.set_source_surface(self.cache_surface, 0, 0)
+        cairo_ctx.paint()
 
     def draw_value(self, cairo_ctx, value, x, width):
         if self.color_value is not None:
@@ -98,6 +112,7 @@ class meter(gtk.DrawingArea):
 
     def set_scale(self, scale):
         self.scale = scale
+        self.cache_surface = None
         self.invalidate_all()
 
 class mono(meter):

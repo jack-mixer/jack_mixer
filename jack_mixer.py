@@ -253,9 +253,9 @@ class jack_mixer(serialized_object):
             channel = self.add_output_channel(**result)
             self.window.show_all()
 
-    def on_remove_channel(self, widget, channel, channel_remove_menu_item):
+    def on_remove_channel(self, widget, channel):
         print 'Removing channel "%s"' % channel.channel_name
-        self.channel_remove_menu.remove(channel_remove_menu_item)
+        self.channel_remove_menu.remove(widget)
         for i in range(len(self.channels)):
             if self.channels[i] is channel:
                 channel.unrealize()
@@ -302,7 +302,7 @@ class jack_mixer(serialized_object):
         channel.realize()
         channel_remove_menu_item = gtk.MenuItem(channel.channel_name)
         self.channel_remove_menu.append(channel_remove_menu_item)
-        channel_remove_menu_item.connect("activate", self.on_remove_channel, channel, channel_remove_menu_item)
+        channel_remove_menu_item.connect("activate", self.on_remove_channel, channel)
         self.channel_remove_menu_item.set_sensitive(True)
         self.channels.append(channel)
 

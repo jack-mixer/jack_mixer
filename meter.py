@@ -70,7 +70,6 @@ class meter(gtk.DrawingArea):
 
     def draw_background(self, cairo_ctx):
         if not self.cache_surface:
-            print 'creating cache surface'
             self.cache_surface = cairo.Surface.create_similar(
                             cairo_ctx.get_target(),
                             cairo.CONTENT_COLOR,

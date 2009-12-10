@@ -507,7 +507,7 @@ class output_channel(channel):
         else:
             object_backend.add_property("type", "mono")
         if self.display_solo_buttons:
-            object_backend.add_property("solo-buttons", "true")
+            object_backend.add_property("solo_buttons", "true")
         channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
@@ -521,7 +521,7 @@ class output_channel(channel):
             if value == "mono":
                 self.stereo = False
                 return True
-        if name == "solo-buttons":
+        if name == "solo_buttons":
             if value == "true":
                 self.display_solo_buttons = True
         return channel.unserialize_property(self, name, value)

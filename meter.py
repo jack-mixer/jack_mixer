@@ -73,8 +73,8 @@ class meter(gtk.DrawingArea):
             self.cache_surface = cairo.Surface.create_similar(
                             cairo_ctx.get_target(),
                             cairo.CONTENT_COLOR,
-                            self.width,
-                            self.height)
+                            int(self.width),
+                            int(self.height))
             cache_cairo_ctx = cairo.Context(self.cache_surface)
 
             cache_cairo_ctx.set_source_rgba(0, 0, 0, 0)

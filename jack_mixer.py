@@ -413,10 +413,14 @@ class jack_mixer(serialized_object):
         self.window.show_all()
 
     def serialize(self, object_backend):
-        pass
+        object_backend.add_property('geometry',
+                        '%sx%s' % (self.window.allocation.width, self.window.allocation.height))
 
     def unserialize_property(self, name, value):
-        pass
+        if name == 'geometry':
+            width, height = value.split('x')
+            self.window.resize(int(width), int(height))
+            return True
 
     def unserialize_child(self, name):
         if name == main_mix_serialization_name():

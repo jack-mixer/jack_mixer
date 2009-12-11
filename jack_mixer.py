@@ -62,6 +62,7 @@ class jack_mixer(serialized_object):
         self.mixer = jack_mixer_c.Mixer(name)
         if not self.mixer:
             return
+        self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
 
         if lash_client:
             # Send our client name to server
@@ -157,6 +158,7 @@ class jack_mixer(serialized_object):
 
         self.main_mix = main_mix(self)
         self.main_mix.realize()
+        self.main_mix.set_monitored()
         self.hbox_outputs = gtk.HBox()
         self.hbox_outputs.set_spacing(0)
         self.hbox_outputs.set_border_width(0)
@@ -353,6 +355,48 @@ class jack_mixer(serialized_object):
         # add group controls to the input channels
         for inputchannel in self.channels:
             inputchannel.add_control_group(channel)
+
+    _monitored_channel = None
+    def get_monitored_channel(self):
+        return self._monitored_channel
+
+    def set_monitored_channel(self, channel):
+        if self._monitored_channel:
+            if channel.channel.name == self._monitored_channel.channel.name:
+                return
+        self._monitored_channel = channel
+        if type(channel) is input_channel:
+            # reset all solo/mute settings
+            for in_channel in self.channels:
+                self.monitor_channel.set_solo(in_channel.channel, False)
+                self.monitor_channel.set_muted(in_channel.channel, False)
+            self.monitor_channel.set_solo(channel.channel, True)
+            self.monitor_channel.prefader = True
+        else:
+            self.monitor_channel.prefader = False
+        self.update_monitor(channel)
+    monitored_channel = property(get_monitored_channel, set_monitored_channel)
+
+    def update_monitor(self, channel):
+        if self.monitored_channel is not channel:
+            return
+        self.monitor_channel.volume = channel.channel.volume
+        self.monitor_channel.balance = channel.channel.balance
+        if type(self.monitored_channel) is output_channel:
+            # sync solo/muted channels
+            for input_channel in self.channels:
+                self.monitor_channel.set_solo(input_channel.channel,
+                                channel.channel.is_solo(input_channel.channel))
+                self.monitor_channel.set_muted(input_channel.channel,
+                                channel.channel.is_muted(input_channel.channel))
+        elif type(self.monitored_channel) is main_mix:
+            # sync solo/muted channels
+            for input_channel in self.channels:
+                self.monitor_channel.set_solo(input_channel.channel,
+                                input_channel.channel.solo)
+                self.monitor_channel.set_muted(input_channel.channel,
+                                input_channel.channel.mute)
+
 
     def lash_check_events(self):
         while lash.lash_get_pending_event_count(self.lash_client):

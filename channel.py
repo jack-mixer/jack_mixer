@@ -38,6 +38,8 @@ import fpconst
 
 class channel(gtk.VBox, serialized_object):
     '''Widget with slider and meter used as base class for more specific channel widgets'''
+    monitor_button = None
+
     def __init__(self, app, name, stereo):
         gtk.VBox.__init__(self)
         self.app = app
@@ -113,6 +115,8 @@ class channel(gtk.VBox, serialized_object):
             self.balance = gtk.HScale(self.balance_adjustment)
             self.balance.set_draw_value(False)
         self.pack_start(self.balance, False)
+        if self.monitor_button:
+            self.reorder_child(self.monitor_button, -1)
         self.balance.show()
 
     def create_slider_widget(self):
@@ -205,6 +209,7 @@ class channel(gtk.VBox, serialized_object):
         if update_engine:
             #print "Setting engine volume to " + db_text
             self.channel.volume = db
+            self.app.update_monitor(self)
 
     def on_volume_changed(self, adjustment):
         self.update_volume(True)
@@ -213,6 +218,7 @@ class channel(gtk.VBox, serialized_object):
         balance = self.balance_adjustment.get_value()
         #print "%s balance: %f" % (self.channel_name, balance)
         self.channel.balance = balance
+        self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):
         if (event.keyval == gtk.keysyms.Up):
@@ -258,6 +264,24 @@ class channel(gtk.VBox, serialized_object):
         # the changes are not applied directly to the widgets as they
         # absolutely have to be done from the gtk thread.
         self.emit('midi-event-received')
+
+    def on_monitor_button_toggled(self, button):
+        if not button.get_active():
+            self.app.main_mix.monitor_button.set_active(True)
+        else:
+            for channel in self.app.channels + self.app.output_channels + [self.app.main_mix]:
+                if channel.monitor_button.get_active() and channel.monitor_button is not button:
+                    channel.monitor_button.handler_block_by_func(
+                                channel.on_monitor_button_toggled)
+                    channel.monitor_button.set_active(False)
+                    channel.monitor_button.handler_unblock_by_func(
+                                channel.on_monitor_button_toggled)
+            self.app.set_monitored_channel(self)
+
+    def set_monitored(self):
+        if self.channel:
+            self.app.set_monitored_channel(self)
+        self.monitor_button.set_active(True)
 
 gobject.signal_new('midi-event-received', channel,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
@@ -339,6 +363,10 @@ class input_channel(channel):
 
         self.create_balance_widget()
 
+        self.monitor_button = gtk.ToggleButton('MON')
+        self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
+        self.pack_start(self.monitor_button, False, False)
+
     def add_control_group(self, channel):
         control_group = ControlGroup(channel, self)
         control_group.show_all()
@@ -369,9 +397,11 @@ class input_channel(channel):
 
     def on_mute_toggled(self, button):
         self.channel.mute = self.mute.get_active()
+        self.app.update_monitor(self.app.main_mix)
 
     def on_solo_toggled(self, button):
         self.channel.solo = self.solo.get_active()
+        self.app.update_monitor(self.app.main_mix)
 
     def serialization_name(self):
         return input_channel_serialization_name()
@@ -481,6 +511,10 @@ class output_channel(channel):
 
         self.create_balance_widget()
 
+        self.monitor_button = gtk.ToggleButton('MON')
+        self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
+        self.pack_start(self.monitor_button, False, False)
+
     channel_properties_dialog = None
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
@@ -570,6 +604,10 @@ class main_mix(channel):
         self.pack_start(self.volume_digits, False)
 
         self.create_balance_widget()
+
+        self.monitor_button = gtk.ToggleButton('MON')
+        self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
+        self.pack_start(self.monitor_button, False, False)
 
     def unrealize(self):
         channel.unrealize(self)
@@ -790,6 +828,7 @@ class ControlGroup(gtk.Alignment):
         gtk.Alignment.__init__(self, 0.5, 0.5, 0, 0)
         self.output_channel = output_channel
         self.input_channel = input_channel
+        self.app = input_channel.app
 
         hbox = gtk.HBox()
         self.hbox = hbox
@@ -827,6 +866,8 @@ class ControlGroup(gtk.Alignment):
 
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())
+        self.app.update_monitor(self)
 
     def on_solo_toggled(self, button):
         self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())
+        self.app.update_monitor(self)

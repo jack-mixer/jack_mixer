@@ -576,7 +576,7 @@ static PyObject*
 OutputChannel_set_solo(OutputChannelObject *self, PyObject *args)
 {
 	PyObject *channel;
-	int solo;
+	unsigned char solo;
 
 	if (! PyArg_ParseTuple(args, "Ob", &channel, &solo)) return NULL;
 
@@ -592,7 +592,7 @@ static PyObject*
 OutputChannel_set_muted(OutputChannelObject *self, PyObject *args)
 {
 	PyObject *channel;
-	int muted;
+	unsigned char muted;
 
 	if (! PyArg_ParseTuple(args, "Ob", &channel, &muted)) return NULL;
 
@@ -604,12 +604,50 @@ OutputChannel_set_muted(OutputChannelObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject*
+OutputChannel_is_solo(OutputChannelObject *self, PyObject *args)
+{
+	PyObject *channel;
+	PyObject *result;
 
+	if (! PyArg_ParseTuple(args, "O", &channel)) return NULL;
+
+	if (output_channel_is_solo(self->output_channel,
+			((ChannelObject*)channel)->channel)) {
+		result = Py_True;
+	} else {
+		result = Py_False;
+	}
+
+	Py_INCREF(result);
+	return result;
+}
+
+static PyObject*
+OutputChannel_is_muted(OutputChannelObject *self, PyObject *args)
+{
+	PyObject *channel;
+	PyObject *result;
+
+	if (! PyArg_ParseTuple(args, "O", &channel)) return NULL;
+
+	if (output_channel_is_muted(self->output_channel,
+			((ChannelObject*)channel)->channel)) {
+		result = Py_True;
+	} else {
+		result = Py_False;
+	}
+
+	Py_INCREF(result);
+	return result;
+}
 
 static PyMethodDef output_channel_methods[] = {
 	{"remove", (PyCFunction)OutputChannel_remove, METH_VARARGS, "Remove"},
 	{"set_solo", (PyCFunction)OutputChannel_set_solo, METH_VARARGS, "Set a channel as solo"},
 	{"set_muted", (PyCFunction)OutputChannel_set_muted, METH_VARARGS, "Set a channel as muted"},
+	{"is_solo", (PyCFunction)OutputChannel_is_solo, METH_VARARGS, "Is a channel set as solo"},
+	{"is_muted", (PyCFunction)OutputChannel_is_muted, METH_VARARGS, "Is a channel set as muted"},
 	{NULL}
 };
 

@@ -1313,3 +1313,28 @@ output_channel_set_muted(
     output_channel_ptr->muted_channels = g_slist_remove(output_channel_ptr->muted_channels, channel);
   }
 }
+
+bool
+output_channel_is_muted(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel)
+{
+  struct output_channel *output_channel_ptr = output_channel;
+
+  if (g_slist_find(output_channel_ptr->muted_channels, channel) != NULL)
+    return true;
+  return false;
+}
+
+bool
+output_channel_is_solo(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel)
+{
+  struct output_channel *output_channel_ptr = output_channel;
+
+  if (g_slist_find(output_channel_ptr->soloed_channels, channel) != NULL)
+    return true;
+  return false;
+}
+

@@ -241,4 +241,13 @@ output_channel_is_solo(
   jack_mixer_output_channel_t output_channel,
   jack_mixer_channel_t channel);
 
+void
+output_channel_set_prefader(
+  jack_mixer_output_channel_t output_channel,
+  bool pfl_value);
+
+bool
+output_channel_is_prefader(
+  jack_mixer_output_channel_t output_channel);
+
 #endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

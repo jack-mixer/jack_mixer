@@ -68,6 +68,8 @@ struct channel
 
   jack_default_audio_sample_t * frames_left;
   jack_default_audio_sample_t * frames_right;
+  jack_default_audio_sample_t * prefader_frames_left;
+  jack_default_audio_sample_t * prefader_frames_right;
 
   bool NaN_detected;
 
@@ -90,6 +92,7 @@ struct output_channel {
   GSList *soloed_channels;
   GSList *muted_channels;
   bool system; /* system channel, without any associated UI */
+  bool prefader;
 };
 
 struct jack_mixer
@@ -505,14 +508,22 @@ mix_one(
 
     for (i = start ; i < end ; i++)
     {
-      frame_left = channel_ptr->frames_left[i-start];
+      if (! output_mix_channel->prefader) {
+        frame_left = channel_ptr->frames_left[i-start];
+      } else {
+        frame_left = channel_ptr->prefader_frames_left[i-start];
+      }
       if (frame_left == NAN)
         break;
       mix_channel->left_buffer_ptr[i] += frame_left;
 
       if (mix_channel->stereo)
       {
-        frame_right = channel_ptr->frames_right[i-start];
+        if (! output_mix_channel->prefader) {
+          frame_right = channel_ptr->frames_right[i-start];
+        } else {
+          frame_right = channel_ptr->prefader_frames_right[i-start];
+        }
         if (frame_right == NAN)
           break;
 
@@ -526,10 +537,12 @@ mix_one(
   /* process main mix channel */
   for (i = start ; i < end ; i++)
   {
+    if (! output_mix_channel->prefader) {
     mix_channel->left_buffer_ptr[i] *= mix_channel->volume_left;
     if (mix_channel->stereo)
     {
       mix_channel->right_buffer_ptr[i] *= mix_channel->volume_right;
+    }
     }
 
     frame_left = fabsf(mix_channel->left_buffer_ptr[i]);
@@ -589,8 +602,15 @@ calc_channel_frames(
   channel_ptr->frames_left = calloc(end-start, sizeof(jack_default_audio_sample_t));
   channel_ptr->frames_right = calloc(end-start, sizeof(jack_default_audio_sample_t));
 
+  channel_ptr->prefader_frames_left = calloc(end-start, sizeof(jack_default_audio_sample_t));
+  channel_ptr->prefader_frames_right = calloc(end-start, sizeof(jack_default_audio_sample_t));
+
   for (i = start ; i < end ; i++)
   {
+    channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
+    if (channel_ptr->stereo)
+      channel_ptr->prefader_frames_right[i-start] = channel_ptr->right_buffer_ptr[i];
+
     if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
     {
       channel_ptr->NaN_detected = true;
@@ -724,6 +744,8 @@ mix(
     channel_ptr = (struct channel*)node_ptr->data;
     free(channel_ptr->frames_left);
     free(channel_ptr->frames_right);
+    free(channel_ptr->prefader_frames_left);
+    free(channel_ptr->prefader_frames_right);
   }
 }
 
@@ -1199,6 +1221,7 @@ create_output_channel(
   output_channel_ptr->soloed_channels = NULL;
   output_channel_ptr->muted_channels = NULL;
   output_channel_ptr->system = system;
+  output_channel_ptr->prefader = false;
 
   return output_channel_ptr;
 
@@ -1336,5 +1359,22 @@ output_channel_is_solo(
   if (g_slist_find(output_channel_ptr->soloed_channels, channel) != NULL)
     return true;
   return false;
+}
+
+void
+output_channel_set_prefader(
+  jack_mixer_output_channel_t output_channel,
+  bool pfl_value)
+{
+  struct output_channel *output_channel_ptr = output_channel;
+  output_channel_ptr->prefader = pfl_value;
+}
+
+bool
+output_channel_is_prefader(
+  jack_mixer_output_channel_t output_channel)
+{
+  struct output_channel *output_channel_ptr = output_channel;
+  return output_channel_ptr->prefader;
 }
 

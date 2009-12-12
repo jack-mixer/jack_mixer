@@ -371,12 +371,20 @@ class input_channel(channel):
         control_group = ControlGroup(channel, self)
         control_group.show_all()
         self.vbox.pack_start(control_group, False)
+        return control_group
 
     def update_control_group(self, channel):
         for control_group in self.vbox.get_children():
             if isinstance(control_group, ControlGroup):
                 if control_group.output_channel is channel:
                     control_group.update()
+
+    def get_control_group(self, channel):
+        for control_group in self.vbox.get_children():
+            if isinstance(control_group, ControlGroup):
+                if control_group.output_channel is channel:
+                    return control_group
+        return None
 
     def unrealize(self):
         channel.unrealize(self)
@@ -444,6 +452,9 @@ available_colours = [
 class output_channel(channel):
     colours = available_colours[:]
     _display_solo_buttons = False
+
+    _init_muted_channels = None
+    _init_solo_channels = None
 
     def __init__(self, app, name, stereo):
         channel.__init__(self, app, name, stereo)
@@ -515,6 +526,17 @@ class output_channel(channel):
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False)
 
+        # add control groups to the input channels, and initialize them
+        # appropriately
+        for input_channel in self.app.channels:
+            ctlgroup = input_channel.add_control_group(self)
+            if self._init_muted_channels and input_channel.channel.name in self._init_muted_channels:
+                ctlgroup.mute.set_active(True)
+            if self._init_solo_channels and input_channel.channel.name in self._init_solo_channels:
+                ctlgroup.solo.set_active(True)
+        self._init_muted_channels = None
+        self._init_solo_channels = None
+
     channel_properties_dialog = None
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
@@ -542,6 +564,17 @@ class output_channel(channel):
             object_backend.add_property("type", "mono")
         if self.display_solo_buttons:
             object_backend.add_property("solo_buttons", "true")
+        muted_channels = []
+        solo_channels = []
+        for input_channel in self.app.channels:
+            if self.channel.is_muted(input_channel.channel):
+                muted_channels.append(input_channel)
+            if self.channel.is_solo(input_channel.channel):
+                solo_channels.append(input_channel)
+        if muted_channels:
+            object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
+        if solo_channels:
+            object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
         channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
@@ -558,12 +591,22 @@ class output_channel(channel):
         if name == "solo_buttons":
             if value == "true":
                 self.display_solo_buttons = True
+                return True
+        if name == 'muted_channels':
+            self._init_muted_channels = value.split('|')
+            return True
+        if name == 'solo_channels':
+            self._init_solo_channels = value.split('|')
+            return True
         return channel.unserialize_property(self, name, value)
 
 def output_channel_serialization_name():
     return "output_channel"
 
 class main_mix(channel):
+    _init_muted_channels = None
+    _init_solo_channels = None
+
     def __init__(self, app):
         channel.__init__(self, app, "MAIN", True)
 
@@ -609,12 +652,43 @@ class main_mix(channel):
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False)
 
+        for input_channel in self.app.channels:
+            if self._init_muted_channels and input_channel.channel.name in self._init_muted_channels:
+                input_channel.mute.set_active(True)
+            if self._init_solo_channels and input_channel.channel.name in self._init_solo_channels:
+                input_channel.solo.set_active(True)
+        self._init_muted_channels = None
+        self._init_solo_channels = None
+
     def unrealize(self):
         channel.unrealize(self)
         self.channel = False
 
     def serialization_name(self):
         return main_mix_serialization_name()
+
+    def serialize(self, object_backend):
+        muted_channels = []
+        solo_channels = []
+        for input_channel in self.app.channels:
+            if input_channel.channel.mute:
+                muted_channels.append(input_channel)
+            if input_channel.channel.solo:
+                solo_channels.append(input_channel)
+        if muted_channels:
+            object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
+        if solo_channels:
+            object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
+        channel.serialize(self, object_backend)
+
+    def unserialize_property(self, name, value):
+        if name == 'muted_channels':
+            self._init_muted_channels = value.split('|')
+            return True
+        if name == 'solo_channels':
+            self._init_solo_channels = value.split('|')
+            return True
+        return channel.unserialize_property(self, name, value)
 
 def main_mix_serialization_name():
     return "main_mix_channel"
@@ -835,15 +909,14 @@ class ControlGroup(gtk.Alignment):
         self.add(hbox)
 
         mute = gtk.ToggleButton()
+        self.mute = mute
         mute.set_label("M")
-        #mute.set_active(self.channel.mute)
         mute.connect("toggled", self.on_mute_toggled)
         hbox.pack_start(mute, False)
 
         solo = gtk.ToggleButton()
         self.solo = solo
         solo.set_label("S")
-        #solo.set_active(self.channel.solo)
         solo.connect("toggled", self.on_solo_toggled)
         if self.output_channel.display_solo_buttons:
             hbox.pack_start(solo, True)

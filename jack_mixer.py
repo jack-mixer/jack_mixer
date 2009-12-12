@@ -168,8 +168,6 @@ class jack_mixer(serialized_object):
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
         self.main_mix = main_mix(self)
-        self.main_mix.realize()
-        self.main_mix.set_monitored()
         self.hbox_outputs = gtk.HBox()
         self.hbox_outputs.set_spacing(0)
         self.hbox_outputs.set_border_width(0)
@@ -365,10 +363,6 @@ class jack_mixer(serialized_object):
         #self.channel_remove_menu_item.set_sensitive(True)
         self.output_channels.append(channel)
 
-        # add group controls to the input channels
-        for inputchannel in self.channels:
-            inputchannel.add_control_group(channel)
-
     _monitored_channel = None
     def get_monitored_channel(self):
         return self._monitored_channel
@@ -409,6 +403,12 @@ class jack_mixer(serialized_object):
                                 input_channel.channel.solo)
                 self.monitor_channel.set_muted(input_channel.channel,
                                 input_channel.channel.mute)
+
+    def get_input_channel_by_name(self, name):
+        for input_channel in self.channels:
+            if input_channel.channel.name == name:
+                return input_channel
+        return None
 
     def on_about(self, *args):
         about = gtk.AboutDialog()
@@ -489,7 +489,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         for channel in self.unserialized_channels:
             if isinstance(channel, input_channel):
                 self.add_channel_precreated(channel)
-            else:
+        for channel in self.unserialized_channels:
+            if isinstance(channel, output_channel):
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
         self.window.show_all()
@@ -528,6 +529,9 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         return "jack_mixer"
 
     def main(self):
+        self.main_mix.realize()
+        self.main_mix.set_monitored()
+
         if not self.mixer:
             return
 

@@ -598,11 +598,11 @@ mix_one(
   for (i = start ; i < end ; i++)
   {
     if (! output_mix_channel->prefader) {
-    mix_channel->left_buffer_ptr[i] *= mix_channel->volume_left;
-    if (mix_channel->stereo)
-    {
-      mix_channel->right_buffer_ptr[i] *= mix_channel->volume_right;
-    }
+      mix_channel->left_buffer_ptr[i] *= mix_channel->volume_left;
+      if (mix_channel->stereo)
+      {
+        mix_channel->right_buffer_ptr[i] *= mix_channel->volume_right;
+      }
     }
 
     frame_left = fabsf(mix_channel->left_buffer_ptr[i]);

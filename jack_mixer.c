@@ -2,10 +2,10 @@
 /*****************************************************************************
  *
  *   This file is part of jack_mixer
- *    
+ *
  *   Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
  *   Copyright (C) 2009 Frederic Peters <fpeters@0d.be>
- *    
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; version 2 of the License
@@ -109,7 +109,15 @@ struct jack_mixer
   struct channel* midi_cc_map[128];
 };
 
-float value_to_db(float value)
+static jack_mixer_output_channel_t create_output_channel(
+  jack_mixer_t mixer,
+  const char * channel_name,
+  bool stereo,
+  bool system);
+
+float
+value_to_db(
+  float value)
 {
   if (value <= 0)
   {
@@ -119,21 +127,16 @@ float value_to_db(float value)
   return 20.0 * log10f(value);
 }
 
-float db_to_value(float db)
+float
+db_to_value(
+  float db)
 {
   return powf(10.0, db/20.0);
 }
 
-static jack_mixer_output_channel_t
-create_output_channel(
-  jack_mixer_t mixer,
-  const char * channel_name,
-  bool stereo,
-  bool system);
-
-
 void
-calc_channel_volumes(struct channel * channel_ptr)
+calc_channel_volumes(
+  struct channel * channel_ptr)
 {
   if (channel_ptr->stereo)
   {
@@ -171,12 +174,17 @@ calc_all_channel_volumes(
 
 #define channel_ptr ((struct channel *)channel)
 
-const char * channel_get_name(jack_mixer_channel_t channel)
+const char*
+channel_get_name(
+  jack_mixer_channel_t channel)
 {
   return channel_ptr->name;
 }
 
-void channel_rename(jack_mixer_channel_t channel, const char * name)
+void
+channel_rename(
+  jack_mixer_channel_t channel,
+  const char * name)
 {
   char * new_name;
   size_t channel_name_size;
@@ -232,17 +240,24 @@ void channel_rename(jack_mixer_channel_t channel, const char * name)
   }
 }
 
-bool channel_is_stereo(jack_mixer_channel_t channel)
+bool
+channel_is_stereo(
+  jack_mixer_channel_t channel)
 {
   return channel_ptr->stereo;
 }
 
-unsigned int channel_get_balance_midi_cc(jack_mixer_channel_t channel)
+unsigned int
+channel_get_balance_midi_cc(
+  jack_mixer_channel_t channel)
 {
   return channel_ptr->midi_cc_balance_index;
 }
 
-unsigned int channel_set_balance_midi_cc(jack_mixer_channel_t channel, unsigned int new_cc)
+unsigned int
+channel_set_balance_midi_cc(
+  jack_mixer_channel_t channel,
+  unsigned int new_cc)
 {
   if (new_cc > 127) {
     return 2; /* error: over limit CC */
@@ -266,12 +281,16 @@ unsigned int channel_set_balance_midi_cc(jack_mixer_channel_t channel, unsigned 
   return 0;
 }
 
-unsigned int channel_get_volume_midi_cc(jack_mixer_channel_t channel)
+unsigned int
+channel_get_volume_midi_cc(
+  jack_mixer_channel_t channel)
 {
   return channel_ptr->midi_cc_volume_index;
 }
 
-unsigned int channel_set_volume_midi_cc(jack_mixer_channel_t channel, unsigned int new_cc)
+unsigned int
+channel_set_volume_midi_cc(
+  jack_mixer_channel_t channel, unsigned int new_cc)
 {
   if (new_cc > 127) {
     return 2; /* error: over limit CC */
@@ -296,7 +315,8 @@ unsigned int channel_set_volume_midi_cc(jack_mixer_channel_t channel, unsigned i
 }
 
 void
-channel_autoset_midi_cc(jack_mixer_channel_t channel)
+channel_autoset_midi_cc(
+  jack_mixer_channel_t channel)
 {
   struct jack_mixer *mixer_ptr;
   int i;
@@ -330,8 +350,9 @@ channel_autoset_midi_cc(jack_mixer_channel_t channel)
   }
 }
 
-
-void remove_channel(jack_mixer_channel_t channel)
+void
+remove_channel(
+  jack_mixer_channel_t channel)
 {
   GSList *list_ptr;
 
@@ -371,19 +392,29 @@ void remove_channel(jack_mixer_channel_t channel)
   free(channel_ptr);
 }
 
-void channel_stereo_meter_read(jack_mixer_channel_t channel, double * left_ptr, double * right_ptr)
+void
+channel_stereo_meter_read(
+  jack_mixer_channel_t channel,
+  double * left_ptr,
+  double * right_ptr)
 {
   assert(channel_ptr);
   *left_ptr = value_to_db(channel_ptr->meter_left);
   *right_ptr = value_to_db(channel_ptr->meter_right);
 }
 
-void channel_mono_meter_read(jack_mixer_channel_t channel, double * mono_ptr)
+void
+channel_mono_meter_read(
+  jack_mixer_channel_t channel,
+  double * mono_ptr)
 {
   *mono_ptr = value_to_db(channel_ptr->meter_left);
 }
 
-void channel_volume_write(jack_mixer_channel_t channel, double volume)
+void
+channel_volume_write(
+  jack_mixer_channel_t channel,
+  double volume)
 {
   assert(channel_ptr);
   channel_ptr->volume = db_to_value(volume);
@@ -398,7 +429,10 @@ channel_volume_read(
   return value_to_db(channel_ptr->volume);
 }
 
-void channel_balance_write(jack_mixer_channel_t channel, double balance)
+void
+channel_balance_write(
+  jack_mixer_channel_t channel,
+  double balance)
 {
   assert(channel_ptr);
   channel_ptr->balance = balance;
@@ -413,7 +447,9 @@ channel_balance_read(
   return channel_ptr->balance;
 }
 
-double channel_abspeak_read(jack_mixer_channel_t channel)
+double
+channel_abspeak_read(
+  jack_mixer_channel_t channel)
 {
   assert(channel_ptr);
   if (channel_ptr->NaN_detected)
@@ -426,40 +462,54 @@ double channel_abspeak_read(jack_mixer_channel_t channel)
   }
 }
 
-void channel_abspeak_reset(jack_mixer_channel_t channel)
+void
+channel_abspeak_reset(
+  jack_mixer_channel_t channel)
 {
   channel_ptr->abspeak = 0;
   channel_ptr->NaN_detected = false;
 }
 
-void channel_mute(jack_mixer_channel_t channel)
+void
+channel_mute(
+  jack_mixer_channel_t channel)
 {
   output_channel_set_muted(channel_ptr->mixer_ptr->main_mix_channel, channel, true);
 }
 
-void channel_unmute(jack_mixer_channel_t channel)
+void
+channel_unmute(
+  jack_mixer_channel_t channel)
 {
   output_channel_set_muted(channel_ptr->mixer_ptr->main_mix_channel, channel, false);
 }
 
-void channel_solo(jack_mixer_channel_t channel)
+void
+channel_solo(
+  jack_mixer_channel_t channel)
 {
   output_channel_set_solo(channel_ptr->mixer_ptr->main_mix_channel, channel, true);
 }
 
-void channel_unsolo(jack_mixer_channel_t channel)
+void
+channel_unsolo(
+  jack_mixer_channel_t channel)
 {
   output_channel_set_solo(channel_ptr->mixer_ptr->main_mix_channel, channel, false);
 }
 
-bool channel_is_muted(jack_mixer_channel_t channel)
+bool
+channel_is_muted(
+  jack_mixer_channel_t channel)
 {
   if (g_slist_find(channel_ptr->mixer_ptr->main_mix_channel->muted_channels, channel))
     return true;
   return false;
 }
 
-bool channel_is_soloed(jack_mixer_channel_t channel)
+bool
+channel_is_soloed(
+  jack_mixer_channel_t channel)
 {
   if (g_slist_find(channel_ptr->mixer_ptr->main_mix_channel->soloed_channels, channel))
     return true;
@@ -487,9 +537,7 @@ channel_set_midi_change_callback(
 #undef channel_ptr
 
 /* process input channels and mix them into main mix */
-static
-inline
-void
+static inline void
 mix_one(
   struct output_channel *output_mix_channel,
   GSList *channels_list,
@@ -574,7 +622,7 @@ mix_one(
       if (mix_channel->peak_right < frame_right)
       {
         mix_channel->peak_right = frame_right;
-  
+
         if (frame_right > mix_channel->abspeak)
         {
           mix_channel->abspeak = frame_right;
@@ -599,9 +647,7 @@ mix_one(
   }
 }
 
-static
-inline
-void
+static inline void
 calc_channel_frames(
   struct channel *channel_ptr,
   jack_nframes_t start,
@@ -709,9 +755,7 @@ calc_channel_frames(
 
 }
 
-static
-inline
-void
+static inline void
 mix(
   struct jack_mixer * mixer_ptr,
   jack_nframes_t start,         /* index of first sample to process */
@@ -761,9 +805,7 @@ mix(
   }
 }
 
-static
-inline
-void
+static inline void
 update_channel_buffers(
   struct channel * channel_ptr,
   jack_nframes_t nframes)
@@ -778,8 +820,10 @@ update_channel_buffers(
 
 #define mixer_ptr ((struct jack_mixer *)context)
 
-int
-process(jack_nframes_t nframes, void * context)
+static int
+process(
+  jack_nframes_t nframes,
+  void * context)
 {
   jack_nframes_t i;
   GSList *node_ptr;
@@ -821,7 +865,6 @@ process(jack_nframes_t nframes, void * context)
   }
 
   offset = 0;
-
 
 #if defined(HAVE_JACK_MIDI)
   midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
@@ -892,7 +935,7 @@ process(jack_nframes_t nframes, void * context)
 
   mix(mixer_ptr, offset, nframes);
 
-  return 0;      
+  return 0;
 }
 
 #undef mixer_ptr
@@ -1277,7 +1320,8 @@ add_output_channel(
 }
 
 void
-remove_output_channel(jack_mixer_output_channel_t output_channel)
+remove_output_channel(
+  jack_mixer_output_channel_t output_channel)
 {
   struct output_channel *output_channel_ptr = output_channel;
   struct channel *channel_ptr = output_channel;
@@ -1309,7 +1353,6 @@ remove_output_channel(jack_mixer_output_channel_t output_channel)
 
   free(channel_ptr);
 }
-
 
 void
 output_channel_set_solo(
@@ -1389,4 +1432,3 @@ output_channel_is_prefader(
   struct output_channel *output_channel_ptr = output_channel;
   return output_channel_ptr->prefader;
 }
-

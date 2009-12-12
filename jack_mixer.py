@@ -258,6 +258,8 @@ class jack_mixer(serialized_object):
     def on_remove_channel(self, widget, channel):
         print 'Removing channel "%s"' % channel.channel_name
         self.channel_remove_menu.remove(widget)
+        if self.monitored_channel is channel:
+            channel.monitor_button.set_active(False)
         for i in range(len(self.channels)):
             if self.channels[i] is channel:
                 channel.unrealize()

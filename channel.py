@@ -394,7 +394,7 @@ class input_channel(channel):
     channel_properties_dialog = None
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
-            self.channel_properties_dialog = ChannelPropertiesDialog(self)
+            self.channel_properties_dialog = ChannelPropertiesDialog(self, self.app)
         self.channel_properties_dialog.show()
         self.channel_properties_dialog.present()
 
@@ -540,7 +540,7 @@ class output_channel(channel):
     channel_properties_dialog = None
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
-            self.channel_properties_dialog = OutputChannelPropertiesDialog(self)
+            self.channel_properties_dialog = OutputChannelPropertiesDialog(self, self.app)
         self.channel_properties_dialog.show()
         self.channel_properties_dialog.present()
 
@@ -695,8 +695,11 @@ def main_mix_serialization_name():
 
 
 class ChannelPropertiesDialog(gtk.Dialog):
-    def __init__(self, parent):
+    channel = None
+
+    def __init__(self, parent, app):
         self.channel = parent
+        self.app = app
         self.mixer = self.channel.mixer
         gtk.Dialog.__init__(self,
                         'Channel "%s" Properties' % self.channel.channel_name,
@@ -828,12 +831,21 @@ class ChannelPropertiesDialog(gtk.Dialog):
             self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
 
     def on_entry_name_changed(self, entry):
-        self.ok_button.set_sensitive(len(entry.get_text()))
+        sensitive = False
+        if len(entry.get_text()):
+            if self.channel and self.channel.channel.name == entry.get_text():
+                sensitive = True
+            elif entry.get_text() not in [x.channel.name for x in self.app.channels] + \
+                        [x.channel.name for x in self.app.output_channels] + ['MAIN']:
+                sensitive = True
+        self.ok_button.set_sensitive(sensitive)
+
 
 class NewChannelDialog(ChannelPropertiesDialog):
-    def __init__(self, parent, mixer):
-        gtk.Dialog.__init__(self, 'New Channel', parent)
-        self.mixer = mixer
+    def __init__(self, app):
+        gtk.Dialog.__init__(self, 'New Channel', app.window)
+        self.mixer = app.mixer
+        self.app = app
         self.create_ui()
 
         self.stereo.set_active(True) # default to stereo
@@ -873,9 +885,10 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
 
 
 class NewOutputChannelDialog(OutputChannelPropertiesDialog):
-    def __init__(self, parent, mixer):
-        gtk.Dialog.__init__(self, 'New Output Channel', parent)
-        self.mixer = mixer
+    def __init__(self, app):
+        gtk.Dialog.__init__(self, 'New Output Channel', app.window)
+        self.mixer = app.mixer
+        self.app = app
         self.create_ui()
 
         # TODO: disable mode for output channels as mono output channels may

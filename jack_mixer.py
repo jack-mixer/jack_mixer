@@ -241,7 +241,7 @@ class jack_mixer(serialized_object):
         self.preferences_dialog.present()
 
     def on_add_input_channel(self, widget):
-        dialog = NewChannelDialog(parent=self.window, mixer=self.mixer)
+        dialog = NewChannelDialog(app=self)
         dialog.set_transient_for(self.window)
         dialog.show()
         ret = dialog.run()
@@ -253,7 +253,7 @@ class jack_mixer(serialized_object):
             self.window.show_all()
 
     def on_add_output_channel(self, widget):
-        dialog = NewOutputChannelDialog(parent=self.window, mixer=self.mixer)
+        dialog = NewOutputChannelDialog(app=self)
         dialog.set_transient_for(self.window)
         dialog.show()
         ret = dialog.run()

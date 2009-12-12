@@ -1,9 +1,11 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 #
 # This file is part of jack_mixer
 #
-# Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
-#  
+# Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
+# Copyright (C) 2009 Frederic Peters <fpeters@0d.be>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License
@@ -89,6 +91,8 @@ class jack_mixer(serialized_object):
         self.menubar.append(mixer_menu_item)
         edit_menu_item = gtk.MenuItem('_Edit')
         self.menubar.append(edit_menu_item)
+        help_menu_item = gtk.MenuItem('_Help')
+        self.menubar.append(help_menu_item)
 
         self.window.set_default_size(120,300)
 
@@ -138,6 +142,13 @@ class jack_mixer(serialized_object):
         preferences = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES)
         preferences.connect('activate', self.on_preferences_cb)
         edit_menu.append(preferences)
+
+        help_menu = gtk.Menu()
+        help_menu_item.set_submenu(help_menu)
+
+        about = gtk.ImageMenuItem(gtk.STOCK_ABOUT)
+        help_menu.append(about)
+        about.connect("activate", self.on_about)
 
         self.hbox_top = gtk.HBox()
         self.vbox_top.pack_start(self.hbox_top, True)
@@ -399,6 +410,31 @@ class jack_mixer(serialized_object):
                 self.monitor_channel.set_muted(input_channel.channel,
                                 input_channel.channel.mute)
 
+    def on_about(self, *args):
+        about = gtk.AboutDialog()
+        about.set_name('jack_mixer')
+        about.set_copyright('Copyright © 2006-2009\nNedko Arnaudov, Frederic Peters')
+        about.set_license('''\
+jack_mixer is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+jack_mixer is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
+Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
+        about.set_authors(['Nedko Arnaudov <nedko@arnaudov.name>',
+                           'Frederic Peters <fpeters@0d.be>'])
+        about.set_logo_icon_name('jack_mixer')
+        about.set_website('http://home.gna.org/jackmixer/')
+
+        about.run()
+        about.destroy()
 
     def lash_check_events(self):
         while lash.lash_get_pending_event_count(self.lash_client):

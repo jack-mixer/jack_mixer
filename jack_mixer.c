@@ -333,9 +333,21 @@ channel_autoset_midi_cc(jack_mixer_channel_t channel)
 
 void remove_channel(jack_mixer_channel_t channel)
 {
+  GSList *list_ptr;
+
   channel_ptr->mixer_ptr->input_channels_list = g_slist_remove(
                   channel_ptr->mixer_ptr->input_channels_list, channel_ptr);
   free(channel_ptr->name);
+
+  /* remove references to input channel from all output channels */
+  channel_unmute(channel_ptr);
+  channel_unsolo(channel_ptr);
+  for (list_ptr = channel_ptr->mixer_ptr->output_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
+  {
+    struct output_channel *output_channel_ptr = list_ptr->data;
+    output_channel_set_solo(output_channel_ptr, channel, false);
+    output_channel_set_muted(output_channel_ptr, channel, false);
+  }
 
   jack_port_unregister(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left);
   if (channel_ptr->stereo)

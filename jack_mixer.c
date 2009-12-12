@@ -115,6 +115,12 @@ static jack_mixer_output_channel_t create_output_channel(
   bool stereo,
   bool system);
 
+static inline void
+update_channel_buffers(
+  struct channel * channel_ptr,
+  jack_nframes_t nframes);
+
+
 float
 value_to_db(
   float value)
@@ -551,6 +557,15 @@ mix_one(
   jack_default_audio_sample_t frame_right;
   struct channel *mix_channel = (struct channel*)output_mix_channel;
 
+  update_channel_buffers(mix_channel, end-start);
+  for (i = 0; i < (end-start); i++)
+  {
+    mix_channel->left_buffer_ptr[i] = 0.0;
+    if (mix_channel->stereo)
+      mix_channel->right_buffer_ptr[i] = 0.0;
+  }
+
+
   for (node_ptr = channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;
@@ -836,32 +851,10 @@ process(
 #endif
   jack_nframes_t offset;
 
-  update_channel_buffers((struct channel*)mixer_ptr->main_mix_channel, nframes);
-
   for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;
-
     update_channel_buffers(channel_ptr, nframes);
-  }
-
-  for (i = 0 ; i < nframes ; i++)
-  {
-    ((struct channel*)(mixer_ptr->main_mix_channel))->left_buffer_ptr[i] = 0.0;
-    ((struct channel*)(mixer_ptr->main_mix_channel))->right_buffer_ptr[i] = 0.0;
-  }
-
-  for (node_ptr = mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
-  {
-    channel_ptr = node_ptr->data;
-    update_channel_buffers(channel_ptr, nframes);
-    for (i = 0 ; i < nframes ; i++)
-    {
-      channel_ptr->left_buffer_ptr[i] = 0.0;
-      if (channel_ptr->stereo) {
-        channel_ptr->right_buffer_ptr[i] = 0.0;
-      }
-    }
   }
 
   offset = 0;

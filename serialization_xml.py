@@ -40,7 +40,7 @@ class xml_serialization(serialization_backend):
         return xml_serialization_object(self.doc, child)
 
     def save(self, file):
-        print >>file, self.doc.toprettyxml()
+        file.write(self.doc.toprettyxml())
 
     def load(self, file):
         self.doc = xml.dom.minidom.parse(file)

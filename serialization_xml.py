@@ -20,14 +20,13 @@
 from serialization import *
 import xml.dom
 import xml.dom.minidom
-import xml.dom.ext
 
 class xml_serialization(serialization_backend):
     def __init__(self):
-        self.doctype = xml.dom.implementation.createDocumentType("pyserialzation", None, None)
+        self.doctype = xml.dom.getDOMImplementation().createDocumentType("pyserialization", None, None)
 
     def get_root_serialization_object(self, name):
-        self.doc = xml.dom.implementation.createDocument(xml.dom.EMPTY_NAMESPACE, name, self.doctype)
+        self.doc = xml.dom.getDOMImplementation().createDocument(xml.dom.EMPTY_NAMESPACE, name, self.doctype)
         return xml_serialization_object(self.doc, self.doc.documentElement)
 
     def get_root_unserialization_object(self, name):
@@ -41,12 +40,10 @@ class xml_serialization(serialization_backend):
         return xml_serialization_object(self.doc, child)
 
     def save(self, file):
-        xml.dom.ext.PrettyPrint(self.doc, file)
+        print >>file, self.doc.toprettyxml()
 
     def load(self, file):
         self.doc = xml.dom.minidom.parse(file)
-        #rint "Loaded:"
-        #xml.dom.ext.PrettyPrint(self.doc)
 
 class xml_serialization_object:
     def __init__(self, doc, element):

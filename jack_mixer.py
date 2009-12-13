@@ -40,14 +40,11 @@ from preferences import PreferencesDialog
 
 sys.path = old_path
 
-try:
-    from serialization_xml import xml_serialization
-    from serialization import serialized_object, serializator
-except ImportError:
-    xml_serialization = None
+from serialization_xml import xml_serialization
+from serialization import serialized_object, serializator
 
-if lash is None or xml_serialization is None:
-    print >> sys.stderr, "Cannot load LASH python bindings or python-xml, you want them unless you enjoy manual jack plumbing each time you use this app"
+if lash is None:
+    print >> sys.stderr, "Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app"
 
 class jack_mixer(serialized_object):
 

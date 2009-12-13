@@ -41,7 +41,7 @@ jack_mixer_c_la_SOURCES = \
 dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py preferences.py
 
 CLEANFILES = *.pyc
-EXTRA_DIST = test.py gpl.txt jack_mixer.schemas jack_mixer.py CHANGES
+EXTRA_DIST = test.py COPYING jack_mixer.schemas jack_mixer.py CHANGES
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 

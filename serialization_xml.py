@@ -22,11 +22,8 @@ import xml.dom
 import xml.dom.minidom
 
 class xml_serialization(serialization_backend):
-    def __init__(self):
-        self.doctype = xml.dom.getDOMImplementation().createDocumentType("pyserialization", None, None)
-
     def get_root_serialization_object(self, name):
-        self.doc = xml.dom.getDOMImplementation().createDocument(xml.dom.EMPTY_NAMESPACE, name, self.doctype)
+        self.doc = xml.dom.getDOMImplementation().createDocument(xml.dom.EMPTY_NAMESPACE, name, None)
         return xml_serialization_object(self.doc, self.doc.documentElement)
 
     def get_root_unserialization_object(self, name):

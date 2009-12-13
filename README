@@ -1,27 +1,52 @@
-jack_mixer is GTK (2.x) JACK audio mixer app with look similar to it`s
-hardware counterparts
+jack_mixer -- Jack Audio Mixer
+==============================
 
-jack_mixer is licensed under GPL version 2, check gpl.txt for more info.
+jack_mixer is a GTK+ JACK audio mixer app with look similar to its hardware
+counterpart.  It has lot of useful features, apart from being able to mix
+multiple JACK audio streams.
 
-Please visit project homepage is at http://home.gna.org/jackmixer/ for
-more info.
+It is licensed under GPL version 2 (or later), check COPYING for more info.
 
-= Using MIDI CCs to control jack_mixer =
+Please visit project homepage is at http://home.gna.org/jackmixer/ for more
+info.
+
+
+Installation
+------------
+
+Read INSTALL for information on installation.
+
+
+Using MIDI CCs to control jack_mixer
+------------------------------------
+
 MIDI CCs can be used to control volume and balance/panorama of channels.
 
-Controller for main channel volume is 7
-Controller for main channel balance is 8
+The default controller for main channel volume is 7, and the default for
+main channel balance is 8.  Default controllers for added channels are
+chosen using predefined algorithm, first free controller starting from 11,
+first for volume, next for balance/panorama.
 
-Controller for input channels are choosen using predefined algorithm,
-first free controller starting from 11, first for volume, next for
-balance/panorama.
+So, if you don't delete channels, you will get CC#11 used for first input
+channel volume, CC#12 for first channel balance/panorama, CC#13 for second
+channel volume, CC#14 for second channel balance/panorama, etc.
 
-So, if you don't delete channels, you will get CC#11 used for first
-input channel volume, CC#12 for first channel balance/panorama, CC#13
-for second channel volume, CC#14 for second channel balance/panorama,
-etc.
+It is also possible to select other CCs when creating the channel, or
+afterwards from the channel properties dialog (accessible by double clicking
+on the channel name).
 
-MIDI CCs are accepted on any channel.
+MIDI CC values (0-127) are mapped to dBFS using current slider scale for
+corresponding channel.
 
-MIDI CC values (0-127) are mapped to dBFS using current slider scale
-for corresponding channel.
+
+Feedback
+--------
+
+If you have trouble getting jack_mixer working, find a bug or you miss some
+feature, please submit a support request with the GNA issue tracker:
+https://gna.org/support/?func=additem&group=jackmixer
+
+jack_mixer was initially written and supported by Nedko Arnaudov, it is now
+maintained by Frederic Peters. You can reach Frederic at fpeters (a.t) 0d
+(dot) be, and Nedko at nedko (a.t) arnaudov (dot) name.  They can also be
+found in #lad on FreeNode (as fredp and nedko).

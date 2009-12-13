@@ -19,7 +19,6 @@ Runtime requirements (checked by configure script):
 Runtime optional things, that will enable you to get full functionality:
  * To get LASH (Linux audio session) support, you need LASH compiled
    with Python bindings. This means at least 0.5.3 release.
-   For LASH support you also need PyXML (0.8.4 should work)
  * If you want your settings to be preserved in GConf you need Python
    bindings for GConf, part of the Python bindings for GNOME. Chances
    are that package you need to install is called gnome-python

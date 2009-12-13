@@ -23,9 +23,11 @@ from optparse import OptionParser
 
 import gtk
 import gobject
-import jack_mixer_c
 import sys
 import os
+
+import jack_mixer_c
+import scale
 
 try:
     import lash

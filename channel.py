@@ -20,21 +20,16 @@
 import gtk
 import gobject
 import glib
-import scale
 import slider
 import meter
 import abspeak
-import math
-import random
 from serialization import serialized_object
 
 try:
     import phat
 except:
-    print "PHAT audio widgets not found, some features will not be available"
     phat = None
 
-import fpconst
 
 class channel(gtk.VBox, serialized_object):
     '''Widget with slider and meter used as base class for more specific channel widgets'''

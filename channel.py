@@ -330,12 +330,14 @@ class input_channel(channel):
         self.mute = gtk.ToggleButton()
         self.mute.set_label("M")
         self.mute.set_active(self.channel.mute)
+        self.mute.connect("button-press-event", self.on_mute_button_pressed)
         self.mute.connect("toggled", self.on_mute_toggled)
         self.hbox_mutesolo.pack_start(self.mute, True)
 
         self.solo = gtk.ToggleButton()
         self.solo.set_label("S")
         self.solo.set_active(self.channel.solo)
+        self.solo.connect("button-press-event", self.on_solo_button_pressed)
         self.solo.connect("toggled", self.on_solo_toggled)
         self.hbox_mutesolo.pack_start(self.solo, True)
 
@@ -407,9 +409,55 @@ class input_channel(channel):
         self.channel.mute = self.mute.get_active()
         self.app.update_monitor(self.app.main_mix)
 
+    def on_mute_button_pressed(self, button, event, *args):
+        if event.button == 3:
+            # right click on the mute button, act on all output channels
+            if button.get_active(): # was muted
+                button.set_active(False)
+                if hasattr(button, 'touched_channels'):
+                    touched_channels = button.touched_channels
+                    for chan in touched_channels:
+                        ctlgroup = self.get_control_group(chan)
+                        ctlgroup.mute.set_active(False)
+                    del button.touched_channels
+            else: # was not muted
+                button.set_active(True)
+                touched_channels = []
+                for chan in self.app.output_channels:
+                    ctlgroup = self.get_control_group(chan)
+                    if not ctlgroup.mute.get_active():
+                        ctlgroup.mute.set_active(True)
+                        touched_channels.append(chan)
+                button.touched_channels = touched_channels
+            return True
+        return False
+
     def on_solo_toggled(self, button):
         self.channel.solo = self.solo.get_active()
         self.app.update_monitor(self.app.main_mix)
+
+    def on_solo_button_pressed(self, button, event, *args):
+        if event.button == 3:
+            # right click on the solo button, act on all output channels
+            if button.get_active(): # was soloed
+                button.set_active(False)
+                if hasattr(button, 'touched_channels'):
+                    touched_channels = button.touched_channels
+                    for chan in touched_channels:
+                        ctlgroup = self.get_control_group(chan)
+                        ctlgroup.solo.set_active(False)
+                    del button.touched_channels
+            else: # was not soloed
+                button.set_active(True)
+                touched_channels = []
+                for chan in self.app.output_channels:
+                    ctlgroup = self.get_control_group(chan)
+                    if not ctlgroup.solo.get_active():
+                        ctlgroup.solo.set_active(True)
+                        touched_channels.append(chan)
+                button.touched_channels = touched_channels
+            return True
+        return False
 
     def serialization_name(self):
         return input_channel_serialization_name()

@@ -26,6 +26,9 @@ import gobject
 import sys
 import os
 
+old_path = sys.path
+sys.path.insert(0, os.path.dirname(sys.argv[0]) + os.sep + ".." + os.sep + "share"+ os.sep + "jack_mixer")
+
 import jack_mixer_c
 import scale
 
@@ -34,8 +37,6 @@ try:
 except:
     lash = None
 
-old_path = sys.path
-sys.path.insert(0, os.path.dirname(sys.argv[0]) + os.sep + ".." + os.sep + "share"+ os.sep + "jack_mixer")
 from channel import *
 import gui
 from preferences import PreferencesDialog

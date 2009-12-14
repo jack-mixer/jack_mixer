@@ -543,7 +543,7 @@ class OutputChannel(Channel):
         self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
         if not self.colours:
-            self.colours = available_colours[:]
+            OutputChannel.colours = available_colours[:]
         for color in self.colours:
             self.color_tuple = [gtk.gdk.color_parse(color[x]) for x in range(3)]
             self.colours.remove(color)

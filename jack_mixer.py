@@ -26,28 +26,29 @@ import gobject
 import sys
 import os
 
-old_path = sys.path
-sys.path.insert(0, os.path.dirname(sys.argv[0]) + os.sep + ".." + os.sep + "share"+ os.sep + "jack_mixer")
-
-import jack_mixer_c
-import scale
-
 try:
     import lash
 except:
     lash = None
+    print >> sys.stderr, "Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app"
 
+# temporary change Python modules lookup path to look into installation
+# directory ($prefix/share/jack_mixer/)
+old_path = sys.path
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'jack_mixer'))
+
+import jack_mixer_c
+import scale
 from channel import *
+
 import gui
 from preferences import PreferencesDialog
-
-sys.path = old_path
 
 from serialization_xml import xml_serialization
 from serialization import serialized_object, serializator
 
-if lash is None:
-    print >> sys.stderr, "Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app"
+# restore Python modules lookup path
+sys.path = old_path
 
 class jack_mixer(serialized_object):
 

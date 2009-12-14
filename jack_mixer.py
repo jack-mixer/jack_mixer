@@ -108,17 +108,16 @@ class JackMixer(SerializedObject):
         mixer_menu.append(add_output_channel)
         add_output_channel.connect("activate", self.on_add_output_channel)
 
-        if lash_client is None:
-            mixer_menu.append(gtk.SeparatorMenuItem())
-            open = gtk.ImageMenuItem(gtk.STOCK_OPEN)
-            mixer_menu.append(open)
-            open.connect('activate', self.on_open_cb)
-            save = gtk.ImageMenuItem(gtk.STOCK_SAVE)
-            mixer_menu.append(save)
-            save.connect('activate', self.on_save_cb)
-            save_as = gtk.ImageMenuItem(gtk.STOCK_SAVE_AS)
-            mixer_menu.append(save_as)
-            save_as.connect('activate', self.on_save_as_cb)
+        mixer_menu.append(gtk.SeparatorMenuItem())
+        open = gtk.ImageMenuItem(gtk.STOCK_OPEN)
+        mixer_menu.append(open)
+        open.connect('activate', self.on_open_cb)
+        save = gtk.ImageMenuItem(gtk.STOCK_SAVE)
+        mixer_menu.append(save)
+        save.connect('activate', self.on_save_cb)
+        save_as = gtk.ImageMenuItem(gtk.STOCK_SAVE_AS)
+        mixer_menu.append(save_as)
+        save_as.connect('activate', self.on_save_as_cb)
 
         mixer_menu.append(gtk.SeparatorMenuItem())
 

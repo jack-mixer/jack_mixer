@@ -180,6 +180,8 @@ class channel(gtk.VBox, serialized_object):
         self.update_volume(False)
 
     def read_meter(self):
+        if not self.channel:
+            return
         if self.stereo:
             meter_left, meter_right = self.channel.meter
             self.meter.set_values(meter_left, meter_right)

@@ -204,8 +204,13 @@ class jack_mixer(serialized_object):
                 f = file(filename, 'r')
                 self.load_from_xml(f)
             except:
-                # TODO: display error in a dialog box
-                print >> sys.stderr, 'Failed to read', filename
+                err = gtk.MessageDialog(self.window,
+                            gtk.DIALOG_MODAL,
+                            gtk.MESSAGE_ERROR,
+                            gtk.BUTTONS_OK,
+                            "Failed loading settings.")
+                err.run()
+                err.destroy()
             else:
                 self.current_filename = filename
             finally:
@@ -460,7 +465,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 print "jack_mixer: LASH ordered to restore data from directory %s" % directory
                 filename = directory + os.sep + "jack_mixer.xml"
                 f = file(filename, "r")
-                self.load_from_xml(f)
+                self.load_from_xml(f, silence_errors=True)
                 f.close()
                 lash.lash_send_event(self.lash_client, event)
             else:
@@ -478,12 +483,17 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         s.serialize(self, b)
         b.save(file)
 
-    def load_from_xml(self, file):
+    def load_from_xml(self, file, silence_errors=False):
         #print "Loading from XML..."
         self.on_channels_clear(None)
         self.unserialized_channels = []
         b = xml_serialization()
-        b.load(file)
+        try:
+            b.load(file)
+        except:
+            if silence_errors:
+                return
+            raise
         s = serializator()
         s.unserialize(self, b)
         for channel in self.unserialized_channels:
@@ -586,7 +596,16 @@ def main():
     if options.config:
         f = file(options.config)
         mixer.current_filename = options.config
-        mixer.load_from_xml(f)
+        try:
+            mixer.load_from_xml(f)
+        except:
+            err = gtk.MessageDialog(mixer.window,
+                            gtk.DIALOG_MODAL,
+                            gtk.MESSAGE_ERROR,
+                            gtk.BUTTONS_OK,
+                            "Failed loading settings.")
+            err.run()
+            err.destroy()
         mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)),300)
         f.close()
 

@@ -1,4 +1,28 @@
-Changes since version 5:
+=========
+Version 7
+=========
+
+ * New maintainer, thanks Nedko for everything!
+ * New icon by Lapo Calamandrei
+ * Option to have a gradient in the vumeters
+ * Option to use stock GtkScale widget for volume and balance
+ * Rewrite of the C/Python binding (this removed the dependency on SWIG)
+ * Improve performance when drawing vumeters
+ * New menu items to load/save settings
+ * New "Channel Properties" dialog, allowing to change assigned MIDI CCs
+ * Automatic post fader outputs for input channels
+ * Possibility to add new output channels, besides main mix
+ * New "monitor" output, assignable to any output channel, or input channel
+   (in which case it will take its prefader volume)
+ * Removal of PyXML dependency
+
+With contributions from Nedko Arnaudov, Lapo Calamandrei, Arnout Engelen,
+and Krzysztof Foltman.
+
+=========
+Version 6
+=========
+
  * Fix building against jack 0.102.20
  * Handle python prefix different from install prefix
  * Fix LASH-less operation

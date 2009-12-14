@@ -600,6 +600,10 @@ class OutputChannel(Channel):
                 self.on_channel_properties()
 
     def unrealize(self):
+        # remove control groups from input channels
+        for input_channel in self.app.channels:
+            input_channel.remove_control_group(self)
+        # then remove itself
         Channel.unrealize(self)
         self.channel.remove()
         self.channel = None

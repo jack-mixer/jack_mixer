@@ -373,6 +373,10 @@ class InputChannel(Channel):
         self.vbox.pack_start(control_group, False)
         return control_group
 
+    def remove_control_group(self, channel):
+        ctlgroup = self.get_control_group(channel)
+        self.vbox.remove(ctlgroup)
+
     def update_control_group(self, channel):
         for control_group in self.vbox.get_children():
             if isinstance(control_group, ControlGroup):
@@ -389,7 +393,7 @@ class InputChannel(Channel):
     def unrealize(self):
         Channel.unrealize(self)
         self.channel.remove()
-        self.channel = False
+        self.channel = None
 
     channel_properties_dialog = None
     def on_channel_properties(self):
@@ -597,7 +601,8 @@ class OutputChannel(Channel):
 
     def unrealize(self):
         Channel.unrealize(self)
-        self.channel = False
+        self.channel.remove()
+        self.channel = None
 
     def serialization_name(self):
         return output_channel_serialization_name()

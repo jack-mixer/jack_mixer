@@ -284,10 +284,14 @@ class JackMixer(SerializedObject):
             self.channel_remove_menu_item.set_sensitive(False)
 
     def on_channels_clear(self, widget):
+        for channel in self.output_channels:
+            channel.unrealize()
+            self.hbox_outputs.remove(channel.parent)
         for channel in self.channels:
             channel.unrealize()
             self.hbox_inputs.remove(channel.parent)
         self.channels = []
+        self.output_channels = []
         self.channel_remove_menu = gtk.Menu()
         self.channel_remove_menu_item.set_submenu(self.channel_remove_menu)
         self.channel_remove_menu_item.set_sensitive(False)

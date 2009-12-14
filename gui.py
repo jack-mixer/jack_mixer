@@ -31,7 +31,7 @@ def lookup_scale(scales, scale_id):
             return scale
     return None
 
-class factory(gobject.GObject):
+class Factory(gobject.GObject):
     def __init__(self, topwindow, meter_scales, slider_scales):
         gobject.GObject.__init__(self)
         self.topwindow = topwindow
@@ -157,14 +157,18 @@ class factory(gobject.GObject):
     def get_use_custom_widgets(self):
         return self.use_custom_widgets
 
-gobject.signal_new("default-meter-scale-changed", factory, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
-gobject.signal_new("default-slider-scale-changed", factory, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
-gobject.signal_new('vumeter-color-changed', factory,
+gobject.signal_new("default-meter-scale-changed", Factory,
+                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
+                gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
+gobject.signal_new("default-slider-scale-changed", Factory,
+                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
+                gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
+gobject.signal_new('vumeter-color-changed', Factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [str])
-gobject.signal_new('vumeter-color-scheme-changed', factory,
+gobject.signal_new('vumeter-color-scheme-changed', Factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [str])
-gobject.signal_new('use-custom-widgets-changed', factory,
+gobject.signal_new('use-custom-widgets-changed', Factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [bool])

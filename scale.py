@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
@@ -20,14 +18,14 @@
 import math
 import jack_mixer_c
 
-class mark:
+class Mark:
     '''Encapsulates scale linear function edge and coefficients for scale = a * dB + b formula'''
     def __init__(self, db, scale):
         self.db = db
         self.scale = scale
         self.text = "%.0f" % math.fabs(db)
 
-class base:
+class Base:
     '''Scale abstraction, various scale implementation derive from this class'''
     def __init__(self, scale_id, description):
         self.marks = []
@@ -38,7 +36,7 @@ class base:
     def add_threshold(self, db, scale, is_mark):
         self.scale.add_threshold(db, scale)
         if is_mark:
-            self.marks.append(mark(db, scale))
+            self.marks.append(Mark(db, scale))
 
     def calculate_coefficients(self):
         self.scale.calculate_coefficients()
@@ -53,7 +51,7 @@ class base:
         return self.scale.scale_to_db(scale)
 
     def add_mark(self, db):
-        self.marks.append(mark(db, -1.0))
+        self.marks.append(Mark(db, -1.0))
 
     def get_marks(self):
         return self.marks
@@ -66,10 +64,11 @@ class base:
 # IEC 60268-18 Peak programme level meters - Digital audio peak level meter
 # Adapted from meterpridge, may be wrong, I'm not buying standards, event if they cost $45
 # If someone has the standart, please eighter share it with me or fix the code.
-class iec_268(base):
+class IEC268(Base):
     '''IEC 60268-18 Peak programme level meters - Digital audio peak level meter'''
     def __init__(self):
-        base.__init__(self, "iec_268", "IEC 60268-18 Peak programme level meters - Digital audio peak level meter")
+        Base.__init__(self, "iec_268",
+                      "IEC 60268-18 Peak programme level meters - Digital audio peak level meter")
         self.add_threshold(-70.0, 0.0, False)
         self.add_threshold(-60.0, 0.05, True)
         self.add_threshold(-50.0, 0.075, True)
@@ -85,10 +84,12 @@ class iec_268(base):
         self.calculate_coefficients()
         self.scale_marks()
 
-class iec_268_minimalistic(base):
-    '''IEC 60268-18 Peak programme level meters - Digital audio peak level meter, fewer marks'''
+class IEC268Minimalistic(Base):
+    '''IEC 60268-18 Peak programme level meters - Digital audio peak level meter,
+       fewer marks'''
     def __init__(self):
-        base.__init__(self, "iec_268_minimalistic", "IEC 60268-18 Peak programme level meters - Digital audio peak level meter, fewer marks")
+        Base.__init__(self, 'iec_268_minimalistic',
+                      'IEC 60268-18 Peak programme level meters - Digital audio peak level meter, fewer marks')
         self.add_threshold(-70.0, 0.0, False)
         self.add_threshold(-60.0, 0.05, True)
         self.add_threshold(-50.0, 0.075, False)
@@ -100,10 +101,10 @@ class iec_268_minimalistic(base):
         self.calculate_coefficients()
         self.scale_marks()
 
-class linear_70dB(base):
+class Linear70dB(Base):
     '''Linear scale with range from -70 to 0 dBFS'''
     def __init__(self):
-        base.__init__(self, "linear_70dB", "Linear scale with range from -70 to 0 dBFS")
+        Base.__init__(self, "linear_70dB", "Linear scale with range from -70 to 0 dBFS")
         self.add_threshold(-70.0, 0.0, False)
         self.add_mark(-60.0)
         self.add_mark(-50.0)
@@ -119,10 +120,10 @@ class linear_70dB(base):
         self.calculate_coefficients()
         self.scale_marks()
 
-class linear_30dB(base):
+class Linear30dB(Base):
     '''Linear scale with range from -30 to +30 dBFS'''
     def __init__(self):
-        base.__init__(self, "linear_30dB", "Linear scale with range from -30 to +30 dBFS")
+        Base.__init__(self, "linear_30dB", "Linear scale with range from -30 to +30 dBFS")
         self.add_threshold(-30.0, 0.0, False)
         self.add_threshold(+30.0, 1.0, True)
         self.calculate_coefficients()

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
@@ -20,7 +18,7 @@
 import gtk
 import gobject
 
-class adjustment_dBFS(gtk.Adjustment):
+class AdjustmentdBFS(gtk.Adjustment):
     def __init__(self, scale, default_db):
         self.default_value = scale.db_to_scale(default_db)
         self.db = default_db
@@ -59,7 +57,8 @@ class adjustment_dBFS(gtk.Adjustment):
         self.set_value(self.scale.db_to_scale(self.db))
         self.disable_value_notify = False
 
-gobject.signal_new("volume-changed", adjustment_dBFS, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
+gobject.signal_new("volume-changed", AdjustmentdBFS,
+                   gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
 
 
 class GtkSlider(gtk.VScale):

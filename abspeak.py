@@ -22,7 +22,7 @@ import fpconst
 import pango
 import gobject
 
-class widget(gtk.EventBox):
+class AbspeakWidget(gtk.EventBox):
     def __init__(self):
         gtk.EventBox.__init__(self)
         self.label = gtk.Label()
@@ -58,5 +58,7 @@ class widget(gtk.EventBox):
 
             self.label.set_text(text)
 
-gobject.signal_new("reset", widget, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
-gobject.signal_new("volume-adjust", widget, gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_FLOAT])
+gobject.signal_new("reset", AbspeakWidget,
+                   gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
+gobject.signal_new("volume-adjust", AbspeakWidget,
+                   gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_FLOAT])

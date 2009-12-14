@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
@@ -20,7 +18,7 @@
 import gtk
 import cairo
 
-class meter(gtk.DrawingArea):
+class MeterWidget(gtk.DrawingArea):
     def __init__(self, scale):
         gtk.DrawingArea.__init__(self)
 
@@ -114,9 +112,9 @@ class meter(gtk.DrawingArea):
         self.cache_surface = None
         self.invalidate_all()
 
-class mono(meter):
+class MonoMeterWidget(MeterWidget):
     def __init__(self, scale):
-        meter.__init__(self, scale)
+        MeterWidget.__init__(self, scale)
         self.value = 0.0
         self.raw_value = 0.0
 
@@ -137,9 +135,9 @@ class mono(meter):
         if (abs(old_value-self.value) * self.height) > 1:
             self.invalidate_all()
 
-class stereo(meter):
+class StereoMeterWidget(MeterWidget):
     def __init__(self, scale):
-        meter.__init__(self, scale)
+        MeterWidget.__init__(self, scale)
         self.left = 0.0
         self.right = 0.0
 

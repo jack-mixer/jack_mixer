@@ -44,19 +44,19 @@ from channel import *
 import gui
 from preferences import PreferencesDialog
 
-from serialization_xml import xml_serialization
-from serialization import serialized_object, serializator
+from serialization_xml import XmlSerialization
+from serialization import SerializedObject, Serializator
 
 # restore Python modules lookup path
 sys.path = old_path
 
-class jack_mixer(serialized_object):
+class JackMixer(SerializedObject):
 
     # scales suitable as meter scales
-    meter_scales = [scale.iec_268(), scale.linear_70dB(), scale.iec_268_minimalistic()]
+    meter_scales = [scale.IEC268(), scale.Linear70dB(), scale.IEC268Minimalistic()]
 
     # scales suitable as volume slider scales
-    slider_scales = [scale.linear_30dB(), scale.linear_70dB()]
+    slider_scales = [scale.Linear30dB(), scale.Linear70dB()]
 
     # name of settngs file that is currently open
     current_filename = None
@@ -80,7 +80,7 @@ class jack_mixer(serialized_object):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(name)
 
-        self.gui_factory = gui.factory(self.window, self.meter_scales, self.slider_scales)
+        self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
 
         self.vbox_top = gtk.VBox()
         self.window.add(self.vbox_top)
@@ -95,7 +95,7 @@ class jack_mixer(serialized_object):
         help_menu_item = gtk.MenuItem('_Help')
         self.menubar.append(help_menu_item)
 
-        self.window.set_default_size(120,300)
+        self.window.set_default_size(120, 300)
 
         mixer_menu = gtk.Menu()
         mixer_menu_item.set_submenu(mixer_menu)
@@ -108,7 +108,7 @@ class jack_mixer(serialized_object):
         mixer_menu.append(add_output_channel)
         add_output_channel.connect("activate", self.on_add_output_channel)
 
-        if lash_client is None and xml_serialization is not None:
+        if lash_client is None:
             mixer_menu.append(gtk.SeparatorMenuItem())
             open = gtk.ImageMenuItem(gtk.STOCK_OPEN)
             mixer_menu.append(open)
@@ -168,7 +168,7 @@ class jack_mixer(serialized_object):
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
-        self.main_mix = main_mix(self)
+        self.main_mix = MainMixChannel(self)
         self.hbox_outputs = gtk.HBox()
         self.hbox_outputs.set_spacing(0)
         self.hbox_outputs.set_border_width(0)
@@ -295,7 +295,7 @@ class jack_mixer(serialized_object):
 
     def add_channel(self, name, stereo, volume_cc, balance_cc):
         try:
-            channel = input_channel(self, name, stereo)
+            channel = InputChannel(self, name, stereo)
             self.add_channel_precreated(channel)
         except Exception:
             err = gtk.MessageDialog(self.window,
@@ -338,11 +338,10 @@ class jack_mixer(serialized_object):
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, display_solo_buttons):
         try:
-            channel = output_channel(self, name, stereo)
+            channel = OutputChannel(self, name, stereo)
             channel.display_solo_buttons = display_solo_buttons
             self.add_output_channel_precreated(channel)
         except Exception:
-            raise
             err = gtk.MessageDialog(self.window,
                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                             gtk.MESSAGE_ERROR,
@@ -378,7 +377,7 @@ class jack_mixer(serialized_object):
             if channel.channel.name == self._monitored_channel.channel.name:
                 return
         self._monitored_channel = channel
-        if type(channel) is input_channel:
+        if type(channel) is InputChannel:
             # reset all solo/mute settings
             for in_channel in self.channels:
                 self.monitor_channel.set_solo(in_channel.channel, False)
@@ -395,14 +394,14 @@ class jack_mixer(serialized_object):
             return
         self.monitor_channel.volume = channel.channel.volume
         self.monitor_channel.balance = channel.channel.balance
-        if type(self.monitored_channel) is output_channel:
+        if type(self.monitored_channel) is OutputChannel:
             # sync solo/muted channels
             for input_channel in self.channels:
                 self.monitor_channel.set_solo(input_channel.channel,
                                 channel.channel.is_solo(input_channel.channel))
                 self.monitor_channel.set_muted(input_channel.channel,
                                 channel.channel.is_muted(input_channel.channel))
-        elif type(self.monitored_channel) is main_mix:
+        elif type(self.monitored_channel) is MainMixChannel:
             # sync solo/muted channels
             for input_channel in self.channels:
                 self.monitor_channel.set_solo(input_channel.channel,
@@ -479,8 +478,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
 
     def save_to_xml(self, file):
         #print "Saving to XML..."
-        b = xml_serialization()
-        s = serializator()
+        b = XmlSerialization()
+        s = Serializator()
         s.serialize(self, b)
         b.save(file)
 
@@ -488,20 +487,20 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         #print "Loading from XML..."
         self.on_channels_clear(None)
         self.unserialized_channels = []
-        b = xml_serialization()
+        b = XmlSerialization()
         try:
             b.load(file)
         except:
             if silence_errors:
                 return
             raise
-        s = serializator()
+        s = Serializator()
         s.unserialize(self, b)
         for channel in self.unserialized_channels:
-            if isinstance(channel, input_channel):
+            if isinstance(channel, InputChannel):
                 self.add_channel_precreated(channel)
         for channel in self.unserialized_channels:
-            if isinstance(channel, output_channel):
+            if isinstance(channel, OutputChannel):
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
         self.window.show_all()
@@ -521,12 +520,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             return self.main_mix
 
         if name == input_channel_serialization_name():
-            channel = input_channel(self, "", True)
+            channel = InputChannel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
 
         if name == output_channel_serialization_name():
-            channel = output_channel(self, "", True)
+            channel = OutputChannel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
 
@@ -583,7 +582,7 @@ def main():
 
     gtk.gdk.threads_init()
     try:
-        mixer = jack_mixer(name, lash_client)
+        mixer = JackMixer(name, lash_client)
     except Exception, e:
         err = gtk.MessageDialog(None,
                             gtk.DIALOG_MODAL,
@@ -607,7 +606,7 @@ def main():
                             "Failed loading settings.")
             err.run()
             err.destroy()
-        mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)),300)
+        mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)), 300)
         f.close()
 
     mixer.main()

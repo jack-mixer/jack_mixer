@@ -23,7 +23,7 @@ import glib
 import slider
 import meter
 import abspeak
-from serialization import serialized_object
+from serialization import SerializedObject
 
 try:
     import phat
@@ -31,8 +31,9 @@ except:
     phat = None
 
 
-class channel(gtk.VBox, serialized_object):
-    '''Widget with slider and meter used as base class for more specific channel widgets'''
+class Channel(gtk.VBox, SerializedObject):
+    '''Widget with slider and meter used as base class for more specific
+       channel widgets'''
     monitor_button = None
 
     def __init__(self, app, name, stereo):
@@ -44,7 +45,7 @@ class channel(gtk.VBox, serialized_object):
         self.stereo = stereo
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
-        self.slider_adjustment = slider.adjustment_dBFS(self.slider_scale, 0.0)
+        self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0)
         self.balance_adjustment = gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
@@ -73,9 +74,9 @@ class channel(gtk.VBox, serialized_object):
         self.create_slider_widget()
 
         if self.stereo:
-            self.meter = meter.stereo(self.meter_scale)
+            self.meter = meter.StereoMeterWidget(self.meter_scale)
         else:
-            self.meter = meter.mono(self.meter_scale)
+            self.meter = meter.MonoMeterWidget(self.meter_scale)
         self.on_vumeter_color_changed(self.gui_factory)
 
         self.meter.set_events(gtk.gdk.SCROLL_MASK)
@@ -86,7 +87,7 @@ class channel(gtk.VBox, serialized_object):
         self.gui_factory.connect('vumeter-color-scheme-changed', self.on_vumeter_color_changed)
         self.gui_factory.connect('use-custom-widgets-changed', self.on_custom_widgets_changed)
 
-        self.abspeak = abspeak.widget()
+        self.abspeak = abspeak.AbspeakWidget()
         self.abspeak.connect("reset", self.on_abspeak_reset)
         self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
 
@@ -136,7 +137,7 @@ class channel(gtk.VBox, serialized_object):
         #print "Default slider scale change detected."
         self.slider_scale = scale
         self.slider_adjustment.set_scale(scale)
-        self.channel.set_midi_scale(self.slider_scale.scale)
+        self.channel.midi_scale = self.slider_scale.scale
 
     def on_vumeter_color_changed(self, gui_factory, *args):
         color = gui_factory.get_vumeter_color()
@@ -280,19 +281,19 @@ class channel(gtk.VBox, serialized_object):
             self.app.set_monitored_channel(self)
         self.monitor_button.set_active(True)
 
-gobject.signal_new('midi-event-received', channel,
+gobject.signal_new('midi-event-received', Channel,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, ())
 
-class input_channel(channel):
+class InputChannel(Channel):
     def __init__(self, app, name, stereo):
-        channel.__init__(self, app, name, stereo)
+        Channel.__init__(self, app, name, stereo)
 
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
         if self.channel == None:
             raise Exception,"Cannot create a channel"
-        channel.realize(self)
+        Channel.realize(self)
         if self.future_volume_midi_cc:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc:
@@ -386,7 +387,7 @@ class input_channel(channel):
         return None
 
     def unrealize(self):
-        channel.unrealize(self)
+        Channel.unrealize(self)
         self.channel.remove()
         self.channel = False
 
@@ -465,7 +466,7 @@ class input_channel(channel):
             object_backend.add_property("type", "stereo")
         else:
             object_backend.add_property("type", "mono")
-        channel.serialize(self, object_backend)
+        Channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
         if name == "name":
@@ -478,7 +479,7 @@ class input_channel(channel):
             if value == "mono":
                 self.stereo = False
                 return True
-        return channel.unserialize_property(self, name, value)
+        return Channel.unserialize_property(self, name, value)
 
 def input_channel_serialization_name():
     return "input_channel"
@@ -494,7 +495,7 @@ available_colours = [
     ('#e9b96e', '#c17d11', '#6f4902'),
 ]
 
-class output_channel(channel):
+class OutputChannel(Channel):
     colours = available_colours[:]
     _display_solo_buttons = False
 
@@ -502,7 +503,7 @@ class output_channel(channel):
     _init_solo_channels = None
 
     def __init__(self, app, name, stereo):
-        channel.__init__(self, app, name, stereo)
+        Channel.__init__(self, app, name, stereo)
 
     def get_display_solo_buttons(self):
         return self._display_solo_buttons
@@ -516,11 +517,11 @@ class output_channel(channel):
     display_solo_buttons = property(get_display_solo_buttons, set_display_solo_buttons)
 
     def realize(self):
-        channel.realize(self)
+        Channel.realize(self)
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
         if self.channel == None:
             raise Exception,"Cannot create a channel"
-        channel.realize(self)
+        Channel.realize(self)
 
         self.channel.midi_scale = self.slider_scale.scale
         self.channel.midi_change_callback = self.midi_change_callback
@@ -595,7 +596,7 @@ class output_channel(channel):
                 self.on_channel_properties()
 
     def unrealize(self):
-        channel.unrealize(self)
+        Channel.unrealize(self)
         self.channel = False
 
     def serialization_name(self):
@@ -620,7 +621,7 @@ class output_channel(channel):
             object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
         if solo_channels:
             object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
-        channel.serialize(self, object_backend)
+        Channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
         if name == "name":
@@ -643,20 +644,20 @@ class output_channel(channel):
         if name == 'solo_channels':
             self._init_solo_channels = value.split('|')
             return True
-        return channel.unserialize_property(self, name, value)
+        return Channel.unserialize_property(self, name, value)
 
 def output_channel_serialization_name():
     return "output_channel"
 
-class main_mix(channel):
+class MainMixChannel(Channel):
     _init_muted_channels = None
     _init_solo_channels = None
 
     def __init__(self, app):
-        channel.__init__(self, app, "MAIN", True)
+        Channel.__init__(self, app, "MAIN", True)
 
     def realize(self):
-        channel.realize(self)
+        Channel.realize(self)
         self.channel = self.mixer.main_mix_channel
         self.channel.midi_scale = self.slider_scale.scale
         self.channel.midi_change_callback = self.midi_change_callback
@@ -706,7 +707,7 @@ class main_mix(channel):
         self._init_solo_channels = None
 
     def unrealize(self):
-        channel.unrealize(self)
+        Channel.unrealize(self)
         self.channel = False
 
     def serialization_name(self):
@@ -724,7 +725,7 @@ class main_mix(channel):
             object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
         if solo_channels:
             object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
-        channel.serialize(self, object_backend)
+        Channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
         if name == 'muted_channels':
@@ -733,7 +734,7 @@ class main_mix(channel):
         if name == 'solo_channels':
             self._init_solo_channels = value.split('|')
             return True
-        return channel.unserialize_property(self, name, value)
+        return Channel.unserialize_property(self, name, value)
 
 def main_mix_serialization_name():
     return "main_mix_channel"
@@ -1002,3 +1003,4 @@ class ControlGroup(gtk.Alignment):
     def on_solo_toggled(self, button):
         self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())
         self.app.update_monitor(self)
+

@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-#
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
-#  
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License
@@ -17,17 +15,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-class serialization_backend:
+class SerializationBackend:
     '''Base class for serialization backends'''
     def get_root_serialization_object(self, name):
-        '''Returns serialization object where properties of root object will be serialized to'''
-        return None                     # this method should never be called for the base class
+        '''Returns serialization object where properties of root object
+           will be serialized to'''
+        # this method should never be called for the base class
+        raise NotImplementedError
 
     def get_child_serialization_object(self, name, backend_object):
-        return None                     # this method should never be called for the base class
+        # this method should never be called for the base class
+        raise NotImplementedError
 
-class serialization_object_backend:
-    '''Base class for serialization backend objects where real object properties will be serialized to or unserialized from.'''
+class SerializationObjectBackend:
+    '''Base class for serialization backend objects where real object
+       properties will be serialized to or unserialized from.'''
     def add_property(self, name, value):
         '''Serialize particular property'''
         pass
@@ -41,7 +43,7 @@ class serialization_object_backend:
     def serialization_name(self):
         return None
 
-class serialized_object:
+class SerializedObject:
     '''Base class for object supporting serialization'''
     def serialization_name(self):
         return None
@@ -60,7 +62,7 @@ class serialized_object:
     def unserialize_child(self, name):
         return None
 
-class serializator:
+class Serializator:
     def __init__(self):
         pass
 
@@ -98,4 +100,6 @@ class serializator:
         childs = object.serialization_get_childs()
         for child in childs:
             #print "serializing child " + repr(child)
-            self.serialize_one(backend, child, backend.get_child_serialization_object(child.serialization_name(), backend_object))
+            self.serialize_one(backend, child,
+                               backend.get_child_serialization_object(
+                                       child.serialization_name(), backend_object))

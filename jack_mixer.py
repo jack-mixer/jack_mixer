@@ -547,15 +547,15 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             return True
 
     def unserialize_child(self, name):
-        if name == main_mix_serialization_name():
+        if name == MainMixChannel.serialization_name():
             return self.main_mix
 
-        if name == input_channel_serialization_name():
+        if name == InputChannel.serialization_name():
             channel = InputChannel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
 
-        if name == output_channel_serialization_name():
+        if name == OutputChannel.serialization_name():
             channel = OutputChannel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel

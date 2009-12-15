@@ -464,8 +464,9 @@ class InputChannel(Channel):
             return True
         return False
 
-    def serialization_name(self):
-        return input_channel_serialization_name()
+    @classmethod
+    def serialization_name(cls):
+        return 'input_channel'
 
     def serialize(self, object_backend):
         object_backend.add_property("name", self.channel_name)
@@ -487,9 +488,6 @@ class InputChannel(Channel):
                 self.stereo = False
                 return True
         return Channel.unserialize_property(self, name, value)
-
-def input_channel_serialization_name():
-    return "input_channel"
 
 
 available_colours = [
@@ -611,8 +609,9 @@ class OutputChannel(Channel):
         self.channel.remove()
         self.channel = None
 
-    def serialization_name(self):
-        return output_channel_serialization_name()
+    @classmethod
+    def serialization_name(cls):
+        return 'output_channel'
 
     def serialize(self, object_backend):
         object_backend.add_property("name", self.channel_name)
@@ -657,9 +656,6 @@ class OutputChannel(Channel):
             self._init_solo_channels = value.split('|')
             return True
         return Channel.unserialize_property(self, name, value)
-
-def output_channel_serialization_name():
-    return "output_channel"
 
 class MainMixChannel(Channel):
     _init_muted_channels = None
@@ -722,8 +718,9 @@ class MainMixChannel(Channel):
         Channel.unrealize(self)
         self.channel = False
 
-    def serialization_name(self):
-        return main_mix_serialization_name()
+    @classmethod
+    def serialization_name(cls):
+        return 'main_mix_channel'
 
     def serialize(self, object_backend):
         muted_channels = []
@@ -747,9 +744,6 @@ class MainMixChannel(Channel):
             self._init_solo_channels = value.split('|')
             return True
         return Channel.unserialize_property(self, name, value)
-
-def main_mix_serialization_name():
-    return "main_mix_channel"
 
 
 class ChannelPropertiesDialog(gtk.Dialog):

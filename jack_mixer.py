@@ -133,7 +133,7 @@ class JackMixer(SerializedObject):
         self.channel_remove_input_menu = gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
-        self.channel_remove_output_menu_item = gtk.MenuItem('Remove Input Channel')
+        self.channel_remove_output_menu_item = gtk.MenuItem('Remove Output Channel')
         edit_menu.append(self.channel_remove_output_menu_item)
         self.channel_remove_output_menu = gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)

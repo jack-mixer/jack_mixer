@@ -284,6 +284,8 @@ gobject.signal_new('midi-event-received', Channel,
                 gobject.TYPE_NONE, ())
 
 class InputChannel(Channel):
+    post_fader_output_channel = None
+
     def __init__(self, app, name, stereo):
         Channel.__init__(self, app, name, stereo)
 
@@ -390,6 +392,9 @@ class InputChannel(Channel):
 
     def unrealize(self):
         Channel.unrealize(self)
+        if self.post_fader_output_channel:
+            self.post_fader_output_channel.remove()
+            self.post_fader_output_channel = None
         self.channel.remove()
         self.channel = None
 

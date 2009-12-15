@@ -83,8 +83,6 @@ struct channel
   void *midi_change_callback_data;
 
   jack_mixer_scale_t midi_scale;
-
-  jack_mixer_output_channel_t output;
 };
 
 struct output_channel {
@@ -393,7 +391,6 @@ remove_channel(
     assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] == channel_ptr);
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
   }
-  remove_output_channel(channel_ptr->output);
 
   free(channel_ptr);
 }
@@ -1075,7 +1072,6 @@ add_channel(
   struct channel * channel_ptr;
   char * port_name;
   size_t channel_name_size;
-  char * output_channel_name;
 
   channel_ptr = malloc(sizeof(struct channel));
   if (channel_ptr == NULL)
@@ -1151,12 +1147,6 @@ add_channel(
   channel_ptr->midi_scale = NULL;
 
   calc_channel_volumes(channel_ptr);
-
-  // for monitoring etc.
-  output_channel_name = malloc(channel_name_size + 5);
-  sprintf(output_channel_name, "%s Out", channel_name);
-  channel_ptr->output = add_output_channel(mixer, output_channel_name, stereo, true);
-  free(output_channel_name);
 
   channel_ptr->mixer_ptr->input_channels_list = g_slist_prepend(
                   channel_ptr->mixer_ptr->input_channels_list, channel_ptr);

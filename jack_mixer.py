@@ -337,6 +337,7 @@ class JackMixer(SerializedObject):
             channel.channel.balance_midi_cc = int(balance_cc)
         if not (volume_cc or balance_cc):
             channel.channel.autoset_midi_cc()
+
         return channel
 
     def add_channel_precreated(self, channel):
@@ -352,6 +353,12 @@ class JackMixer(SerializedObject):
 
         for outputchannel in self.output_channels:
             channel.add_control_group(outputchannel)
+
+        # create post fader output channel matching the input channel
+        channel.post_fader_output_channel = self.mixer.add_output_channel(
+                        channel.channel.name + ' Out', channel.channel.is_stereo, True)
+        channel.post_fader_output_channel.volume = 0
+        channel.post_fader_output_channel.set_solo(channel.channel, True)
 
     def read_meters(self):
         for channel in self.channels:

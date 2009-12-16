@@ -1,4 +1,13 @@
 =========
+Version 8
+=========
+
+ * Fix private modules lookup
+ * Fix rotation of output channel colours
+ * New menu items to remove output channels
+ * New command line parameter to not connect to LASH
+
+=========
 Version 7
 =========
 

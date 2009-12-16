@@ -588,14 +588,21 @@ def help():
     print "Usage: %s [mixer_name]" % sys.argv[0]
 
 def main():
-    if lash:                        # If LASH python bindings are available
+    # Connect to LASH if Python bindings are available, and the user did not
+    # pass --no-lash
+    if lash and not '--no-lash' in sys.argv:
         # sys.argv is modified by this call
         lash_client = lash.init(sys.argv, "jack_mixer", lash.LASH_Config_File)
     else:
         lash_client = None
 
     parser = OptionParser()
-    parser.add_option('-c', '--config', dest='config')
+    parser.add_option('-c', '--config', dest='config',
+                      help='use a non default configuration file')
+    # --no-lash here is not acted upon, it is specified for completeness when
+    # --help is passed.
+    parser.add_option('--no-lash', dest='nolash', action='store_true',
+                      help='do not connect to LASH')
     options, args = parser.parse_args()
 
     # Yeah , this sounds stupid, we connected earlier, but we dont want to show this if we got --help option

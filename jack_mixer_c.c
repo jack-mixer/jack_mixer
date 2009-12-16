@@ -211,6 +211,10 @@ Channel_get_volume(ChannelObject *self, void *closure)
 static int
 Channel_set_volume(ChannelObject *self, PyObject *value, void *closure)
 {
+	if (self->channel == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "unitialized channel");
+		return -1;
+	}
 	channel_volume_write(self->channel, PyFloat_AsDouble(value));
 	return 0;
 }

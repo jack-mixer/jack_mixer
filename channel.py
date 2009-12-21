@@ -760,6 +760,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
         self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         self.ok_button = self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+        self.set_default_response(gtk.RESPONSE_APPLY);
 
         self.create_ui()
         self.fill_ui()

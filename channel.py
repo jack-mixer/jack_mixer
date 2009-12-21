@@ -60,6 +60,8 @@ class Channel(gtk.VBox, SerializedObject):
             self.label_name.set_text(name)
         if self.channel:
             self.channel.name = name
+        if self.post_fader_output_channel:
+            self.post_fader_output_channel.name = "%s Out" % name;
     channel_name = property(get_channel_name, set_channel_name)
 
     def realize(self):

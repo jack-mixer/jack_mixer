@@ -54,6 +54,7 @@ class Channel(gtk.VBox, SerializedObject):
     label_name = None
     channel = None
     def set_channel_name(self, name):
+        self.app.on_channel_rename(self._channel_name, name);
         self._channel_name = name
         if self.label_name:
             self.label_name.set_text(name)

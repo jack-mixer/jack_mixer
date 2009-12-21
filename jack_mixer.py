@@ -128,12 +128,22 @@ class JackMixer(SerializedObject):
         edit_menu = gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
-        self.channel_remove_input_menu_item = gtk.MenuItem('Remove Input Channel')
+        self.channel_edit_input_menu_item = gtk.MenuItem('_Edit Input Channel')
+        edit_menu.append(self.channel_edit_input_menu_item)
+        self.channel_edit_input_menu = gtk.Menu()
+        self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
+
+        self.channel_edit_output_menu_item = gtk.MenuItem('Edit _Output Channel')
+        edit_menu.append(self.channel_edit_output_menu_item)
+        self.channel_edit_output_menu = gtk.Menu()
+        self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
+
+        self.channel_remove_input_menu_item = gtk.MenuItem('Remove _Input Channel')
         edit_menu.append(self.channel_remove_input_menu_item)
         self.channel_remove_input_menu = gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
-        self.channel_remove_output_menu_item = gtk.MenuItem('Remove Output Channel')
+        self.channel_remove_output_menu_item = gtk.MenuItem('_Remove Output Channel')
         edit_menu.append(self.channel_remove_output_menu_item)
         self.channel_remove_output_menu = gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
@@ -274,9 +284,20 @@ class JackMixer(SerializedObject):
             channel = self.add_output_channel(**result)
             self.window.show_all()
 
+    def on_edit_input_channel(self, widget, channel):
+        print 'Editing channel "%s"' % channel.channel_name
+        channel.on_channel_properties()
+
+    def remove_channel_edit_input_menuitem_by_label(self, widget, label):
+        if (widget.get_label() == label):
+            self.channel_edit_input_menu.remove(widget)
+
     def on_remove_input_channel(self, widget, channel):
         print 'Removing channel "%s"' % channel.channel_name
         self.channel_remove_input_menu.remove(widget)
+        self.channel_edit_input_menu.foreach(
+            self.remove_channel_edit_input_menuitem_by_label, 
+            channel.channel_name);
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
         for i in range(len(self.channels)):
@@ -288,9 +309,20 @@ class JackMixer(SerializedObject):
         if len(self.channels) == 0:
             self.channel_remove_input_menu_item.set_sensitive(False)
 
+    def on_edit_output_channel(self, widget, channel):
+        print 'Editing channel "%s"' % channel.channel_name
+        channel.on_channel_properties()
+
+    def remove_channel_edit_output_menuitem_by_label(self, widget, label):
+        if (widget.get_label() == label):
+            self.channel_edit_output_menu.remove(widget)
+
     def on_remove_output_channel(self, widget, channel):
         print 'Removing channel "%s"' % channel.channel_name
         self.channel_remove_output_menu.remove(widget)
+        self.channel_edit_output_menu.foreach(
+            self.remove_channel_edit_output_menuitem_by_label, 
+            channel.channel_name);
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
         for i in range(len(self.channels)):
@@ -302,6 +334,23 @@ class JackMixer(SerializedObject):
         if len(self.output_channels) == 0:
             self.channel_remove_output_menu_item.set_sensitive(False)
 
+    def rename_channels(self, container, parameters):
+        if (container.get_label() == parameters['oldname']):
+            container.set_label(parameters['newname']) 
+
+    def on_channel_rename(self, oldname, newname):
+        rename_parameters = { 'oldname' : oldname, 'newname' : newname }
+        self.channel_edit_input_menu.foreach(self.rename_channels, 
+            rename_parameters)
+        self.channel_edit_output_menu.foreach(self.rename_channels, 
+            rename_parameters)
+        self.channel_remove_input_menu.foreach(self.rename_channels, 
+            rename_parameters)
+        self.channel_remove_output_menu.foreach(self.rename_channels, 
+            rename_parameters)
+        print "Renaming channel from %s to %s\n" % (oldname, newname)
+
+
     def on_channels_clear(self, widget):
         for channel in self.output_channels:
             channel.unrealize()
@@ -311,9 +360,15 @@ class JackMixer(SerializedObject):
             self.hbox_inputs.remove(channel.parent)
         self.channels = []
         self.output_channels = []
+        self.channel_edit_input_menu = gtk.Menu()
+        self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
+        self.channel_edit_input_menu_item.set_sensitive(False)
         self.channel_remove_input_menu = gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
         self.channel_remove_input_menu_item.set_sensitive(False)
+        self.channel_edit_output_menu = gtk.Menu()
+        self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
+        self.channel_edit_output_menu_item.set_sensitive(False)
         self.channel_remove_output_menu = gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
         self.channel_remove_output_menu_item.set_sensitive(False)
@@ -345,10 +400,17 @@ class JackMixer(SerializedObject):
         frame.add(channel)
         self.hbox_inputs.pack_start(frame, False)
         channel.realize()
+
+        channel_edit_menu_item = gtk.MenuItem(channel.channel_name)
+        self.channel_edit_input_menu.append(channel_edit_menu_item)
+        channel_edit_menu_item.connect("activate", self.on_edit_input_channel, channel)
+        self.channel_edit_input_menu_item.set_sensitive(True)
+
         channel_remove_menu_item = gtk.MenuItem(channel.channel_name)
         self.channel_remove_input_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_input_channel, channel)
         self.channel_remove_input_menu_item.set_sensitive(True)
+
         self.channels.append(channel)
 
         for outputchannel in self.output_channels:
@@ -393,10 +455,17 @@ class JackMixer(SerializedObject):
         frame.add(channel)
         self.hbox_outputs.pack_start(frame, False)
         channel.realize()
+
+        channel_edit_menu_item = gtk.MenuItem(channel.channel_name)
+        self.channel_edit_output_menu.append(channel_edit_menu_item)
+        channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
+        self.channel_edit_output_menu_item.set_sensitive(True)
+
         channel_remove_menu_item = gtk.MenuItem(channel.channel_name)
         self.channel_remove_output_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_output_channel, channel)
         self.channel_remove_output_menu_item.set_sensitive(True)
+
         self.output_channels.append(channel)
 
     _monitored_channel = None

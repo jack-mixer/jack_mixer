@@ -192,7 +192,7 @@ class JackMixer(SerializedObject):
         gobject.timeout_add(200, self.lash_check_events)
 
     def sighandler(self, signum, frame):
-        print "Signal %d received" % signum
+        #print "Signal %d received" % signum
         if signum == signal.SIGUSR1:
             self.save = True
         elif signum == signal.SIGTERM:
@@ -486,11 +486,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         about.destroy()
 
     def lash_check_events(self):
-        if self.current_filename and self.save:
-            print "saving on SIGUSR1 request"
-            self.on_save_cb()
-            print "save done"
+        if self.save:
             self.save = False
+            if self.current_filename:
+                print "saving on SIGUSR1 request"
+                self.on_save_cb()
+                print "save done"
+            else:
+                print "not saving because filename is not known"
             return True
 
         if not self.lash_client:
@@ -645,7 +648,7 @@ def main():
     if not name:
         name = "jack_mixer-%u" % os.getpid()
 
-    gtk.gdk.threads_init()
+    #gtk.gdk.threads_init() # if this function is called, when SIGUSR1 is received, we enter tight loop...
     try:
         mixer = JackMixer(name, lash_client)
     except Exception, e:

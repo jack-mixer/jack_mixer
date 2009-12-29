@@ -648,7 +648,7 @@ def main():
     if not name:
         name = "jack_mixer-%u" % os.getpid()
 
-    #gtk.gdk.threads_init() # if this function is called, when SIGUSR1 is received, we enter tight loop...
+    gtk.gdk.threads_init() # if this function is called, when SIGUSR1 is received, we enter tight loop...
     try:
         mixer = JackMixer(name, lash_client)
     except Exception, e:

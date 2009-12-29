@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
 # This file is part of jack_mixer
 #
@@ -25,6 +25,7 @@ import gtk
 import gobject
 import sys
 import os
+import signal
 
 try:
     import lash
@@ -66,6 +67,8 @@ class JackMixer(SerializedObject):
         if not self.mixer:
             return
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
+
+        self.save = False
 
         if lash_client:
             # Send our client name to server
@@ -196,8 +199,18 @@ class JackMixer(SerializedObject):
         gobject.timeout_add(80, self.read_meters)
         self.lash_client = lash_client
 
-        if lash_client:
-            gobject.timeout_add(1000, self.lash_check_events)
+        gobject.timeout_add(200, self.lash_check_events)
+
+    def sighandler(self, signum, frame):
+        #print "Signal %d received" % signum
+        if signum == signal.SIGUSR1:
+            self.save = True
+        elif signum == signal.SIGTERM:
+            gtk.main_quit()
+        elif signum == signal.SIGINT:
+            gtk.main_quit()
+        else:
+            print "Unknown signal %d received" % signum
 
     def cleanup(self):
         print "Cleaning jack_mixer"
@@ -542,6 +555,19 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         about.destroy()
 
     def lash_check_events(self):
+        if self.save:
+            self.save = False
+            if self.current_filename:
+                print "saving on SIGUSR1 request"
+                self.on_save_cb()
+                print "save done"
+            else:
+                print "not saving because filename is not known"
+            return True
+
+        if not self.lash_client:
+            return True
+
         while lash.lash_get_pending_event_count(self.lash_client):
             event = lash.lash_get_event(self.lash_client)
 
@@ -647,6 +673,10 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
 
         self.window.show_all()
 
+        signal.signal(signal.SIGUSR1, self.sighandler)
+        signal.signal(signal.SIGTERM, self.sighandler)
+        signal.signal(signal.SIGINT, self.sighandler)
+
         gtk.main()
 
         #f = file("/dev/stdout", "w")
@@ -687,7 +717,7 @@ def main():
     if not name:
         name = "jack_mixer"
 
-    gtk.gdk.threads_init()
+    gtk.gdk.threads_init() # if this function is called, when SIGUSR1 is received, we enter tight loop...
     try:
         mixer = JackMixer(name, lash_client)
     except Exception, e:

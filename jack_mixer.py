@@ -616,7 +616,7 @@ def main():
         name = None
 
     if not name:
-        name = "jack_mixer-%u" % os.getpid()
+        name = "jack_mixer"
 
     gtk.gdk.threads_init()
     try:

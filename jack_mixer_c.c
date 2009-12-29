@@ -828,7 +828,7 @@ Mixer_add_channel(MixerObject *self, PyObject *args)
 	int stereo;
 	jack_mixer_channel_t channel;
 
-	if (! PyArg_ParseTuple(args, "sb", &name, &stereo)) return NULL;
+	if (! PyArg_ParseTuple(args, "si", &name, &stereo)) return NULL;
 
 	channel = add_channel(self->mixer, name, (bool)stereo);
 

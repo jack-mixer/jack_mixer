@@ -45,6 +45,12 @@
 
 #define PEAK_FRAMES_CHUNK 4800
 
+// we don't know how much to allocate, but we don't want to wait with 
+// allocating until we're in the process() callback, so we just take a 
+// fairly big chunk: 4 periods per buffer, 4096 samples per period.
+// (not sure if the '*4' is needed)
+#define MAX_BLOCK_SIZE (4 * 4096)
+
 #define FLOAT_EXISTS(x) (!((x) - (x)))
 
 struct channel
@@ -669,14 +675,12 @@ calc_channel_frames(
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
 
-  channel_ptr->frames_left = calloc(end-start, sizeof(jack_default_audio_sample_t));
-  channel_ptr->frames_right = calloc(end-start, sizeof(jack_default_audio_sample_t));
-
-  channel_ptr->prefader_frames_left = calloc(end-start, sizeof(jack_default_audio_sample_t));
-  channel_ptr->prefader_frames_right = calloc(end-start, sizeof(jack_default_audio_sample_t));
-
   for (i = start ; i < end ; i++)
   {
+    if (i-start >= MAX_BLOCK_SIZE)
+    {
+      fprintf(STDERR, "i-start too high: %d - %d\n", i, start);
+    }
     channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
     if (channel_ptr->stereo)
       channel_ptr->prefader_frames_right[i-start] = channel_ptr->right_buffer_ptr[i];
@@ -805,15 +809,6 @@ mix(
     }
 
     mix_one(output_channel_ptr, mixer_ptr->input_channels_list, start, end);
-  }
-
-  for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
-  {
-    channel_ptr = (struct channel*)node_ptr->data;
-    free(channel_ptr->frames_left);
-    free(channel_ptr->frames_right);
-    free(channel_ptr->prefader_frames_left);
-    free(channel_ptr->prefader_frames_right);
   }
 }
 
@@ -1137,6 +1132,11 @@ add_channel(
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
 
+  channel_ptr->frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->prefader_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->prefader_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+
   channel_ptr->NaN_detected = false;
 
   channel_ptr->midi_cc_volume_index = 0;
@@ -1246,6 +1246,11 @@ create_output_channel(
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
+
+  channel_ptr->frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->prefader_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->prefader_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
 
   channel_ptr->NaN_detected = false;
 

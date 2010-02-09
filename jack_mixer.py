@@ -201,6 +201,8 @@ class JackMixer(SerializedObject):
 
         gobject.timeout_add(200, self.lash_check_events)
 
+        gobject.timeout_add(50, self.midi_events_check)
+
     def sighandler(self, signum, frame):
         #print "Signal %d received" % signum
         if signum == signal.SIGUSR1:
@@ -441,6 +443,11 @@ class JackMixer(SerializedObject):
         self.main_mix.read_meter()
         for channel in self.output_channels:
             channel.read_meter()
+        return True
+
+    def midi_events_check(self):
+        for channel in self.channels + [self.main_mix] + self.output_channels:
+            channel.midi_events_check()
         return True
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, display_solo_buttons):

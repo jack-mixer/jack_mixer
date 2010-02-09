@@ -70,7 +70,6 @@ class Channel(gtk.VBox, SerializedObject):
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
         self.balance_adjustment.connect("value-changed", self.on_balance_changed)
-        self.connect('midi-event-received', self.on_midi_event_received)
 
         self.slider = None
         self.create_slider_widget()
@@ -256,14 +255,14 @@ class Channel(gtk.VBox, SerializedObject):
             return True
         return False
 
+    def midi_events_check(self):
+        if self.channel.midi_got_events:
+            self.slider_adjustment.set_value_db(self.channel.volume)
+            self.balance_adjustment.set_value(self.channel.balance)
+
     def on_midi_event_received(self, *args):
         self.slider_adjustment.set_value_db(self.channel.volume)
         self.balance_adjustment.set_value(self.channel.balance)
-
-    def midi_change_callback(self, *args):
-        # the changes are not applied directly to the widgets as they
-        # absolutely have to be done from the gtk thread.
-        self.emit('midi-event-received')
 
     def on_monitor_button_toggled(self, button):
         if not button.get_active():
@@ -283,10 +282,6 @@ class Channel(gtk.VBox, SerializedObject):
             self.app.set_monitored_channel(self)
         self.monitor_button.set_active(True)
 
-gobject.signal_new('midi-event-received', Channel,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, ())
-
 class InputChannel(Channel):
     post_fader_output_channel = None
 
@@ -303,7 +298,6 @@ class InputChannel(Channel):
         if self.future_balance_midi_cc:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         self.channel.midi_scale = self.slider_scale.scale
-        self.channel.midi_change_callback = self.midi_change_callback
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
@@ -533,7 +527,6 @@ class OutputChannel(Channel):
         Channel.realize(self)
 
         self.channel.midi_scale = self.slider_scale.scale
-        self.channel.midi_change_callback = self.midi_change_callback
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
@@ -672,7 +665,6 @@ class MainMixChannel(Channel):
         Channel.realize(self)
         self.channel = self.mixer.main_mix_channel
         self.channel.midi_scale = self.slider_scale.scale
-        self.channel.midi_change_callback = self.midi_change_callback
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)

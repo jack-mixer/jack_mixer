@@ -437,6 +437,21 @@ Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	return -1;
 }
 
+static PyObject*
+Channel_get_midi_got_events(ChannelObject *self, void *closure)
+{
+	PyObject *result;
+
+	if (channel_get_midi_got_events(self->channel)) {
+		result = Py_True;
+	} else {
+		result = Py_False;
+	}
+	Py_INCREF(result);
+	return result;
+}
+
+
 static PyGetSetDef Channel_getseters[] = {
 	{"is_stereo", 
 		(getter)Channel_get_is_stereo, NULL,
@@ -478,6 +493,9 @@ static PyGetSetDef Channel_getseters[] = {
 		(getter)Channel_get_volume_midi_cc,
 		(setter)Channel_set_volume_midi_cc,
 		"Volume MIDI CC", NULL},
+	{"midi_got_events",
+		(getter)Channel_get_midi_got_events, NULL,
+		"Got new MIDI events", NULL},
 	{NULL}
 };
 

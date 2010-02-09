@@ -85,6 +85,7 @@ struct channel
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
 
+  bool midi_got_events;
   void (*midi_change_callback) (void*);
   void *midi_change_callback_data;
 
@@ -543,6 +544,15 @@ channel_set_midi_change_callback(
   channel_ptr->midi_change_callback_data = user_data;
 }
 
+bool
+channel_get_midi_got_events(
+  jack_mixer_channel_t channel)
+{
+  bool t = channel_ptr->midi_got_events;
+  channel_ptr->midi_got_events = false;
+  return t;
+}
+
 #undef channel_ptr
 
 /* process input channels and mix them into main mix */
@@ -909,6 +919,7 @@ process(
 
       calc_channel_volumes(channel_ptr);
 
+      channel_ptr->midi_got_events = true;
       if (channel_ptr->midi_change_callback)
         channel_ptr->midi_change_callback(channel_ptr->midi_change_callback_data);
 

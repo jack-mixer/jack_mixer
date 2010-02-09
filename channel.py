@@ -17,7 +17,6 @@
 
 import gtk
 import gobject
-import glib
 import slider
 import meter
 import abspeak
@@ -862,7 +861,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
                 return False
             return True
         window.show_all()
-        glib.timeout_add_seconds(1, close_sense_timeout, window, entry)
+        gobject.timeout_add_seconds(1, close_sense_timeout, window, entry)
 
     def on_sense_midi_volume_clicked(self, *args):
         self.sense_popup_dialog(self.entry_volume_cc)

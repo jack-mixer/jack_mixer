@@ -53,6 +53,7 @@ class Channel(gtk.VBox, SerializedObject):
 
     label_name = None
     channel = None
+    post_fader_output_channel = None
     def set_channel_name(self, name):
         self.app.on_channel_rename(self._channel_name, name);
         self._channel_name = name

@@ -679,7 +679,7 @@ calc_channel_frames(
   {
     if (i-start >= MAX_BLOCK_SIZE)
     {
-      fprintf(STDERR, "i-start too high: %d - %d\n", i, start);
+      fprintf(stderr, "i-start too high: %d - %d\n", i, start);
     }
     channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
     if (channel_ptr->stereo)

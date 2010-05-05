@@ -714,7 +714,13 @@ def main():
     # Yeah , this sounds stupid, we connected earlier, but we dont want to show this if we got --help option
     # This issue should be fixed in pylash, there is a reason for having two functions for initialization after all
     if lash_client:
-        print "Successfully connected to LASH server at " +  lash.lash_get_server_name(lash_client)
+        server_name = lash.lash_get_server_name(lash_client)
+        if server_name:
+            print "Successfully connected to LASH server at " + server_name
+        else:
+            # getting the server name failed, probably not worth trying to do
+            # further things with as a lash client.
+            lash_client = None
 
     if len(args) == 1:
         name = args[0]

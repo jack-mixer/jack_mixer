@@ -222,6 +222,8 @@ class JackMixer(SerializedObject):
         for channel in self.channels:
             channel.unrealize()
 
+        self.mixer.destroy()
+
     def on_open_cb(self, *args):
         dlg = gtk.FileChooserDialog(title='Open', parent=self.window,
                         action=gtk.FILE_CHOOSER_ACTION_OPEN,

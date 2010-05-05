@@ -873,10 +873,21 @@ Mixer_add_output_channel(MixerObject *self, PyObject *args)
 	return OutputChannel_New(channel);
 }
 
+static PyObject*
+Mixer_destroy(MixerObject *self, PyObject *args)
+{
+	if (self->mixer) {
+		destroy(self->mixer);
+		self->mixer = NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyMethodDef Mixer_methods[] = {
 	{"add_channel", (PyCFunction)Mixer_add_channel, METH_VARARGS, "Add a new channel"},
 	{"add_output_channel", (PyCFunction)Mixer_add_output_channel, METH_VARARGS, "Add a new output channel"},
+	{"destroy", (PyCFunction)Mixer_destroy, METH_VARARGS, "Destroy JACK Mixer"},
 //	{"remove_channel", (PyCFunction)Mixer_remove_channel, METH_VARARGS, "Remove a channel"},
 	{NULL}
 };

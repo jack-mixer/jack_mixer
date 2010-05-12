@@ -4,6 +4,9 @@ Installation
 This program uses autotools. So you do the usual
   ./configure && make && make install 
 
+If you're building directly from version control, you first need to:
+  ./autogen.sh
+
 Build requirements:
  * You need gcc (3.4.3 should work)
  * You need Python headers (python-dev package or something like that)

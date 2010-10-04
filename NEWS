@@ -1,4 +1,21 @@
 =========
+Version 9
+=========
+
+ * Changed to no longer appends PID to jack client name (#15006)
+ * Added 'Edit .. channel' submenus
+ * Set a default 'apply' button in channel properties
+ * Fixed creation of  mono channels
+ * Removed bad crackling when changing the volume through MIDI
+ * Moved back to polling for MIDI events, to avoid the need for threads
+ * Changed to use backward compatible call to gobject.timeout_add (#14999)
+ * Updated not to fail if we can't get lash server name
+ * Added support for Ladish level 1
+ * Improved SIGUSR1 handling
+
+With contributions from Nedko Arnaudov and Arnout Engelen.
+
+=========
 Version 8
 =========
 

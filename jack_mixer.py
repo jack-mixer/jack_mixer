@@ -540,7 +540,7 @@ class JackMixer(SerializedObject):
     def on_about(self, *args):
         about = gtk.AboutDialog()
         about.set_name('jack_mixer')
-        about.set_copyright('Copyright © 2006-2009\nNedko Arnaudov, Frederic Peters')
+        about.set_copyright('Copyright © 2006-2010\nNedko Arnaudov, Frederic Peters, Arnout Engelen')
         about.set_license('''\
 jack_mixer is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the

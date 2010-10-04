@@ -875,8 +875,14 @@ class ChannelPropertiesDialog(gtk.Dialog):
         if response_id == gtk.RESPONSE_APPLY:
             name = self.entry_name.get_text()
             self.channel.channel_name = name
-            self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
-            self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
+            try:
+                self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
+            except ValueError:
+                pass
+            try:
+                self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
+            except ValueError:
+                pass
 
     def on_entry_name_changed(self, entry):
         sensitive = False

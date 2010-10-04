@@ -704,7 +704,7 @@ def main():
     else:
         lash_client = None
 
-    parser = OptionParser()
+    parser = OptionParser(usage='usage: %prog [options] [jack_client_name]')
     parser.add_option('-c', '--config', dest='config',
                       help='use a non default configuration file')
     # --no-lash here is not acted upon, it is specified for completeness when

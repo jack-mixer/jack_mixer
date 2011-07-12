@@ -957,6 +957,10 @@ process(
       {
         continue;
       }
+      if (channel_ptr->midi_cc_balance_index == (unsigned int)cc_channel_index)
+      {
+        continue;
+      }
       midi_out_buffer = jack_midi_event_reserve(midi_buffer, i, 3);
       if (midi_out_buffer == NULL)
       {

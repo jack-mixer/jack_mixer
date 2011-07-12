@@ -88,6 +88,7 @@ struct channel
   bool midi_in_got_events;
   void (*midi_change_callback) (void*);
   void *midi_change_callback_data;
+  bool midi_out_has_events;
 
   jack_mixer_scale_t midi_scale;
 };
@@ -429,6 +430,7 @@ channel_volume_write(
 {
   assert(channel_ptr);
   channel_ptr->volume = db_to_value(volume);
+  channel_ptr->midi_out_has_events = true;
   calc_channel_volumes(channel_ptr);
 }
 
@@ -848,8 +850,10 @@ process(
 #if defined(HAVE_JACK_MIDI)
   jack_nframes_t event_count;
   jack_midi_event_t in_event;
+  unsigned char* midi_out_buffer;
   void * midi_buffer;
   signed char byte;
+  unsigned int cc_channel_index;
 #endif
   jack_nframes_t offset;
 
@@ -889,7 +893,7 @@ process(
 
     LOG_DEBUG(
       "%u: CC#%u -> %u",
-      (unsigned int)(in_event.buffer[0] & 0x0F),
+      (unsigned int)(in_event.buffer[0]),
       (unsigned int)in_event.buffer[1],
       (unsigned int)in_event.buffer[2]);
 
@@ -935,6 +939,41 @@ process(
 
     }
 
+  }
+
+  midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_out, nframes);
+  jack_midi_clear_buffer(midi_buffer);
+
+  for(i=0; i<nframes; i++)
+  {
+    for (cc_channel_index=0; cc_channel_index<128; cc_channel_index++)
+    {
+      channel_ptr = mixer_ptr->midi_cc_map[cc_channel_index];
+      if (channel_ptr == NULL)
+      {
+        continue;
+      }
+      if (channel_ptr->midi_out_has_events == false)
+      {
+        continue;
+      }
+      midi_out_buffer = jack_midi_event_reserve(midi_buffer, i, 3);
+      if (midi_out_buffer == NULL)
+      {
+        continue;
+      }
+      midi_out_buffer[0] = 0xB0; /* control change */
+      midi_out_buffer[1] = cc_channel_index;
+      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume)));
+
+      LOG_DEBUG(
+        "%u: CC#%u <- %u",
+        (unsigned int)(midi_out_buffer[0]),
+        (unsigned int)midi_out_buffer[1],
+        (unsigned int)midi_out_buffer[2]);
+
+      channel_ptr->midi_out_has_events = false;
+    }
   }
 
 #endif
@@ -1172,6 +1211,7 @@ add_channel(
   channel_ptr->midi_cc_balance_index = 0;
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
+  channel_ptr->midi_out_has_events = false;
 
   channel_ptr->midi_scale = NULL;
 

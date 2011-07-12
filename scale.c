@@ -83,9 +83,10 @@ scale_add_threshold(
   struct threshold * threshold_ptr;
 
   LOG_DEBUG("Adding threshold (%f dBFS -> %f) to scale %p", db, scale, scale_ptr);
-  LOG_DEBUG("Threshold %p created ", threshold_ptr, db, scale);
 
   threshold_ptr = malloc(sizeof(struct threshold));
+  LOG_DEBUG("Threshold %p created ", threshold_ptr, db, scale);
+
   if (threshold_ptr == NULL)
   {
     return false;

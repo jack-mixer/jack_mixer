@@ -109,6 +109,7 @@ struct jack_mixer
   struct output_channel *main_mix_channel;
 
   jack_port_t * port_midi_in;
+  jack_port_t * port_midi_out;
   unsigned int last_midi_channel;
 
   struct channel* midi_cc_map[128];
@@ -1003,9 +1004,17 @@ create(
   mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
   if (mixer_ptr->port_midi_in == NULL)
   {
-    LOG_ERROR("Cannot create JACK port");
+    LOG_ERROR("Cannot create JACK MIDI in port");
     goto close_jack;
   }
+
+  mixer_ptr->port_midi_out = jack_port_register(mixer_ptr->jack_client, "midi out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+  if (mixer_ptr->port_midi_out == NULL)
+  {
+    LOG_ERROR("Cannot create JACK MIDI out port");
+    goto close_jack;
+  }
+
 #endif
 
   calc_channel_volumes((struct channel*)mixer_ptr->main_mix_channel);

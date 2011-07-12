@@ -871,9 +871,8 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
     def on_response_cb(self, dlg, response_id, *args):
         self.channel.channel_properties_dialog = None
-        self.destroy()
+        name = self.entry_name.get_text()
         if response_id == gtk.RESPONSE_APPLY:
-            name = self.entry_name.get_text()
             self.channel.channel_name = name
             try:
                 self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
@@ -883,6 +882,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
                 self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
             except ValueError:
                 pass
+        self.destroy()
 
     def on_entry_name_changed(self, entry):
         sensitive = False
@@ -933,9 +933,9 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         self.display_solo_buttons.set_active(self.channel.display_solo_buttons)
 
     def on_response_cb(self, dlg, response_id, *args):
-        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
         if response_id == gtk.RESPONSE_APPLY:
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
+        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
 
 
 class NewOutputChannelDialog(OutputChannelPropertiesDialog):

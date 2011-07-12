@@ -255,7 +255,7 @@ class Channel(gtk.VBox, SerializedObject):
         return False
 
     def midi_events_check(self):
-        if self.channel.midi_got_events:
+        if self.channel.midi_in_got_events:
             self.slider_adjustment.set_value_db(self.channel.volume)
             self.balance_adjustment.set_value(self.channel.balance)
 

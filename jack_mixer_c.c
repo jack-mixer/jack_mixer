@@ -438,11 +438,11 @@ Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 }
 
 static PyObject*
-Channel_get_midi_got_events(ChannelObject *self, void *closure)
+Channel_get_midi_in_got_events(ChannelObject *self, void *closure)
 {
 	PyObject *result;
 
-	if (channel_get_midi_got_events(self->channel)) {
+	if (channel_get_midi_in_got_events(self->channel)) {
 		result = Py_True;
 	} else {
 		result = Py_False;
@@ -493,9 +493,9 @@ static PyGetSetDef Channel_getseters[] = {
 		(getter)Channel_get_volume_midi_cc,
 		(setter)Channel_set_volume_midi_cc,
 		"Volume MIDI CC", NULL},
-	{"midi_got_events",
-		(getter)Channel_get_midi_got_events, NULL,
-		"Got new MIDI events", NULL},
+	{"midi_in_got_events",
+		(getter)Channel_get_midi_in_got_events, NULL,
+		"Got new MIDI IN events", NULL},
 	{NULL}
 };
 

@@ -795,13 +795,14 @@ Mixer_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Mixer_init(MixerObject *self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = {"name", NULL};
+	static char *kwlist[] = {"name", "stereo", NULL};
 	char *name;
+	int stereo = 1;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s", kwlist, &name))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|b", kwlist, &name, &stereo))
 		return -1;
 	
-	self->mixer = create(name);
+	self->mixer = create(name, (bool)stereo);
 	if (self->mixer == NULL) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"error creating mixer, probably jack is not running");

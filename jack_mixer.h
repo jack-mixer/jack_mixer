@@ -41,7 +41,8 @@ typedef void * jack_mixer_threshold_t;
 
 jack_mixer_t
 create(
-  const char * jack_client_name_ptr);
+  const char * jack_client_name_ptr,
+  bool stereo);
 
 void
 destroy(

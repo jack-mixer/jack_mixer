@@ -991,7 +991,8 @@ process(
 
 jack_mixer_t
 create(
-  const char * jack_client_name_ptr)
+  const char * jack_client_name_ptr,
+  bool stereo)
 {
   int ret;
   struct jack_mixer * mixer_ptr;
@@ -1033,7 +1034,7 @@ create(
 
   LOG_DEBUG("Sample rate: %" PRIu32, jack_get_sample_rate(mixer_ptr->jack_client));
 
-  mixer_ptr->main_mix_channel = create_output_channel(mixer_ptr, "MAIN", true, false);
+  mixer_ptr->main_mix_channel = create_output_channel(mixer_ptr, "MAIN", stereo, false);
   if (mixer_ptr->main_mix_channel == NULL) {
     LOG_ERROR("Cannot create main mix channel");
     goto close_jack;

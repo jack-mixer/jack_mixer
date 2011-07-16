@@ -5,6 +5,7 @@ Version 10
  * Fixed change of channel settings (#18299)
  * Added a MIDI out port for feeding back volume levels into motorized
    controllers
+ * Added jack_mix_box, a minimalistic (no UI) jack mixer
 
 With contributions from John Hedges.
 

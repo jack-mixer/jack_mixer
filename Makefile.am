@@ -45,8 +45,16 @@ EXTRA_DIST = test.py COPYING jack_mixer.schemas jack_mixer.py NEWS
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 
+bin_PROGRAMS = jack_mix_box
+
 jack_mixer_c.so: jack_mixer_c.la
 	ln -nfs .libs/jack_mixer_c.so
+
+jack_mix_box_SOURCES = jack_mix_box.c jack_mixer.c scale.c log.c
+
+jack_mix_box_CFLAGS = $(JACKMIXER_CFLAGS)
+
+jack_mix_box_LDADD = $(JACKMIXER_LIBS) -lm
 
 test: _jack_mixer_c.so
 	@./test.py

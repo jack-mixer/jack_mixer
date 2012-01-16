@@ -949,7 +949,7 @@ process(
     for (cc_channel_index=0; cc_channel_index<128; cc_channel_index++)
     {
       channel_ptr = mixer_ptr->midi_cc_map[cc_channel_index];
-      if (channel_ptr == NULL)
+      if (channel_ptr == NULL || channel_ptr->midi_scale == NULL)
       {
         continue;
       }

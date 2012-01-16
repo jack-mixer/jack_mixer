@@ -685,6 +685,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)
         signal.signal(signal.SIGINT, self.sighandler)
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
         gtk.main()
 

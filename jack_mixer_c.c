@@ -826,6 +826,12 @@ Mixer_get_channels_count(MixerObject *self, void *closure)
 }
 
 static PyObject*
+Mixer_get_client_name(MixerObject *self, void *closure)
+{
+	return PyString_FromString(get_client_name(self->mixer));
+}
+
+static PyObject*
 Mixer_get_last_midi_channel(MixerObject *self, void *closure)
 {
 	return PyInt_FromLong(get_last_midi_channel(self->mixer));
@@ -889,6 +895,7 @@ static PyMethodDef Mixer_methods[] = {
 	{"add_channel", (PyCFunction)Mixer_add_channel, METH_VARARGS, "Add a new channel"},
 	{"add_output_channel", (PyCFunction)Mixer_add_output_channel, METH_VARARGS, "Add a new output channel"},
 	{"destroy", (PyCFunction)Mixer_destroy, METH_VARARGS, "Destroy JACK Mixer"},
+	{"client_name", (PyCFunction)Mixer_get_client_name, METH_VARARGS, "Get jack client name"},
 //	{"remove_channel", (PyCFunction)Mixer_remove_channel, METH_VARARGS, "Remove a channel"},
 	{NULL}
 };

@@ -63,5 +63,16 @@
         <long>Whether to use custom widgets for the slider and balance.</long>
       </locale>
     </schema>
+    <schema>
+      <key>/schemas/apps/jack_mixer/minimize_to_tray</key>
+      <applyto>/apps/jack_mixer/minimize_to_tray</applyto>
+      <owner>jack_mixer</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Minimize to tray</short>
+        <long>Minimize main window to tray instead of closing the whole app.</long>
+      </locale>
+    </schema>
   </schemalist>
 </gconfschemafile>

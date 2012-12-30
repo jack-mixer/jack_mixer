@@ -6,8 +6,9 @@ Version 10
  * Added a MIDI out port for feeding back volume levels into motorized
    controllers
  * Added jack_mix_box, a minimalistic (no UI) jack mixer
+ * Added a trayicon and minimize to tray feature
 
-With contributions from John Hedges.
+With contributions from John Hedges and Sarah Mischke.
 
 =========
 Version 9

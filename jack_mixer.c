@@ -1124,6 +1124,13 @@ get_channels_count(
   return g_slist_length(mixer_ctx_ptr->input_channels_list);
 }
 
+const char*
+get_client_name(
+  jack_mixer_t mixer)
+{
+  return jack_get_client_name(mixer_ctx_ptr->jack_client);
+}
+
 unsigned int
 get_last_midi_channel(
   jack_mixer_t mixer)

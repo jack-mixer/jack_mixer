@@ -56,6 +56,10 @@ unsigned int
 get_channels_count(
   jack_mixer_t mixer);
 
+const char*
+get_client_name(
+  jack_mixer_t mixer);
+
 unsigned int
 get_last_midi_channel(
   jack_mixer_t mixer);

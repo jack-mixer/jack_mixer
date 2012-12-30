@@ -59,6 +59,9 @@ class Factory(gobject.GObject):
             self.use_custom_widgets = self.gconf_client.get_bool(
                             '/apps/jack_mixer/use_custom_widgets')
 
+            self.minimize_to_tray = self.gconf_client.get_bool(
+                            '/apps/jack_mixer/minimize_to_tray')
+
             self.gconf_client.add_dir("/apps/jack_mixer", gconf.CLIENT_PRELOAD_NONE)
             self.gconf_client.notify_add("/apps/jack_mixer/default_meter_scale", self.on_gconf_default_meter_scale_changed)
             self.gconf_client.notify_add("/apps/jack_mixer/default_slider_scale", self.on_gconf_default_slider_scale_changed)
@@ -68,12 +71,15 @@ class Factory(gobject.GObject):
                             self.on_gconf_vumeter_color_scheme_change)
             self.gconf_client.notify_add('/apps/jack_mixer/use_custom_widgets',
                             self.on_gconf_use_custom_widgets_change)
+            self.gconf_client.notify_add('/apps/jack_mixer/minimize_to_tray',
+                            self.on_gconf_minimize_to_tray_change)
         else:
             self.default_meter_scale = meter_scales[0]
             self.default_slider_scale = slider_scales[0]
             self.vumeter_color = '#ccb300'
             self.vumeter_color_scheme = 'default'
             self.use_custom_widgets = False
+            self.minimize_to_tray = True
 
     def on_gconf_default_meter_scale_changed(self, client, connection_id, entry, args):
         #print "GConf default_meter_scale changed"
@@ -140,6 +146,17 @@ class Factory(gobject.GObject):
         use_custom = entry.get_value().get_bool()
         self.set_use_custom_widgets(use_custom, from_gconf=True)
 
+    def set_minimize_to_tray(self, minimize_to_tray, from_gconf=False):
+        if gconf and not from_gconf:
+            self.gconf_client.set_bool('/apps/jack_mixer/minimize_to_tray', minimize_to_tray)
+        else:
+            self.minimize_to_tray = minimize_to_tray
+            self.emit('minimize-to-tray-changed', self.minimize_to_tray)
+
+    def on_gconf_minimize_to_tray_change(self, client, connection_id, entry, args):
+        minimize_to_tray = entry.get_value().get_bool()
+        self.set_minimize_to_tray(minimize_to_tray, from_gconf=True)
+
     def get_default_meter_scale(self):
         return self.default_meter_scale
 
@@ -155,6 +172,9 @@ class Factory(gobject.GObject):
     def get_use_custom_widgets(self):
         return self.use_custom_widgets
 
+    def get_minimize_to_tray(self):
+        return self.minimize_to_tray
+
 gobject.signal_new("default-meter-scale-changed", Factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
@@ -168,5 +188,8 @@ gobject.signal_new('vumeter-color-scheme-changed', Factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [str])
 gobject.signal_new('use-custom-widgets-changed', Factory,
+                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
+                gobject.TYPE_NONE, [bool])
+gobject.signal_new('minimize-to-tray-changed', Factory,
                 gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
                 gobject.TYPE_NONE, [bool])

@@ -38,7 +38,10 @@ except:
 old_path = sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'jack_mixer'))
 
+
 import jack_mixer_c
+
+
 import scale
 from channel import *
 
@@ -50,6 +53,44 @@ from serialization import SerializedObject, Serializator
 
 # restore Python modules lookup path
 sys.path = old_path
+
+
+class TrayIcon(gtk.StatusIcon):
+    mixer = None
+
+    def __init__(self, mixer):
+        gtk.StatusIcon.__init__(self)
+        self.mixer = mixer
+        self.set_from_icon_name( mixer.window.get_icon_name() )
+        self.set_tooltip('Jack Mixer ('+mixer.mixer.client_name()+')')
+        self.set_visible(True)
+
+        self.menu = menu = gtk.Menu()
+
+        window_item = gtk.MenuItem("Show Mixer")
+        window_item.connect("activate", self.show_window, "Jack Mixer")
+        menu.append(window_item)
+
+        menu.append(gtk.SeparatorMenuItem())
+
+        quit_item = gtk.MenuItem("Quit")
+        quit_item.connect("activate", self.mixer.on_quit_cb, "quit")
+        menu.append(quit_item)
+        menu.show_all()
+
+        self.connect("activate", self.show_window)
+        self.connect('popup-menu', self.icon_clicked)
+
+    def show_window(self, widget, event=None):
+        if self.mixer.window.get_property("visible"):
+            self.mixer.window.hide()
+        else:
+            self.mixer.window.present()
+
+    def icon_clicked(self, status, button, time):
+        self.menu.popup(None, None, None, button, time)
+
+
 
 class JackMixer(SerializedObject):
 
@@ -78,11 +119,13 @@ class JackMixer(SerializedObject):
 
             lash.lash_jack_client_name(lash_client, name)
 
-        gtk.window_set_default_icon_name('jack_mixer')
-
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_title(name)
+        if name != self.mixer.client_name():
+            self.window.set_title(name + " ("+ self.mixer.client_name()+")" )
+        else:
+            self.window.set_title(name)
 
+        self.window.set_icon_name('jack_mixer')
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
 
         self.vbox_top = gtk.VBox()
@@ -196,12 +239,25 @@ class JackMixer(SerializedObject):
 
         self.window.connect("destroy", gtk.main_quit)
 
+        self.trayicon = TrayIcon(self)
+        self.window.connect('delete-event', self.on_delete_event)
+
         gobject.timeout_add(80, self.read_meters)
         self.lash_client = lash_client
 
         gobject.timeout_add(200, self.lash_check_events)
 
         gobject.timeout_add(50, self.midi_events_check)
+
+
+    def on_delete_event(self, widget, event):
+       if self.gui_factory.get_minimize_to_tray():
+            self.window.hide()
+            return True
+       else:
+           self.on_quit_cb()
+           return False
+
 
     def sighandler(self, signum, frame):
         #print "Signal %d received" % signum

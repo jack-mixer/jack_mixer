@@ -8,7 +8,7 @@ Version 10
  * Added jack_mix_box, a minimalistic (no UI) jack mixer
  * Added a trayicon and minimize to tray feature
 
-With contributions from John Hedges and Sarah Mischke.
+With contributions from John Hedges, Sarah Mischke, and Nedko Arnaudov.
 
 =========
 Version 9

@@ -20,6 +20,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+test -n "$srcdir" || srcdir=`dirname "$0"`
+test -n "$srcdir" || srcdir=.
+
+olddir=`pwd`
+cd "$srcdir"
+
 if test x$1 = xclean
 then
   GENERATED="aclocal.m4 autom4te.cache config.h.in configure config Makefile.in"
@@ -35,3 +41,6 @@ else
   automake --foreign --add-missing --copy
   autoconf
 fi
+
+cd "$olddir"
+test -n "$NOCONFIGURE" || "$srcdir/configure" "$@"

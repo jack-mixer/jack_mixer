@@ -20,7 +20,7 @@
 #
 
 AC_PREREQ(2.61)
-AC_INIT(jack_mixer, 10)
+AC_INIT(jack_mixer, 11)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE

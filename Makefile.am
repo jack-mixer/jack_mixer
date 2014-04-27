@@ -24,7 +24,7 @@ endif
 
 SUBDIRS = data
 
-INCLUDES = $(PYTHON_INCLUDES)
+AM_CPPFLAGS = $(PYTHON_INCLUDES)
 
 jack_mixerdir = $(pkgdatadir)
 pkgpyexecdir = $(pythondir)

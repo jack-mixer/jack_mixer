@@ -158,17 +158,22 @@ calc_channel_volumes(
 
   if (channel_ptr->stereo)
   {
-    if (channel_ptr->balance_new > 0)
+    if (channel_ptr->balance > 0)
     {
       channel_ptr->volume_left = channel_ptr->volume * (1 - channel_ptr->balance);
       channel_ptr->volume_right = channel_ptr->volume;
-      channel_ptr->volume_left_new = channel_ptr->volume_new * (1 - channel_ptr->balance_new);
-      channel_ptr->volume_right_new = channel_ptr->volume_new;
     }
     else
     {
       channel_ptr->volume_left = channel_ptr->volume;
       channel_ptr->volume_right = channel_ptr->volume * (1 + channel_ptr->balance);
+    }
+    if (channel_ptr->balance_new > 0) {
+      channel_ptr->volume_left_new = channel_ptr->volume_new * (1 - channel_ptr->balance_new);
+      channel_ptr->volume_right_new = channel_ptr->volume_new;
+    }
+    else
+    {
       channel_ptr->volume_left_new = channel_ptr->volume_new;
       channel_ptr->volume_right_new = channel_ptr->volume_new * (1 + channel_ptr->balance_new);
     }

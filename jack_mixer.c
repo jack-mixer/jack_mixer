@@ -59,9 +59,13 @@ struct channel
   char * name;
   bool stereo;
   float volume;
+  float volume_new;
   float balance;
+  float balance_new;
   float volume_left;
   float volume_right;
+  float volume_left_new;
+  float volume_right_new;
   float meter_left;
   float meter_right;
   float abspeak;
@@ -151,23 +155,30 @@ void
 calc_channel_volumes(
   struct channel * channel_ptr)
 {
+
   if (channel_ptr->stereo)
   {
-    if (channel_ptr->balance > 0)
+    if (channel_ptr->balance_new > 0)
     {
       channel_ptr->volume_left = channel_ptr->volume * (1 - channel_ptr->balance);
       channel_ptr->volume_right = channel_ptr->volume;
+      channel_ptr->volume_left_new = channel_ptr->volume_new * (1 - channel_ptr->balance_new);
+      channel_ptr->volume_right_new = channel_ptr->volume_new;
     }
     else
     {
       channel_ptr->volume_left = channel_ptr->volume;
       channel_ptr->volume_right = channel_ptr->volume * (1 + channel_ptr->balance);
+      channel_ptr->volume_left_new = channel_ptr->volume_new;
+      channel_ptr->volume_right_new = channel_ptr->volume_new * (1 + channel_ptr->balance_new);
     }
   }
   else
   {
     channel_ptr->volume_left = channel_ptr->volume * (1 - channel_ptr->balance);
     channel_ptr->volume_right = channel_ptr->volume * (1 + channel_ptr->balance);
+    channel_ptr->volume_left_new = channel_ptr->volume_new * (1 - channel_ptr->balance_new);
+    channel_ptr->volume_right_new = channel_ptr->volume_new * (1 + channel_ptr->balance_new);
   }
 }
 
@@ -429,7 +440,7 @@ channel_volume_write(
   double volume)
 {
   assert(channel_ptr);
-  channel_ptr->volume = db_to_value(volume);
+  channel_ptr->volume_new = db_to_value(volume);
   channel_ptr->midi_out_has_events = true;
   calc_channel_volumes(channel_ptr);
 }
@@ -448,7 +459,7 @@ channel_balance_write(
   double balance)
 {
   assert(channel_ptr);
-  channel_ptr->balance = balance;
+  channel_ptr->balance_new = balance;
   calc_channel_volumes(channel_ptr);
 }
 
@@ -624,14 +635,23 @@ mix_one(
 
   }
 
+
   /* process main mix channel */
   for (i = start ; i < end ; i++)
   {
     if (! output_mix_channel->prefader) {
-      mix_channel->left_buffer_ptr[i] *= mix_channel->volume_left;
+      float vol = mix_channel->volume_left;
+      if (mix_channel->volume_left != mix_channel->volume_left_new) {
+        vol = i * (mix_channel->volume_left_new - mix_channel->volume_left) / (end - start) + mix_channel->volume_left;
+      }
+      mix_channel->left_buffer_ptr[i] *= vol;
       if (mix_channel->stereo)
       {
-        mix_channel->right_buffer_ptr[i] *= mix_channel->volume_right;
+        float vol = mix_channel->volume_right;
+        if (mix_channel->volume_right != mix_channel->volume_right_new) {
+          vol = i * (mix_channel->volume_right_new - mix_channel->volume_right) / (end - start) + mix_channel->volume_right;
+        }
+        mix_channel->right_buffer_ptr[i] *= vol;
       }
     }
 
@@ -675,6 +695,14 @@ mix_one(
       mix_channel->peak_frames = 0;
     }
   }
+  if (mix_channel->volume != mix_channel->volume_new) {
+    mix_channel->volume = mix_channel->volume_new;
+    calc_channel_volumes(mix_channel);
+  }
+  if (mix_channel->balance != mix_channel->balance_new) {
+    mix_channel->balance = mix_channel->balance_new;
+    calc_channel_volumes(mix_channel);
+  }
 }
 
 static inline void
@@ -703,9 +731,16 @@ calc_channel_frames(
       channel_ptr->frames_left[i-start] = NAN;
       break;
     }
+    float vol = channel_ptr->volume_left;
+    if (channel_ptr->volume_left != channel_ptr->volume_left_new) {
+      vol = i * (channel_ptr->volume_left_new - channel_ptr->volume_left) / (end - start) + channel_ptr->volume_left;
+    }
+    frame_left = channel_ptr->left_buffer_ptr[i] * vol;
 
-    frame_left = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_left;
-
+    vol = channel_ptr->volume_right;
+    if (channel_ptr->volume_right != channel_ptr->volume_right_new) {
+        vol = i * (channel_ptr->volume_right_new - channel_ptr->volume_right) / (end - start) + channel_ptr->volume_right;
+    }
     if (channel_ptr->stereo)
     {
       if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i]))
@@ -715,13 +750,12 @@ calc_channel_frames(
         break;
       }
 
-      frame_right = channel_ptr->right_buffer_ptr[i] * channel_ptr->volume_right;
+      frame_right = channel_ptr->right_buffer_ptr[i] * vol;
     }
     else
     {
-      frame_right = channel_ptr->left_buffer_ptr[i] * channel_ptr->volume_right;
+      frame_right = channel_ptr->right_buffer_ptr[i] * vol;
     }
-
     channel_ptr->frames_left[i-start] = frame_left;
     channel_ptr->frames_right[i-start] = frame_right;
 
@@ -779,6 +813,14 @@ calc_channel_frames(
 
       channel_ptr->peak_frames = 0;
     }
+  }
+  if (channel_ptr->volume != channel_ptr->volume_new) {
+    channel_ptr->volume = channel_ptr->volume_new;
+    calc_channel_volumes(channel_ptr);
+  }
+  if (channel_ptr->balance != channel_ptr->balance_new) {
+    channel_ptr->balance = channel_ptr->balance_new;
+    calc_channel_volumes(channel_ptr);
   }
 
 }
@@ -855,7 +897,6 @@ process(
   signed char byte;
   unsigned int cc_channel_index;
 #endif
-  jack_nframes_t offset;
 
   for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
@@ -870,8 +911,6 @@ process(
     channel_ptr = node_ptr->data;
     update_channel_buffers(channel_ptr, nframes);
   }
-
-  offset = 0;
 
 #if defined(HAVE_JACK_MIDI)
   midi_buffer = jack_port_get_buffer(mixer_ptr->port_midi_in, nframes);
@@ -903,16 +942,6 @@ process(
     /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
     if (channel_ptr != NULL && channel_ptr->midi_scale != NULL)
     {
-      assert(in_event.time >= offset);
-
-      if (in_event.time > offset)
-      {
-        // Perform the mixing of the part between the previous volume change
-        // (or the start of the block) up until this one.
-        mix(mixer_ptr, offset, in_event.time);
-        offset = in_event.time;
-      }
-
       if (channel_ptr->midi_cc_balance_index == (unsigned int)in_event.buffer[1])
       {
         byte = in_event.buffer[2];
@@ -922,13 +951,13 @@ process(
         }
         byte -= 64;
 
-        channel_ptr->balance = (float)byte / 63;
-        LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance);
+        channel_ptr->balance_new = (float)byte / 63;
+        LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance_new);
       }
       else
       {
-        channel_ptr->volume = db_to_value(scale_scale_to_db(channel_ptr->midi_scale, (double)in_event.buffer[2] / 127));
-        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume);
+        channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale, (double)in_event.buffer[2] / 127));
+        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
       }
 
       calc_channel_volumes(channel_ptr);
@@ -968,7 +997,7 @@ process(
       }
       midi_out_buffer[0] = 0xB0; /* control change */
       midi_out_buffer[1] = cc_channel_index;
-      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume)));
+      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume_new)));
 
       LOG_DEBUG(
         "%u: CC#%u <- %u",
@@ -982,7 +1011,7 @@ process(
 
 #endif
 
-  mix(mixer_ptr, offset, nframes);
+  mix(mixer_ptr, 0, nframes);
 
   return 0;
 }
@@ -1203,6 +1232,7 @@ add_channel(
   channel_ptr->stereo = stereo;
 
   channel_ptr->volume = 0.0;
+  channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;
@@ -1319,6 +1349,7 @@ create_output_channel(
   channel_ptr->stereo = stereo;
 
   channel_ptr->volume = 0.0;
+  channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;

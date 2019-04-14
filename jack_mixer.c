@@ -153,56 +153,6 @@ db_to_value(
   return powf(10.0, db/20.0);
 }
 
-void
-calc_channel_volumes(
-  struct channel * channel_ptr)
-{
-  return;
-  if (channel_ptr->stereo)
-  {
-    if (channel_ptr->balance > 0)
-    {
-      channel_ptr->volume_left = channel_ptr->volume * (1 - channel_ptr->balance);
-      channel_ptr->volume_right = channel_ptr->volume;
-    }
-    else
-    {
-      channel_ptr->volume_left = channel_ptr->volume;
-      channel_ptr->volume_right = channel_ptr->volume * (1 + channel_ptr->balance);
-    }
-    if (channel_ptr->balance_new > 0) {
-      channel_ptr->volume_left_new = channel_ptr->volume_new * (1 - channel_ptr->balance_new);
-      channel_ptr->volume_right_new = channel_ptr->volume_new;
-    }
-    else
-    {
-      channel_ptr->volume_left_new = channel_ptr->volume_new;
-      channel_ptr->volume_right_new = channel_ptr->volume_new * (1 + channel_ptr->balance_new);
-    }
-  }
-  else
-  {
-    channel_ptr->volume_left = channel_ptr->volume * (1 - channel_ptr->balance);
-    channel_ptr->volume_right = channel_ptr->volume * (1 + channel_ptr->balance);
-    channel_ptr->volume_left_new = channel_ptr->volume_new * (1 - channel_ptr->balance_new);
-    channel_ptr->volume_right_new = channel_ptr->volume_new * (1 + channel_ptr->balance_new);
-  }
-}
-
-void
-calc_all_channel_volumes(
-  struct jack_mixer * mixer_ptr)
-{
-  struct channel * channel_ptr;
-  GSList *list_ptr;
-
-  for (list_ptr = mixer_ptr->input_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
-  {
-    channel_ptr = list_ptr->data;
-    calc_channel_volumes(channel_ptr);
-  }
-}
-
 #define channel_ptr ((struct channel *)channel)
 
 const char*
@@ -456,7 +406,6 @@ channel_volume_write(
   channel_ptr->volume_idx = 0;
   channel_ptr->volume_new = db_to_value(volume);
   channel_ptr->midi_out_has_events = true;
-  calc_channel_volumes(channel_ptr);
 }
 
 double
@@ -479,7 +428,6 @@ channel_balance_write(
   }
   channel_ptr->balance_idx = 0;
   channel_ptr->balance_new = balance;
-  calc_channel_volumes(channel_ptr);
 }
 
 double
@@ -733,13 +681,11 @@ mix_one(
     if ((mix_channel->volume != mix_channel->volume_new) && (mix_channel->volume_idx == (VOLUME_TRANSITION_STEPS - 1))) {
       mix_channel->volume = mix_channel->volume_new;
       mix_channel->volume_idx = 0;
-      calc_channel_volumes(mix_channel);
     }
     mix_channel->balance_idx++;
     if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx >= (VOLUME_TRANSITION_STEPS - 1))) {
       mix_channel->balance = mix_channel->balance_new;
       mix_channel->balance_idx = 0;
-      calc_channel_volumes(mix_channel);
     }
   }
 }
@@ -873,14 +819,12 @@ calc_channel_frames(
      (channel_ptr->volume_idx == (VOLUME_TRANSITION_STEPS - 1))) {
       channel_ptr->volume = channel_ptr->volume_new;
       channel_ptr->volume_idx = 0;
-      calc_channel_volumes(channel_ptr);
     }
     channel_ptr->balance_idx++;
     if ((channel_ptr->balance != channel_ptr->balance_new) &&
      (channel_ptr->balance_idx >= (VOLUME_TRANSITION_STEPS -1))) {
       channel_ptr->balance = channel_ptr->balance_new;
       channel_ptr->balance_idx = 0;
-      calc_channel_volumes(channel_ptr);
      }
   }
 }
@@ -1030,8 +974,6 @@ process(
         LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
       }
 
-      calc_channel_volumes(channel_ptr);
-
       channel_ptr->midi_in_got_events = true;
       if (channel_ptr->midi_change_callback)
         channel_ptr->midi_change_callback(channel_ptr->midi_change_callback_data);
@@ -1159,8 +1101,6 @@ create(
   }
 
 #endif
-
-  calc_channel_volumes((struct channel*)mixer_ptr->main_mix_channel);
 
   ret = jack_set_process_callback(mixer_ptr->jack_client, process, mixer_ptr);
   if (ret != 0)
@@ -1327,8 +1267,6 @@ add_channel(
   channel_ptr->midi_out_has_events = false;
 
   channel_ptr->midi_scale = NULL;
-
-  calc_channel_volumes(channel_ptr);
 
   channel_ptr->mixer_ptr->input_channels_list = g_slist_prepend(
                   channel_ptr->mixer_ptr->input_channels_list, channel_ptr);

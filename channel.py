@@ -205,7 +205,6 @@ class Channel(gtk.VBox, SerializedObject):
         self.volume_digits.set_text(db_text)
 
         if update_engine:
-            #print "Setting engine volume to " + db_text
             self.channel.volume = db
             self.app.update_monitor(self)
 

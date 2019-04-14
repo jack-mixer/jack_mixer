@@ -158,5 +158,5 @@ class StereoMeterWidget(MeterWidget):
         old_right = self.right
         self.left = self.scale.db_to_scale(left)
         self.right = self.scale.db_to_scale(right)
-        if (abs(old_left-self.left) * self.height) > 1 or (abs(old_right-self.right) * self.height) > 1:
+        if (abs(old_left-self.left) * self.height) > 0.01 or (abs(old_right-self.right) * self.height) > 0.01:
             self.invalidate_all()

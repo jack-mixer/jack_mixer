@@ -43,8 +43,8 @@
 
 #include "jack_compat.h"
 
+#define VOLUME_TRANSITION_SECONDS 0.2
 #define PEAK_FRAMES_CHUNK 4800
-#define VOLUME_TRANSITION_STEPS 48000
 // we don't know how much to allocate, but we don't want to wait with 
 // allocating until we're in the process() callback, so we just take a 
 // fairly big chunk: 4 periods per buffer, 4096 samples per period.
@@ -58,6 +58,8 @@ struct channel
   struct jack_mixer * mixer_ptr;
   char * name;
   bool stereo;
+  float volume_transition_seconds;
+  unsigned int num_volume_transition_steps;
   float volume;
   jack_nframes_t volume_idx;
   float volume_new;
@@ -401,7 +403,8 @@ channel_volume_write(
    *then set current volume to place in transition to avoid a jump.*/
   if (channel_ptr->volume_new != channel_ptr->volume) {
     channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-     (channel_ptr->volume_new - channel_ptr->volume) / VOLUME_TRANSITION_STEPS;
+     (channel_ptr->volume_new - channel_ptr->volume) /
+     channel_ptr->num_volume_transition_steps;
   }
   channel_ptr->volume_idx = 0;
   channel_ptr->volume_new = db_to_value(volume);
@@ -424,7 +427,8 @@ channel_balance_write(
   assert(channel_ptr);
   if (channel_ptr->balance != channel_ptr->balance_new) {
     channel_ptr->balance = channel_ptr->balance + channel_ptr->balance_idx *
-      (channel_ptr->balance_new - channel_ptr->balance) / VOLUME_TRANSITION_STEPS;
+      (channel_ptr->balance_new - channel_ptr->balance) /
+      channel_ptr->num_volume_transition_steps;
   }
   channel_ptr->balance_idx = 0;
   channel_ptr->balance_new = balance;
@@ -604,6 +608,7 @@ mix_one(
 
 
   /* process main mix channel */
+  unsigned int steps = mix_channel->num_volume_transition_steps;
   for (i = start ; i < end ; i++)
   {
     if (! output_mix_channel->prefader) {
@@ -614,10 +619,10 @@ mix_one(
       float balance_new = mix_channel->balance_new;
       float bal = balance;
       if (volume != volume_new) {
-        vol = (mix_channel->volume_idx * (volume_new - volume) / VOLUME_TRANSITION_STEPS) + volume;
+        vol = mix_channel->volume_idx * (volume_new - volume) / steps + volume;
       }
       if (balance != balance_new) {
-        bal = mix_channel->balance_idx * (balance_new - balance) / VOLUME_TRANSITION_STEPS + balance;
+        bal = mix_channel->balance_idx * (balance_new - balance) / steps + balance;
       }
 
       float vol_l;
@@ -678,12 +683,12 @@ mix_one(
       mix_channel->peak_frames = 0;
     }
     mix_channel->volume_idx++;
-    if ((mix_channel->volume != mix_channel->volume_new) && (mix_channel->volume_idx == (VOLUME_TRANSITION_STEPS - 1))) {
+    if ((mix_channel->volume != mix_channel->volume_new) && (mix_channel->volume_idx == steps)) {
       mix_channel->volume = mix_channel->volume_new;
       mix_channel->volume_idx = 0;
     }
     mix_channel->balance_idx++;
-    if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx >= (VOLUME_TRANSITION_STEPS - 1))) {
+    if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx == steps)) {
       mix_channel->balance = mix_channel->balance_new;
       mix_channel->balance_idx = 0;
     }
@@ -699,6 +704,7 @@ calc_channel_frames(
   jack_nframes_t i;
   jack_default_audio_sample_t frame_left;
   jack_default_audio_sample_t frame_right;
+  unsigned int steps = channel_ptr->num_volume_transition_steps;
   for (i = start ; i < end ; i++)
   {
     if (i-start >= MAX_BLOCK_SIZE)
@@ -722,10 +728,10 @@ calc_channel_frames(
     float balance_new = channel_ptr->balance_new;
     float bal = balance;
     if (channel_ptr->volume != channel_ptr->volume_new) {
-      vol = channel_ptr->volume_idx * (volume_new - volume) / VOLUME_TRANSITION_STEPS + volume;
+      vol = channel_ptr->volume_idx * (volume_new - volume) / steps + volume;
     }
     if (channel_ptr->balance != channel_ptr->balance_new) {
-      bal = channel_ptr->balance_idx * (balance_new - balance) / VOLUME_TRANSITION_STEPS + balance;
+      bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
     }
     float vol_l;
     float vol_r;
@@ -816,13 +822,13 @@ calc_channel_frames(
     }
     channel_ptr->volume_idx++;
     if ((channel_ptr->volume != channel_ptr->volume_new) &&
-     (channel_ptr->volume_idx == (VOLUME_TRANSITION_STEPS - 1))) {
+     (channel_ptr->volume_idx == steps)) {
       channel_ptr->volume = channel_ptr->volume_new;
       channel_ptr->volume_idx = 0;
     }
     channel_ptr->balance_idx++;
     if ((channel_ptr->balance != channel_ptr->balance_new) &&
-     (channel_ptr->balance_idx >= (VOLUME_TRANSITION_STEPS -1))) {
+     (channel_ptr->balance_idx >= steps)) {
       channel_ptr->balance = channel_ptr->balance_new;
       channel_ptr->balance_idx = 0;
      }
@@ -957,7 +963,8 @@ process(
 
         if (channel_ptr->balance != channel_ptr->balance_new) {
           channel_ptr->balance = channel_ptr->balance + channel_ptr->balance_idx *
-           (channel_ptr->balance_new - channel_ptr->balance) / VOLUME_TRANSITION_STEPS;
+           (channel_ptr->balance_new - channel_ptr->balance) /
+           channel_ptr->num_volume_transition_steps;
         }
         channel_ptr->balance_idx = 0;
         channel_ptr->balance_new = (float)byte / 63;
@@ -967,7 +974,8 @@ process(
       {
         if (channel_ptr->volume_new != channel_ptr->volume) {
           channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-           (channel_ptr->volume_new - channel_ptr->volume) / VOLUME_TRANSITION_STEPS;
+           (channel_ptr->volume_new - channel_ptr->volume) /
+           channel_ptr->num_volume_transition_steps;
         }
         channel_ptr->volume_idx = 0;
         channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale, (double)in_event.buffer[2] / 127));
@@ -1241,6 +1249,10 @@ add_channel(
 
   channel_ptr->stereo = stereo;
 
+  channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
+  channel_ptr->num_volume_transition_steps =
+    channel_ptr->volume_transition_seconds *
+    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
@@ -1357,6 +1369,10 @@ create_output_channel(
 
   channel_ptr->stereo = stereo;
 
+  channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
+  channel_ptr->num_volume_transition_steps =
+    channel_ptr->volume_transition_seconds *
+    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;

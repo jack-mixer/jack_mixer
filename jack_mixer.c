@@ -1252,7 +1252,7 @@ add_channel(
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
     channel_ptr->volume_transition_seconds *
-    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
+    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
@@ -1372,7 +1372,7 @@ create_output_channel(
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
     channel_ptr->volume_transition_seconds *
-    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
+    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;

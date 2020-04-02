@@ -1,4 +1,13 @@
 ==========
+Version 11 (unreleased)
+==========
+
+ * Spread out volume transition over a period of time to reduce
+   discontinuities.
+
+With contributions from Daniel Sheeler.
+
+==========
 Version 10
 ==========
 

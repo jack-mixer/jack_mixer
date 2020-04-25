@@ -369,7 +369,7 @@ class JackMixer(SerializedObject):
         print 'Removing channel "%s"' % channel.channel_name
         self.channel_remove_input_menu.remove(widget)
         self.channel_edit_input_menu.foreach(
-            self.remove_channel_edit_input_menuitem_by_label, 
+            self.remove_channel_edit_input_menuitem_by_label,
             channel.channel_name);
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
@@ -394,7 +394,7 @@ class JackMixer(SerializedObject):
         print 'Removing channel "%s"' % channel.channel_name
         self.channel_remove_output_menu.remove(widget)
         self.channel_edit_output_menu.foreach(
-            self.remove_channel_edit_output_menuitem_by_label, 
+            self.remove_channel_edit_output_menuitem_by_label,
             channel.channel_name);
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
@@ -409,17 +409,17 @@ class JackMixer(SerializedObject):
 
     def rename_channels(self, container, parameters):
         if (container.get_label() == parameters['oldname']):
-            container.set_label(parameters['newname']) 
+            container.set_label(parameters['newname'])
 
     def on_channel_rename(self, oldname, newname):
         rename_parameters = { 'oldname' : oldname, 'newname' : newname }
-        self.channel_edit_input_menu.foreach(self.rename_channels, 
+        self.channel_edit_input_menu.foreach(self.rename_channels,
             rename_parameters)
-        self.channel_edit_output_menu.foreach(self.rename_channels, 
+        self.channel_edit_output_menu.foreach(self.rename_channels,
             rename_parameters)
-        self.channel_remove_input_menu.foreach(self.rename_channels, 
+        self.channel_remove_input_menu.foreach(self.rename_channels,
             rename_parameters)
-        self.channel_remove_output_menu.foreach(self.rename_channels, 
+        self.channel_remove_output_menu.foreach(self.rename_channels,
             rename_parameters)
         print "Renaming channel from %s to %s\n" % (oldname, newname)
 

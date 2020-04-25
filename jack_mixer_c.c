@@ -478,16 +478,16 @@ Channel_get_midi_in_got_events(ChannelObject *self, void *closure)
 
 
 static PyGetSetDef Channel_getseters[] = {
-	{"is_stereo", 
+	{"is_stereo",
 		(getter)Channel_get_is_stereo, NULL,
 		"mono/stereo", NULL},
-	{"volume", 
+	{"volume",
 		(getter)Channel_get_volume, (setter)Channel_set_volume,
 		"volume", NULL},
-	{"balance", 
+	{"balance",
 		(getter)Channel_get_balance, (setter)Channel_set_balance,
 		"balance", NULL},
-	{"mute", 
+	{"mute",
 		(getter)Channel_get_mute, (setter)Channel_set_mute,
 		"mute", NULL},
 	{"out_mute",
@@ -499,7 +499,7 @@ static PyGetSetDef Channel_getseters[] = {
 	{"meter",
 		(getter)Channel_get_meter, NULL,
 		"meter", NULL},
-	{"abspeak", 
+	{"abspeak",
 		(getter)Channel_get_abspeak, (setter)Channel_set_abspeak,
 		"balance", NULL},
 	{"midi_scale",
@@ -639,7 +639,7 @@ OutputChannel_get_prefader(OutputChannelObject *self, void *closure)
 }
 
 static PyGetSetDef OutputChannel_getseters[] = {
-	{"prefader", 
+	{"prefader",
 		(getter)OutputChannel_get_prefader, (setter)OutputChannel_set_prefader,
 		"prefader", NULL},
 	{NULL}
@@ -829,7 +829,7 @@ Mixer_init(MixerObject *self, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|b", kwlist, &name, &stereo))
 		return -1;
-	
+
 	self->mixer = create(name, (bool)stereo);
 	if (self->mixer == NULL) {
 		PyErr_SetString(PyExc_RuntimeError,
@@ -989,7 +989,7 @@ PyMODINIT_FUNC initjack_mixer_c(void)
 		return;
 	if (PyType_Ready(&ScaleType) < 0)
 		return;
-	
+
 	m = Py_InitModule3("jack_mixer_c", jack_mixer_methods, "Jack Mixer C Helper Module");
 
 	Py_INCREF(&MixerType);

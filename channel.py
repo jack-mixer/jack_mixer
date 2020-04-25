@@ -546,6 +546,12 @@ class OutputChannel(Channel):
             break
         self.label_name_event_box.modify_bg(gtk.STATE_NORMAL, self.color_tuple[1])
         self.vbox.pack_start(self.label_name_event_box, True)
+        self.mute = gtk.ToggleButton()
+        self.mute.set_label("M")
+        self.mute.set_active(self.channel.mute)
+        self.mute.connect("toggled", self.on_mute_toggled)
+        self.vbox.pack_start(self.mute, False)
+
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
         frame.add(self.abspeak);
@@ -594,6 +600,10 @@ class OutputChannel(Channel):
         if event.type == gtk.gdk._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
+
+    def on_mute_toggled(self, button):
+        self.channel.out_mute = self.mute.get_active()
+        self.app.update_monitor(self.app.main_mix)
 
     def unrealize(self):
         # remove control groups from input channels
@@ -674,6 +684,11 @@ class MainMixChannel(Channel):
         self.label_name.set_text(self.channel_name)
         self.label_name.set_size_request(0, -1)
         self.vbox.pack_start(self.label_name, False)
+        self.mute = gtk.ToggleButton()
+        self.mute.set_label("M")
+        self.mute.set_active(self.channel.mute)
+        self.mute.connect("toggled", self.on_mute_toggled)
+        self.vbox.pack_start(self.mute, False)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
         frame.add(self.abspeak);
@@ -707,6 +722,10 @@ class MainMixChannel(Channel):
                 input_channel.solo.set_active(True)
         self._init_muted_channels = None
         self._init_solo_channels = None
+
+    def on_mute_toggled(self, button):
+        self.channel.out_mute = self.mute.get_active()
+        self.app.update_monitor(self.app.main_mix)
 
     def unrealize(self):
         Channel.unrealize(self)

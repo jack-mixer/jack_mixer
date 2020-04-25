@@ -572,6 +572,7 @@ class JackMixer(SerializedObject):
             return
         self.monitor_channel.volume = channel.channel.volume
         self.monitor_channel.balance = channel.channel.balance
+        self.monitor_channel.out_mute = channel.channel.mute
         if type(self.monitored_channel) is OutputChannel:
             # sync solo/muted channels
             for input_channel in self.channels:

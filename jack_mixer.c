@@ -58,6 +58,7 @@ struct channel
   struct jack_mixer * mixer_ptr;
   char * name;
   bool stereo;
+  bool out_mute;
   float volume_transition_seconds;
   unsigned int num_volume_transition_steps;
   float volume;
@@ -80,6 +81,8 @@ struct channel
   float peak_left;
   float peak_right;
 
+  jack_default_audio_sample_t * tmp_mixed_frames_left;
+  jack_default_audio_sample_t * tmp_mixed_frames_right;
   jack_default_audio_sample_t * frames_left;
   jack_default_audio_sample_t * frames_right;
   jack_default_audio_sample_t * prefader_frames_left;
@@ -480,6 +483,20 @@ channel_unmute(
 }
 
 void
+channel_out_mute(
+  jack_mixer_channel_t channel)
+{
+  channel_ptr->out_mute = true;
+}
+
+void
+channel_out_unmute(
+  jack_mixer_channel_t channel)
+{
+  channel_ptr->out_mute = false;
+}
+
+void
 channel_solo(
   jack_mixer_channel_t channel)
 {
@@ -500,6 +517,13 @@ channel_is_muted(
   if (g_slist_find(channel_ptr->mixer_ptr->main_mix_channel->muted_channels, channel))
     return true;
   return false;
+}
+
+bool
+channel_is_out_muted(
+  jack_mixer_channel_t channel)
+{
+  return channel_ptr->out_mute;
 }
 
 bool
@@ -557,11 +581,10 @@ mix_one(
 
   for (i = start; i < end; i++)
   {
-    mix_channel->left_buffer_ptr[i] = 0.0;
+    mix_channel->left_buffer_ptr[i] = mix_channel->tmp_mixed_frames_left[i] = 0.0;
     if (mix_channel->stereo)
-      mix_channel->right_buffer_ptr[i] = 0.0;
+      mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i] = 0.0;
   }
-
 
   for (node_ptr = channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
@@ -587,7 +610,7 @@ mix_one(
       }
       if (frame_left == NAN)
         break;
-      mix_channel->left_buffer_ptr[i] += frame_left;
+      mix_channel->tmp_mixed_frames_left[i] += frame_left;
 
       if (mix_channel->stereo)
       {
@@ -599,7 +622,7 @@ mix_one(
         if (frame_right == NAN)
           break;
 
-        mix_channel->right_buffer_ptr[i] += frame_right;
+        mix_channel->tmp_mixed_frames_right[i] += frame_right;
       }
 
     }
@@ -639,11 +662,11 @@ mix_one(
         vol_l = vol * (1 - bal);
         vol_r = vol * (1 + bal);
       }
-      mix_channel->left_buffer_ptr[i] *= vol_l;
-      mix_channel->right_buffer_ptr[i] *= vol_r;
+      mix_channel->tmp_mixed_frames_left[i] *= vol_l;
+      mix_channel->tmp_mixed_frames_right[i] *= vol_r;
     }
 
-    frame_left = fabsf(mix_channel->left_buffer_ptr[i]);
+    frame_left = fabsf(mix_channel->tmp_mixed_frames_left[i]);
     if (mix_channel->peak_left < frame_left)
     {
       mix_channel->peak_left = frame_left;
@@ -656,7 +679,7 @@ mix_one(
 
     if (mix_channel->stereo)
     {
-      frame_right = fabsf(mix_channel->right_buffer_ptr[i]);
+      frame_right = fabsf(mix_channel->tmp_mixed_frames_right[i]);
       if (mix_channel->peak_right < frame_right)
       {
         mix_channel->peak_right = frame_right;
@@ -691,6 +714,11 @@ mix_one(
     if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx == steps)) {
       mix_channel->balance = mix_channel->balance_new;
       mix_channel->balance_idx = 0;
+    }
+
+    if (!mix_channel->out_mute) {
+        mix_channel->left_buffer_ptr[i] = mix_channel->tmp_mixed_frames_left[i];
+        mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
 }
@@ -1368,6 +1396,7 @@ create_output_channel(
   }
 
   channel_ptr->stereo = stereo;
+  channel_ptr->out_mute = false;
 
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
@@ -1385,6 +1414,8 @@ create_output_channel(
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
 
+  channel_ptr->tmp_mixed_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  channel_ptr->tmp_mixed_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
   channel_ptr->frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
   channel_ptr->frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
   channel_ptr->prefader_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));

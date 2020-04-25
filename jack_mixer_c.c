@@ -246,6 +246,20 @@ Channel_get_mute(ChannelObject *self, void *closure)
 	return result;
 }
 
+static PyObject*
+Channel_get_out_mute(ChannelObject *self, void *closure)
+{
+	PyObject *result;
+
+    if (channel_is_out_muted(self->channel)) {
+		result = Py_True;
+	} else {
+		result = Py_False;
+	}
+	Py_INCREF(result);
+	return result;
+}
+
 static int
 Channel_set_mute(ChannelObject *self, PyObject *value, void *closure)
 {
@@ -253,6 +267,17 @@ Channel_set_mute(ChannelObject *self, PyObject *value, void *closure)
 		channel_mute(self->channel);
 	} else {
 		channel_unmute(self->channel);
+	}
+	return 0;
+}
+
+static int
+Channel_set_out_mute(ChannelObject *self, PyObject *value, void *closure)
+{
+	if (value == Py_True) {
+		channel_out_mute(self->channel);
+	} else {
+		channel_out_unmute(self->channel);
 	}
 	return 0;
 }
@@ -465,7 +490,10 @@ static PyGetSetDef Channel_getseters[] = {
 	{"mute", 
 		(getter)Channel_get_mute, (setter)Channel_set_mute,
 		"mute", NULL},
-	{"solo", 
+	{"out_mute",
+		(getter)Channel_get_out_mute, (setter)Channel_set_out_mute,
+		"out_mute", NULL},
+	{"solo",
 		(getter)Channel_get_solo, (setter)Channel_set_solo,
 		"solo", NULL},
 	{"meter",

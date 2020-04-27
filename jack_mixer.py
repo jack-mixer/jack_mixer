@@ -459,11 +459,11 @@ class JackMixer(SerializedObject):
             err.run()
             err.destroy()
             return
-        if volume_cc:
+        if volume_cc != '-1':
             channel.channel.volume_midi_cc = int(volume_cc)
-        if balance_cc:
+        if balance_cc != '-1':
             channel.channel.balance_midi_cc = int(balance_cc)
-        if not (volume_cc or balance_cc):
+        if (volume_cc == '-1' and balance_cc == '-1'):
             channel.channel.autoset_midi_cc()
 
         return channel
@@ -522,9 +522,9 @@ class JackMixer(SerializedObject):
             err.run()
             err.destroy()
             return
-        if volume_cc:
+        if volume_cc != '-1':
             channel.channel.volume_midi_cc = int(volume_cc)
-        if balance_cc:
+        if balance_cc != '-1':
             channel.channel.balance_midi_cc = int(balance_cc)
         return channel
 

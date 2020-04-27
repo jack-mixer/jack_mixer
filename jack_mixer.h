@@ -117,7 +117,7 @@ double
 channel_balance_read(
   jack_mixer_channel_t channel);
 
-unsigned int
+int
 channel_get_balance_midi_cc(
   jack_mixer_channel_t channel);
 
@@ -126,7 +126,7 @@ channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
   unsigned int new_cc);
 
-unsigned int
+int
 channel_get_volume_midi_cc(
   jack_mixer_channel_t channel);
 

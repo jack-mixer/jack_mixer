@@ -234,11 +234,11 @@ class Channel(gtk.VBox, SerializedObject):
         object_backend.add_property("volume", "%f" % self.slider_adjustment.get_value_db())
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
 
-        if self.channel.volume_midi_cc:
         if hasattr(self.channel, 'out_mute'):
             object_backend.add_property('out_mute', str(self.channel.out_mute))
+        if self.channel.volume_midi_cc != -1:
             object_backend.add_property('volume_midi_cc', str(self.channel.volume_midi_cc))
-        if self.channel.balance_midi_cc:
+        if self.channel.balance_midi_cc != -1:
             object_backend.add_property('balance_midi_cc', str(self.channel.balance_midi_cc))
 
     def unserialize_property(self, name, value):
@@ -297,9 +297,9 @@ class InputChannel(Channel):
         if self.channel == None:
             raise Exception,"Cannot create a channel"
         Channel.realize(self)
-        if self.future_volume_midi_cc:
+        if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
-        if self.future_balance_midi_cc:
+        if self.future_balance_midi_cc != None:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         self.channel.midi_scale = self.slider_scale.scale
 
@@ -529,6 +529,10 @@ class OutputChannel(Channel):
         if self.channel == None:
             raise Exception,"Cannot create a channel"
         Channel.realize(self)
+        if self.future_volume_midi_cc != None:
+            self.channel.volume_midi_cc = self.future_volume_midi_cc
+        if self.future_balance_midi_cc != None:
+            self.channel.balance_midi_cc = self.future_balance_midi_cc
         if self.future_out_mute:
             self.channel.out_mute = self.future_out_mute
 
@@ -901,11 +905,13 @@ class ChannelPropertiesDialog(gtk.Dialog):
         if response_id == gtk.RESPONSE_APPLY:
             self.channel.channel_name = name
             try:
-                self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
+                if self.entry_volume_cc.get_text() != '-1':
+                    self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
             except ValueError:
                 pass
             try:
-                self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
+                if self.entry_balance_cc.get_text() != '-1':
+                    self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
             except ValueError:
                 pass
         self.destroy()
@@ -927,6 +933,7 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
+        self.fill_ui()
 
         self.stereo.set_active(True) # default to stereo
 
@@ -934,6 +941,10 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.ok_button = self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
         self.ok_button.set_sensitive(False)
         self.set_default_response(gtk.RESPONSE_OK);
+
+    def fill_ui(self):
+        self.entry_volume_cc.set_text('-1')
+        self.entry_balance_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
@@ -970,6 +981,7 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
+        self.fill_ui()
 
         # TODO: disable mode for output channels as mono output channels may
         # not be correctly handled yet.
@@ -980,6 +992,10 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.ok_button = self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
         self.ok_button.set_sensitive(False)
         self.set_default_response(gtk.RESPONSE_OK);
+
+    def fill_ui(self):
+        self.entry_volume_cc.set_text('-1')
+        self.entry_balance_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),

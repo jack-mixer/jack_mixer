@@ -44,6 +44,7 @@ class Channel(gtk.VBox, SerializedObject):
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0)
         self.balance_adjustment = gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
+        self.future_out_mute = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
 
@@ -234,6 +235,8 @@ class Channel(gtk.VBox, SerializedObject):
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
 
         if self.channel.volume_midi_cc:
+        if hasattr(self.channel, 'out_mute'):
+            object_backend.add_property('out_mute', str(self.channel.out_mute))
             object_backend.add_property('volume_midi_cc', str(self.channel.volume_midi_cc))
         if self.channel.balance_midi_cc:
             object_backend.add_property('balance_midi_cc', str(self.channel.balance_midi_cc))
@@ -244,6 +247,9 @@ class Channel(gtk.VBox, SerializedObject):
             return True
         if name == "balance":
             self.balance_adjustment.set_value(float(value))
+            return True
+        if name == 'out_mute':
+            self.future_out_mute = (value == 'True')
             return True
         if name == 'volume_midi_cc':
             self.future_volume_midi_cc = int(value)
@@ -523,6 +529,8 @@ class OutputChannel(Channel):
         if self.channel == None:
             raise Exception,"Cannot create a channel"
         Channel.realize(self)
+        if self.future_out_mute:
+            self.channel.out_mute = self.future_out_mute
 
         self.channel.midi_scale = self.slider_scale.scale
 
@@ -548,7 +556,7 @@ class OutputChannel(Channel):
         self.vbox.pack_start(self.label_name_event_box, True)
         self.mute = gtk.ToggleButton()
         self.mute.set_label("M")
-        self.mute.set_active(self.channel.mute)
+        self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
         self.vbox.pack_start(self.mute, False)
 

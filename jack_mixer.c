@@ -118,7 +118,6 @@ struct jack_mixer
   jack_client_t * jack_client;
   GSList *input_channels_list;
   GSList *output_channels_list;
-  struct output_channel *main_mix_channel;
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
@@ -333,14 +332,11 @@ remove_channel(
   jack_mixer_channel_t channel)
 {
   GSList *list_ptr;
-
   channel_ptr->mixer_ptr->input_channels_list = g_slist_remove(
                   channel_ptr->mixer_ptr->input_channels_list, channel_ptr);
   free(channel_ptr->name);
 
   /* remove references to input channel from all output channels */
-  channel_unmute(channel_ptr);
-  channel_unsolo(channel_ptr);
   for (list_ptr = channel_ptr->mixer_ptr->output_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
   {
     struct output_channel *output_channel_ptr = list_ptr->data;
@@ -461,20 +457,6 @@ channel_abspeak_reset(
 }
 
 void
-channel_mute(
-  jack_mixer_channel_t channel)
-{
-  output_channel_set_muted(channel_ptr->mixer_ptr->main_mix_channel, channel, true);
-}
-
-void
-channel_unmute(
-  jack_mixer_channel_t channel)
-{
-  output_channel_set_muted(channel_ptr->mixer_ptr->main_mix_channel, channel, false);
-}
-
-void
 channel_out_mute(
   jack_mixer_channel_t channel)
 {
@@ -488,43 +470,11 @@ channel_out_unmute(
   channel_ptr->out_mute = false;
 }
 
-void
-channel_solo(
-  jack_mixer_channel_t channel)
-{
-  output_channel_set_solo(channel_ptr->mixer_ptr->main_mix_channel, channel, true);
-}
-
-void
-channel_unsolo(
-  jack_mixer_channel_t channel)
-{
-  output_channel_set_solo(channel_ptr->mixer_ptr->main_mix_channel, channel, false);
-}
-
-bool
-channel_is_muted(
-  jack_mixer_channel_t channel)
-{
-  if (g_slist_find(channel_ptr->mixer_ptr->main_mix_channel->muted_channels, channel))
-    return true;
-  return false;
-}
-
 bool
 channel_is_out_muted(
   jack_mixer_channel_t channel)
 {
   return channel_ptr->out_mute;
-}
-
-bool
-channel_is_soloed(
-  jack_mixer_channel_t channel)
-{
-  if (g_slist_find(channel_ptr->mixer_ptr->main_mix_channel->soloed_channels, channel))
-    return true;
-  return false;
 }
 
 void
@@ -871,8 +821,6 @@ mix(
     calc_channel_frames(channel_ptr, start, end);
   }
 
-  mix_one((struct output_channel*)mixer_ptr->main_mix_channel, mixer_ptr->input_channels_list, start, end);
-
   for (node_ptr = mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     output_channel_ptr = node_ptr->data;
@@ -935,7 +883,6 @@ process(
   }
 
   // Fill output buffers with the input 
-  update_channel_buffers((struct channel*)mixer_ptr->main_mix_channel, nframes);
   for (node_ptr = mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;
@@ -1103,15 +1050,6 @@ create(
 
   LOG_DEBUG("Sample rate: %" PRIu32, jack_get_sample_rate(mixer_ptr->jack_client));
 
-  mixer_ptr->main_mix_channel = create_output_channel(mixer_ptr, "MAIN", stereo, false);
-  if (mixer_ptr->main_mix_channel == NULL) {
-    LOG_ERROR("Cannot create main mix channel");
-    goto close_jack;
-  }
-  channel_set_volume_midi_cc(mixer_ptr->main_mix_channel, 7);
-  channel_set_balance_midi_cc(mixer_ptr->main_mix_channel, 8);
-
-  ((struct channel*)(mixer_ptr->main_mix_channel))->mixer_ptr = mixer_ptr;
 
 #if defined(HAVE_JACK_MIDI)
   mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
@@ -1173,16 +1111,9 @@ destroy(
 
   pthread_mutex_destroy(&mixer_ctx_ptr->mutex);
 
-  free(mixer_ctx_ptr->main_mix_channel);
   free(mixer_ctx_ptr);
 }
 
-jack_mixer_channel_t
-get_main_mix_channel(
-  jack_mixer_t mixer)
-{
-  return (struct channel*)mixer_ctx_ptr->main_mix_channel;
-}
 
 unsigned int
 get_channels_count(

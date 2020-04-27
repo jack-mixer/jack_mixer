@@ -48,10 +48,6 @@ void
 destroy(
   jack_mixer_t mixer);
 
-jack_mixer_channel_t
-get_main_mix_channel(
-  jack_mixer_t mixer);
-
 unsigned int
 get_channels_count(
   jack_mixer_t mixer);
@@ -153,14 +149,6 @@ channel_abspeak_reset(
   jack_mixer_channel_t channel);
 
 void
-channel_mute(
-  jack_mixer_channel_t channel);
-
-void
-channel_unmute(
-  jack_mixer_channel_t channel);
-
-void
 channel_out_mute(
   jack_mixer_channel_t channel);
 
@@ -168,24 +156,8 @@ void
 channel_out_unmute(
   jack_mixer_channel_t channel);
 
-void
-channel_solo(
-  jack_mixer_channel_t channel);
-
-void
-channel_unsolo(
-  jack_mixer_channel_t channel);
-
-bool
-channel_is_muted(
-  jack_mixer_channel_t channel);
-
 bool
 channel_is_out_muted(
-  jack_mixer_channel_t channel);
-
-bool
-channel_is_soloed(
   jack_mixer_channel_t channel);
 
 void

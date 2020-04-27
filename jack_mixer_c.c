@@ -233,20 +233,6 @@ Channel_set_balance(ChannelObject *self, PyObject *value, void *closure)
 }
 
 static PyObject*
-Channel_get_mute(ChannelObject *self, void *closure)
-{
-	PyObject *result;
-
-	if (channel_is_muted(self->channel)) {
-		result = Py_True;
-	} else {
-		result = Py_False;
-	}
-	Py_INCREF(result);
-	return result;
-}
-
-static PyObject*
 Channel_get_out_mute(ChannelObject *self, void *closure)
 {
 	PyObject *result;
@@ -261,48 +247,12 @@ Channel_get_out_mute(ChannelObject *self, void *closure)
 }
 
 static int
-Channel_set_mute(ChannelObject *self, PyObject *value, void *closure)
-{
-	if (value == Py_True) {
-		channel_mute(self->channel);
-	} else {
-		channel_unmute(self->channel);
-	}
-	return 0;
-}
-
-static int
 Channel_set_out_mute(ChannelObject *self, PyObject *value, void *closure)
 {
 	if (value == Py_True) {
 		channel_out_mute(self->channel);
 	} else {
 		channel_out_unmute(self->channel);
-	}
-	return 0;
-}
-
-static PyObject*
-Channel_get_solo(ChannelObject *self, void *closure)
-{
-	PyObject *result;
-
-	if (channel_is_soloed(self->channel)) {
-		result = Py_True;
-	} else {
-		result = Py_False;
-	}
-	Py_INCREF(result);
-	return result;
-}
-
-static int
-Channel_set_solo(ChannelObject *self, PyObject *value, void *closure)
-{
-	if (value == Py_True) {
-		channel_solo(self->channel);
-	} else {
-		channel_unsolo(self->channel);
 	}
 	return 0;
 }
@@ -487,15 +437,9 @@ static PyGetSetDef Channel_getseters[] = {
 	{"balance",
 		(getter)Channel_get_balance, (setter)Channel_set_balance,
 		"balance", NULL},
-	{"mute",
-		(getter)Channel_get_mute, (setter)Channel_set_mute,
-		"mute", NULL},
 	{"out_mute",
 		(getter)Channel_get_out_mute, (setter)Channel_set_out_mute,
 		"out_mute", NULL},
-	{"solo",
-		(getter)Channel_get_solo, (setter)Channel_set_solo,
-		"solo", NULL},
 	{"meter",
 		(getter)Channel_get_meter, NULL,
 		"meter", NULL},
@@ -792,14 +736,12 @@ OutputChannel_New(jack_mixer_output_channel_t output_channel)
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *main_mix_channel;
 	jack_mixer_t mixer;
 } MixerObject;
 
 static void
 Mixer_dealloc(MixerObject *self)
 {
-	Py_XDECREF(self->main_mix_channel);
 	if (self->mixer)
 		destroy(self->mixer);
 	self->ob_type->tp_free((PyObject*)self);
@@ -813,7 +755,6 @@ Mixer_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self = (MixerObject*)type->tp_alloc(type, 0);
 
 	if (self != NULL) {
-		self->main_mix_channel = NULL;
 		self->mixer = NULL;
 	}
 
@@ -837,13 +778,10 @@ Mixer_init(MixerObject *self, PyObject *args, PyObject *kwds)
 		return -1;
 	}
 
-	self->main_mix_channel = Channel_New(get_main_mix_channel(self->mixer));
-
 	return 0;
 }
 
 static PyMemberDef Mixer_members[] = {
-	{"main_mix_channel", T_OBJECT, offsetof(MixerObject, main_mix_channel), 0, "main_mix_channel"},
 	{NULL}
 };
 

@@ -269,10 +269,8 @@ class Channel(gtk.VBox, SerializedObject):
         self.balance_adjustment.set_value(self.channel.balance)
 
     def on_monitor_button_toggled(self, button):
-        if not button.get_active():
-            self.app.main_mix.monitor_button.set_active(True)
-        else:
-            for channel in self.app.channels + self.app.output_channels + [self.app.main_mix]:
+        if button.get_active():
+            for channel in self.app.channels + self.app.output_channels:
                 if channel.monitor_button.get_active() and channel.monitor_button is not button:
                     channel.monitor_button.handler_block_by_func(
                                 channel.on_monitor_button_toggled)
@@ -323,25 +321,6 @@ class InputChannel(Channel):
 #             self.label_stereo.set_text("mono")
 #         self.label_stereo.set_size_request(0, -1)
 #         self.vbox.pack_start(self.label_stereo, True)
-
-        # hbox for mute and solo buttons
-        self.hbox_mutesolo = gtk.HBox()
-
-        self.mute = gtk.ToggleButton()
-        self.mute.set_label("M")
-        self.mute.set_active(self.channel.mute)
-        self.mute.connect("button-press-event", self.on_mute_button_pressed)
-        self.mute.connect("toggled", self.on_mute_toggled)
-        self.hbox_mutesolo.pack_start(self.mute, True)
-
-        self.solo = gtk.ToggleButton()
-        self.solo.set_label("S")
-        self.solo.set_active(self.channel.solo)
-        self.solo.connect("button-press-event", self.on_solo_button_pressed)
-        self.solo.connect("toggled", self.on_solo_toggled)
-        self.hbox_mutesolo.pack_start(self.solo, True)
-
-        self.vbox.pack_start(self.hbox_mutesolo, False)
 
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
@@ -414,7 +393,6 @@ class InputChannel(Channel):
 
     def on_mute_toggled(self, button):
         self.channel.mute = self.mute.get_active()
-        self.app.update_monitor(self.app.main_mix)
 
     def on_mute_button_pressed(self, button, event, *args):
         if event.button == 3:
@@ -441,7 +419,6 @@ class InputChannel(Channel):
 
     def on_solo_toggled(self, button):
         self.channel.solo = self.solo.get_active()
-        self.app.update_monitor(self.app.main_mix)
 
     def on_solo_button_pressed(self, button, event, *args):
         if event.button == 3:
@@ -615,7 +592,6 @@ class OutputChannel(Channel):
 
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
-        self.app.update_monitor(self.app.main_mix)
 
     def unrealize(self):
         # remove control groups from input channels
@@ -673,103 +649,6 @@ class OutputChannel(Channel):
             self._init_solo_channels = value.split('|')
             return True
         return Channel.unserialize_property(self, name, value)
-
-class MainMixChannel(Channel):
-    _init_muted_channels = None
-    _init_solo_channels = None
-
-    def __init__(self, app):
-        Channel.__init__(self, app, "MAIN", True)
-
-    def realize(self):
-        Channel.realize(self)
-        self.channel = self.mixer.main_mix_channel
-        self.channel.midi_scale = self.slider_scale.scale
-
-        self.on_volume_changed(self.slider_adjustment)
-        self.on_balance_changed(self.balance_adjustment)
-
-        # vbox child at upper part
-        self.vbox = gtk.VBox()
-        self.pack_start(self.vbox, False)
-        self.label_name = gtk.Label()
-        self.label_name.set_text(self.channel_name)
-        self.label_name.set_size_request(0, -1)
-        self.vbox.pack_start(self.label_name, False)
-        self.mute = gtk.ToggleButton()
-        self.mute.set_label("M")
-        self.mute.set_active(self.channel.mute)
-        self.mute.connect("toggled", self.on_mute_toggled)
-        self.vbox.pack_start(self.mute, False)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
-        frame.add(self.abspeak);
-        self.vbox.pack_start(frame, False)
-
-        # hbox child at lower part
-        self.hbox = gtk.HBox()
-        self.hbox.pack_start(self.slider, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
-        frame.add(self.meter);
-        self.hbox.pack_start(frame, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
-        frame.add(self.hbox);
-        self.pack_start(frame, True)
-
-        self.volume_digits.set_size_request(0, -1)
-        self.pack_start(self.volume_digits, False)
-
-        self.create_balance_widget()
-
-        self.monitor_button = gtk.ToggleButton('MON')
-        self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
-        self.pack_start(self.monitor_button, False, False)
-
-        for input_channel in self.app.channels:
-            if self._init_muted_channels and input_channel.channel.name in self._init_muted_channels:
-                input_channel.mute.set_active(True)
-            if self._init_solo_channels and input_channel.channel.name in self._init_solo_channels:
-                input_channel.solo.set_active(True)
-        self._init_muted_channels = None
-        self._init_solo_channels = None
-
-    def on_mute_toggled(self, button):
-        self.channel.out_mute = self.mute.get_active()
-        self.app.update_monitor(self.app.main_mix)
-
-    def unrealize(self):
-        Channel.unrealize(self)
-        self.channel = False
-
-    @classmethod
-    def serialization_name(cls):
-        return 'main_mix_channel'
-
-    def serialize(self, object_backend):
-        muted_channels = []
-        solo_channels = []
-        for input_channel in self.app.channels:
-            if input_channel.channel.mute:
-                muted_channels.append(input_channel)
-            if input_channel.channel.solo:
-                solo_channels.append(input_channel)
-        if muted_channels:
-            object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
-        if solo_channels:
-            object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
-        Channel.serialize(self, object_backend)
-
-    def unserialize_property(self, name, value):
-        if name == 'muted_channels':
-            self._init_muted_channels = value.split('|')
-            return True
-        if name == 'solo_channels':
-            self._init_solo_channels = value.split('|')
-            return True
-        return Channel.unserialize_property(self, name, value)
-
 
 class ChannelPropertiesDialog(gtk.Dialog):
     channel = None

@@ -83,10 +83,6 @@ main(int argc, char *argv[])
 	}
 
 	mixer = create(jack_cli_name, false);
-	main_mix_channel = get_main_mix_channel(mixer);
-	channel_set_midi_scale(main_mix_channel, scale);
-	channel_volume_write(main_mix_channel, 0);
-	channel_set_volume_midi_cc(main_mix_channel, 0);
 
 	channel_index = 0;
 	while (optind < argc) {

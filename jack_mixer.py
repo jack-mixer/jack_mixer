@@ -228,12 +228,10 @@ class JackMixer(SerializedObject):
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
-        self.main_mix = MainMixChannel(self)
         self.hbox_outputs = gtk.HBox()
         self.hbox_outputs.set_spacing(0)
         self.hbox_outputs.set_border_width(0)
         frame = gtk.Frame()
-        frame.add(self.main_mix)
         self.hbox_outputs.pack_start(frame, False)
         self.hbox_top.pack_start(self.hbox_outputs, False)
 
@@ -498,13 +496,12 @@ class JackMixer(SerializedObject):
     def read_meters(self):
         for channel in self.channels:
             channel.read_meter()
-        self.main_mix.read_meter()
         for channel in self.output_channels:
             channel.read_meter()
         return True
 
     def midi_events_check(self):
-        for channel in self.channels + [self.main_mix] + self.output_channels:
+        for channel in self.channels + self.output_channels:
             channel.midi_events_check()
         return True
 
@@ -580,13 +577,6 @@ class JackMixer(SerializedObject):
                                 channel.channel.is_solo(input_channel.channel))
                 self.monitor_channel.set_muted(input_channel.channel,
                                 channel.channel.is_muted(input_channel.channel))
-        elif type(self.monitored_channel) is MainMixChannel:
-            # sync solo/muted channels
-            for input_channel in self.channels:
-                self.monitor_channel.set_solo(input_channel.channel,
-                                input_channel.channel.solo)
-                self.monitor_channel.set_muted(input_channel.channel,
-                                input_channel.channel.mute)
 
     def get_input_channel_by_name(self, name):
         for input_channel in self.channels:
@@ -708,9 +698,6 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             return True
 
     def unserialize_child(self, name):
-        if name == MainMixChannel.serialization_name():
-            return self.main_mix
-
         if name == InputChannel.serialization_name():
             channel = InputChannel(self, "", True)
             self.unserialized_channels.append(channel)
@@ -724,16 +711,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
     def serialization_get_childs(self):
         '''Get child objects tha required and support serialization'''
         childs = self.channels[:] + self.output_channels[:]
-        childs.append(self.main_mix)
         return childs
 
     def serialization_name(self):
         return "jack_mixer"
 
     def main(self):
-        self.main_mix.realize()
-        self.main_mix.set_monitored()
-
         if not self.mixer:
             return
 

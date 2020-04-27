@@ -43,7 +43,7 @@
 
 #include "jack_compat.h"
 
-#define VOLUME_TRANSITION_SECONDS 0.2
+#define VOLUME_TRANSITION_SECONDS 0.01
 #define PEAK_FRAMES_CHUNK 4800
 // we don't know how much to allocate, but we don't want to wait with 
 // allocating until we're in the process() callback, so we just take a 

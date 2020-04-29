@@ -92,6 +92,7 @@ struct channel
 
   int midi_cc_volume_index;
   int midi_cc_balance_index;
+  int midi_cc_mute_index;
 
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
@@ -252,6 +253,8 @@ channel_set_balance_midi_cc(
           channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index = -1;
       } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index == new_cc) {
           channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index = -1;
+      } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index == new_cc) {
+          channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index = -1;
       }
   }
   if (channel_ptr->midi_cc_balance_index != -1) {
@@ -281,6 +284,8 @@ channel_set_volume_midi_cc(
           channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index = -1;
       } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index == new_cc) {
           channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index = -1;
+      } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index == new_cc) {
+          channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index = -1;
       }
   }
   if (channel_ptr->midi_cc_volume_index != -1) {
@@ -288,6 +293,38 @@ channel_set_volume_midi_cc(
   }
   channel_ptr->mixer_ptr->midi_cc_map[new_cc] = channel_ptr;
   channel_ptr->midi_cc_volume_index = new_cc;
+  return 0;
+}
+
+int
+channel_get_mute_midi_cc(
+  jack_mixer_channel_t channel)
+{
+  return channel_ptr->midi_cc_mute_index;
+}
+
+unsigned int
+channel_set_mute_midi_cc(
+  jack_mixer_channel_t channel,
+  unsigned int new_cc)
+{
+  if (new_cc > 127) {
+    return 2; /* error: over limit CC */
+  }
+  if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
+      if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index == new_cc) {
+          channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index = -1;
+      } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index == new_cc) {
+          channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index = -1;
+      } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index == new_cc) {
+          channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index = -1;
+      }
+  }
+  if (channel_ptr->midi_cc_mute_index != -1) {
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] = NULL;
+  }
+  channel_ptr->mixer_ptr->midi_cc_map[new_cc] = channel_ptr;
+  channel_ptr->midi_cc_mute_index = new_cc;
   return 0;
 }
 
@@ -321,6 +358,19 @@ channel_autoset_midi_cc(
       channel_ptr->midi_cc_balance_index = i;
 
       LOG_NOTICE("New channel \"%s\" balance mapped to CC#%i", channel_ptr->name, i);
+
+      break;
+    }
+  }
+
+  for (; i < 128 ; i++)
+  {
+    if (mixer_ptr->midi_cc_map[i] == NULL)
+    {
+      mixer_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_cc_mute_index = i;
+
+      LOG_NOTICE("New channel \"%s\" mute mapped to CC#%i", channel_ptr->name, i);
 
       break;
     }
@@ -360,6 +410,12 @@ remove_channel(
   {
     assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] == channel_ptr);
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
+  }
+
+  if (channel_ptr->midi_cc_mute_index != -1)
+  {
+    assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] == channel_ptr);
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] = NULL;
   }
 
   free(channel_ptr);
@@ -937,7 +993,7 @@ process(
         channel_ptr->balance_new = (float)byte / 63;
         LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance_new);
       }
-      else
+      else if (channel_ptr->midi_cc_volume_index == (unsigned int)in_event.buffer[1])
       {
         if (channel_ptr->volume_new != channel_ptr->volume) {
           channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
@@ -948,7 +1004,13 @@ process(
         channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale, (double)in_event.buffer[2] / 127));
         LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
       }
-
+      else if (channel_ptr->midi_cc_mute_index == (unsigned int)in_event.buffer[1])
+      {
+        if ((unsigned int)in_event.buffer[2] == 127) {
+          channel_ptr->out_mute = !channel_ptr->out_mute;
+        }
+        LOG_DEBUG("\"%s\" out_mute %d", channel_ptr->name, channel_ptr->out_mute);
+      }
       channel_ptr->midi_in_got_events = true;
       if (channel_ptr->midi_change_callback)
         channel_ptr->midi_change_callback(channel_ptr->midi_change_callback_data);
@@ -1226,6 +1288,7 @@ add_channel(
 
   channel_ptr->midi_cc_volume_index = -1;
   channel_ptr->midi_cc_balance_index = -1;
+  channel_ptr->midi_cc_mute_index = -1;
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
   channel_ptr->midi_out_has_events = false;
@@ -1349,6 +1412,7 @@ create_output_channel(
 
   channel_ptr->midi_cc_volume_index = -1;
   channel_ptr->midi_cc_balance_index = -1;
+  channel_ptr->midi_cc_mute_index = -1;
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
 
@@ -1429,6 +1493,12 @@ remove_output_channel(
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
   }
 
+  if (channel_ptr->midi_cc_mute_index != -1)
+  {
+    assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] == channel_ptr);
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] = NULL;
+  }
+  
   g_slist_free(output_channel_ptr->soloed_channels);
   g_slist_free(output_channel_ptr->muted_channels);
 

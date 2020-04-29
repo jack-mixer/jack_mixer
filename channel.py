@@ -47,6 +47,7 @@ class Channel(gtk.VBox, SerializedObject):
         self.future_out_mute = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
+        self.future_mute_midi_cc = None
 
     def get_channel_name(self):
         return self._channel_name
@@ -242,6 +243,8 @@ class Channel(gtk.VBox, SerializedObject):
             object_backend.add_property('volume_midi_cc', str(self.channel.volume_midi_cc))
         if self.channel.balance_midi_cc != -1:
             object_backend.add_property('balance_midi_cc', str(self.channel.balance_midi_cc))
+        if self.channel.mute_midi_cc != -1:
+            object_backend.add_property('mute_midi_cc', str(self.channel.mute_midi_cc))
 
     def unserialize_property(self, name, value):
         if name == "volume":
@@ -259,12 +262,10 @@ class Channel(gtk.VBox, SerializedObject):
         if name == 'balance_midi_cc':
             self.future_balance_midi_cc = int(value)
             return True
+        if name == 'mute_midi_cc':
+            self.future_mute_midi_cc = int(value)
+            return True
         return False
-
-    def midi_events_check(self):
-        if self.channel.midi_in_got_events:
-            self.slider_adjustment.set_value_db(self.channel.volume)
-            self.balance_adjustment.set_value(self.channel.balance)
 
     def on_midi_event_received(self, *args):
         self.slider_adjustment.set_value_db(self.channel.volume)
@@ -301,6 +302,9 @@ class InputChannel(Channel):
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc != None:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
+        if self.future_mute_midi_cc != None:
+            self.channel.mute_midi_cc = self.future_mute_midi_cc
+        self.channel.midi_scale = self.slider_scale.scale
         self.channel.midi_scale = self.slider_scale.scale
 
         self.on_volume_changed(self.slider_adjustment)
@@ -405,6 +409,11 @@ class InputChannel(Channel):
     def on_solo_toggled(self, button):
         self.channel.solo = self.solo.get_active()
 
+    def midi_events_check(self):
+        if self.channel.midi_in_got_events:
+            self.mute.set_active(self.channel.out_mute)
+            Channel.on_midi_event_received(self)
+
     def on_solo_button_pressed(self, button, event, *args):
         if event.button == 3:
             # right click on the solo button, act on all output channels
@@ -494,6 +503,9 @@ class OutputChannel(Channel):
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc != None:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
+        if self.future_mute_midi_cc != None:
+            self.channel.mute_midi_cc = self.future_mute_midi_cc
+
 
         self.channel.midi_scale = self.slider_scale.scale
 
@@ -574,6 +586,14 @@ class OutputChannel(Channel):
 
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
+
+    def on_solo_button_pressed(self, button, event, *args):
+        self.channel.solo = self.solo.get_active()
+
+    def midi_events_check(self):
+        if self.channel.midi_in_got_events:
+            self.mute.set_active(self.channel.out_mute)
+            Channel.on_midi_event_received(self)
 
     def unrealize(self):
         # remove control groups from input channels
@@ -670,7 +690,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         vbox = gtk.VBox()
         self.vbox.add(vbox)
 
-        table = gtk.Table(2, 2, False)
+        table = gtk.Table(2, 3, False)
         vbox.pack_start(self.create_frame('Properties', table))
         table.set_row_spacings(5)
         table.set_col_spacings(5)
@@ -716,6 +736,17 @@ class ChannelPropertiesDialog(gtk.Dialog):
                         self.on_sense_midi_balance_clicked)
         table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
 
+        table.attach(gtk.Label('Mute'), 0, 1, 2, 3)
+        self.entry_mute_cc = gtk.Entry()
+        self.entry_mute_cc.set_activates_default(True)
+        self.entry_mute_cc.set_editable(False)
+        self.entry_mute_cc.set_width_chars(3)
+        table.attach(self.entry_mute_cc, 1, 2, 2, 3)
+        self.button_sense_midi_mute = gtk.Button('Autoset')
+        self.button_sense_midi_mute.connect('clicked',
+                        self.on_sense_midi_mute_clicked)
+        table.attach(self.button_sense_midi_mute, 2, 3, 2, 3)
+
         self.vbox.show_all()
 
     def fill_ui(self):
@@ -727,6 +758,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.mode_hbox.set_sensitive(False)
         self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
         self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
+        self.entry_mute_cc.set_text('%s' % self.channel.channel.mute_midi_cc)
 
     def sense_popup_dialog(self, entry):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -760,6 +792,9 @@ class ChannelPropertiesDialog(gtk.Dialog):
     def on_sense_midi_balance_clicked(self, *args):
         self.sense_popup_dialog(self.entry_balance_cc)
 
+    def on_sense_midi_mute_clicked(self, *args):
+        self.sense_popup_dialog(self.entry_mute_cc)
+
     def on_response_cb(self, dlg, response_id, *args):
         self.channel.channel_properties_dialog = None
         name = self.entry_name.get_text()
@@ -773,6 +808,11 @@ class ChannelPropertiesDialog(gtk.Dialog):
             try:
                 if self.entry_balance_cc.get_text() != '-1':
                     self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
+            except ValueError:
+                pass
+            try:
+                if self.entry_mute_cc.get_text() != '-1':
+                    self.channel.channel.mute_midi_cc = int(self.entry_mute_cc.get_text())
             except ValueError:
                 pass
         self.destroy()
@@ -806,12 +846,14 @@ class NewChannelDialog(ChannelPropertiesDialog):
     def fill_ui(self):
         self.entry_volume_cc.set_text('-1')
         self.entry_balance_cc.set_text('-1')
+        self.entry_mute_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': self.entry_volume_cc.get_text(),
-                'balance_cc': self.entry_balance_cc.get_text()
+                'balance_cc': self.entry_balance_cc.get_text(),
+                'mute_cc': self.entry_mute_cc.get_text()
                }
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):

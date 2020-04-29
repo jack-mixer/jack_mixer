@@ -444,7 +444,7 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
         self.channel_remove_output_menu_item.set_sensitive(False)
 
-    def add_channel(self, name, stereo, volume_cc, balance_cc):
+    def add_channel(self, name, stereo, volume_cc, balance_cc, midi_cc):
         try:
             channel = InputChannel(self, name, stereo)
             self.add_channel_precreated(channel)
@@ -461,7 +461,9 @@ class JackMixer(SerializedObject):
             channel.channel.volume_midi_cc = int(volume_cc)
         if balance_cc != '-1':
             channel.channel.balance_midi_cc = int(balance_cc)
-        if (volume_cc == '-1' and balance_cc == '-1'):
+        if midi_cc != '-1':
+            channel.channel.mute_midi_cc = int(mute_cc)
+        if (volume_cc == '-1' and balance_cc == '-1' and mute_cc == '-1'):
             channel.channel.autoset_midi_cc()
 
         return channel

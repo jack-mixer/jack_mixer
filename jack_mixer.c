@@ -532,7 +532,7 @@ mix_one(
   {
     channel_ptr = node_ptr->data;
 
-    if (g_slist_find(output_mix_channel->muted_channels, channel_ptr) != NULL) {
+    if (g_slist_find(output_mix_channel->muted_channels, channel_ptr) != NULL || channel_ptr->out_mute) {
       /* skip muted channels */
       continue;
     }
@@ -1211,6 +1211,7 @@ add_channel(
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;
   channel_ptr->abspeak = 0.0;
+  channel_ptr->out_mute = false;
 
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;

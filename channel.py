@@ -67,6 +67,8 @@ class Channel(gtk.VBox, SerializedObject):
 
     def realize(self):
         #print "Realizing channel \"%s\"" % self.channel_name
+        if self.future_out_mute != None:
+            self.channel.out_mute = self.future_out_mute
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
         self.balance_adjustment.connect("value-changed", self.on_balance_changed)
@@ -322,6 +324,12 @@ class InputChannel(Channel):
 #         self.label_stereo.set_size_request(0, -1)
 #         self.vbox.pack_start(self.label_stereo, True)
 
+        self.mute = gtk.ToggleButton()
+        self.mute.set_label("M")
+        self.mute.set_active(self.channel.out_mute)
+        self.mute.connect("toggled", self.on_mute_toggled)
+        self.vbox.pack_start(self.mute, True)
+
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
         frame.add(self.abspeak);
@@ -392,30 +400,7 @@ class InputChannel(Channel):
                 self.on_channel_properties()
 
     def on_mute_toggled(self, button):
-        self.channel.mute = self.mute.get_active()
-
-    def on_mute_button_pressed(self, button, event, *args):
-        if event.button == 3:
-            # right click on the mute button, act on all output channels
-            if button.get_active(): # was muted
-                button.set_active(False)
-                if hasattr(button, 'touched_channels'):
-                    touched_channels = button.touched_channels
-                    for chan in touched_channels:
-                        ctlgroup = self.get_control_group(chan)
-                        ctlgroup.mute.set_active(False)
-                    del button.touched_channels
-            else: # was not muted
-                button.set_active(True)
-                touched_channels = []
-                for chan in self.app.output_channels:
-                    ctlgroup = self.get_control_group(chan)
-                    if not ctlgroup.mute.get_active():
-                        ctlgroup.mute.set_active(True)
-                        touched_channels.append(chan)
-                button.touched_channels = touched_channels
-            return True
-        return False
+        self.channel.out_mute = self.mute.get_active()
 
     def on_solo_toggled(self, button):
         self.channel.solo = self.solo.get_active()
@@ -501,7 +486,6 @@ class OutputChannel(Channel):
     display_solo_buttons = property(get_display_solo_buttons, set_display_solo_buttons)
 
     def realize(self):
-        Channel.realize(self)
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
         if self.channel == None:
             raise Exception,"Cannot create a channel"
@@ -510,8 +494,6 @@ class OutputChannel(Channel):
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc != None:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
-        if self.future_out_mute:
-            self.channel.out_mute = self.future_out_mute
 
         self.channel.midi_scale = self.slider_scale.scale
 

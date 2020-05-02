@@ -1,5 +1,7 @@
 [Desktop Entry]
 Name=Jack Mixer
+Comment=Jack Mixer
+Comment[fr]=Mixeur pour JACK
 Exec=jack_mixer
 Terminal=false
 Type=Application

@@ -787,12 +787,15 @@ class ChannelPropertiesDialog(gtk.Dialog):
         gobject.timeout_add_seconds(1, close_sense_timeout, window, entry)
 
     def on_sense_midi_volume_clicked(self, *args):
+        self.mixer.last_midi_channel = int(self.entry_volume_cc.get_text())
         self.sense_popup_dialog(self.entry_volume_cc)
 
     def on_sense_midi_balance_clicked(self, *args):
+        self.mixer.last_midi_channel = int(self.entry_balance_cc.get_text())
         self.sense_popup_dialog(self.entry_balance_cc)
 
     def on_sense_midi_mute_clicked(self, *args):
+        self.mixer.last_midi_channel = int(self.entry_mute_cc.get_text())
         self.sense_popup_dialog(self.entry_mute_cc)
 
     def on_response_cb(self, dlg, response_id, *args):

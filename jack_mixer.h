@@ -56,9 +56,14 @@ const char*
 get_client_name(
   jack_mixer_t mixer);
 
-unsigned int
+int
 get_last_midi_channel(
   jack_mixer_t mixer);
+
+unsigned int
+set_last_midi_channel(
+  jack_mixer_t mixer,
+  int new_channel);
 
 jack_mixer_channel_t
 add_channel(
@@ -120,7 +125,7 @@ channel_get_balance_midi_cc(
 unsigned int
 channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
-  unsigned int new_cc);
+  int new_cc);
 
 int
 channel_get_volume_midi_cc(
@@ -129,7 +134,7 @@ channel_get_volume_midi_cc(
 unsigned int
 channel_set_volume_midi_cc(
   jack_mixer_channel_t channel,
-  unsigned int new_cc);
+  int new_cc);
 
 int
 channel_get_mute_midi_cc(
@@ -138,7 +143,7 @@ channel_get_mute_midi_cc(
 unsigned int
 channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
-  unsigned int new_cc);
+  int new_cc);
 
 void
 channel_autoset_midi_cc(

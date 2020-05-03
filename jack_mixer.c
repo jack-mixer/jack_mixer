@@ -122,7 +122,7 @@ struct jack_mixer
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
-  unsigned int last_midi_channel;
+  int last_midi_channel;
 
   struct channel* midi_cc_map[128];
 };
@@ -243,10 +243,10 @@ channel_get_balance_midi_cc(
 unsigned int
 channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
-  unsigned int new_cc)
+  int new_cc)
 {
-  if (new_cc > 127) {
-    return 2; /* error: over limit CC */
+  if (new_cc < 0 || new_cc > 127) {
+    return 2; /* error: outside limit CC */
   }
   if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
       if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index == new_cc) {
@@ -274,10 +274,10 @@ channel_get_volume_midi_cc(
 
 unsigned int
 channel_set_volume_midi_cc(
-  jack_mixer_channel_t channel, unsigned int new_cc)
+  jack_mixer_channel_t channel, int new_cc)
 {
-  if (new_cc > 127) {
-    return 2; /* error: over limit CC */
+  if (new_cc< 0 || new_cc > 127) {
+    return 2; /* error: outside limit CC */
   }
   if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
       if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index == new_cc) {
@@ -306,10 +306,10 @@ channel_get_mute_midi_cc(
 unsigned int
 channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
-  unsigned int new_cc)
+  int new_cc)
 {
-  if (new_cc > 127) {
-    return 2; /* error: over limit CC */
+  if (new_cc < 0 || new_cc > 127) {
+    return 2; /* error: outside limit CC */
   }
   if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
       if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index == new_cc) {
@@ -1092,7 +1092,7 @@ create(
   mixer_ptr->input_channels_list = NULL;
   mixer_ptr->output_channels_list = NULL;
 
-  mixer_ptr->last_midi_channel = 0;
+  mixer_ptr->last_midi_channel = -1;
 
   for (i = 0 ; i < 128 ; i++)
   {
@@ -1191,11 +1191,19 @@ get_client_name(
   return jack_get_client_name(mixer_ctx_ptr->jack_client);
 }
 
-unsigned int
+int
 get_last_midi_channel(
   jack_mixer_t mixer)
 {
   return mixer_ctx_ptr->last_midi_channel;
+}
+
+unsigned int
+set_last_midi_channel(
+  jack_mixer_t mixer,
+  int new_channel) {
+  mixer_ctx_ptr->last_midi_channel = new_channel;
+  return 0;
 }
 
 jack_mixer_channel_t

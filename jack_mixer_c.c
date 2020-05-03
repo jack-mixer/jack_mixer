@@ -371,7 +371,7 @@ Channel_get_balance_midi_cc(ChannelObject *self, void *closure)
 static int
 Channel_set_balance_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 {
-	unsigned int new_cc;
+	int new_cc;
 	unsigned int result;
 
 	new_cc = PyInt_AsLong(value);
@@ -379,9 +379,7 @@ Channel_set_balance_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	if (result == 0) {
 		return 0;
 	}
-	if (result == 1) {
-		PyErr_SetString(PyExc_RuntimeError, "value already in use");
-	} else if (result == 2) {
+	if (result == 2) {
 		PyErr_SetString(PyExc_RuntimeError, "value out of range");
 	}
 	return -1;
@@ -396,7 +394,7 @@ Channel_get_volume_midi_cc(ChannelObject *self, void *closure)
 static int
 Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 {
-	unsigned int new_cc;
+	int new_cc;
 	unsigned int result;
 
 	new_cc = PyInt_AsLong(value);
@@ -404,9 +402,7 @@ Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	if (result == 0) {
 		return 0;
 	}
-	if (result == 1) {
-		PyErr_SetString(PyExc_RuntimeError, "value already in use");
-	} else if (result == 2) {
+	if (result == 2) {
 		PyErr_SetString(PyExc_RuntimeError, "value out of range");
 	}
 	return -1;
@@ -421,7 +417,7 @@ Channel_get_mute_midi_cc(ChannelObject *self, void *closure)
 static int
 Channel_set_mute_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 {
-	unsigned int new_cc;
+	int new_cc;
 	unsigned int result;
 
 	new_cc = PyInt_AsLong(value);
@@ -429,9 +425,7 @@ Channel_set_mute_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	if (result == 0) {
 		return 0;
 	}
-	if (result == 1) {
-		PyErr_SetString(PyExc_RuntimeError, "value already in use");
-	} else if (result == 2) {
+	if (result == 2) {
 		PyErr_SetString(PyExc_RuntimeError, "value out of range");
 	}
 	return -1;
@@ -832,11 +826,24 @@ Mixer_get_last_midi_channel(MixerObject *self, void *closure)
 	return PyInt_FromLong(get_last_midi_channel(self->mixer));
 }
 
+static int
+Mixer_set_last_midi_channel(MixerObject *self, PyObject *value, void *closure)
+{
+	int new_channel;
+	unsigned int result;
+
+	new_channel = PyInt_AsLong(value);
+	result = set_last_midi_channel(self->mixer, new_channel);
+	if (result == 0) {
+		return 0;
+	}
+	return -1;
+}
 
 static PyGetSetDef Mixer_getseters[] = {
 	{"channels_count", (getter)Mixer_get_channels_count, NULL,
 		"channels count", NULL},
-	{"last_midi_channel", (getter)Mixer_get_last_midi_channel, NULL,
+	{"last_midi_channel", (getter)Mixer_get_last_midi_channel, (setter)Mixer_set_last_midi_channel,
 		"last midi channel", NULL},
 	{NULL}
 };

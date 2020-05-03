@@ -899,12 +899,14 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
     def fill_ui(self):
         self.entry_volume_cc.set_text('-1')
         self.entry_balance_cc.set_text('-1')
+        self.entry_mute_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': self.entry_volume_cc.get_text(),
                 'balance_cc': self.entry_balance_cc.get_text(),
+                'mute_cc': self.entry_mute_cc.get_text(),
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
                }
 

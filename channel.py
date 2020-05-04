@@ -978,21 +978,26 @@ class ControlGroup(gtk.Alignment):
         self.mute = mute
         mute.set_label("M")
         mute.connect("toggled", self.on_mute_toggled)
-        hbox.pack_start(mute, False)
+        muteevent = gtk.EventBox()
+        muteevent.add(mute)
+        hbox.pack_start(muteevent, False)
 
         solo = gtk.ToggleButton()
         self.solo = solo
         solo.set_label("S")
         solo.connect("toggled", self.on_solo_toggled)
+        soloevent = gtk.EventBox()
+        soloevent.add(solo)
         if self.output_channel.display_solo_buttons:
-            hbox.pack_start(solo, True)
+            hbox.pack_start(soloevent, True)
 
-        mute.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
-        mute.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
-        mute.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
-        solo.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
-        solo.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
-        solo.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
+        print output_channel.color_tuple
+        muteevent.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
+        muteevent.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
+        muteevent.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
+        soloevent.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
+        soloevent.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
+        soloevent.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
 
     def update(self):
         if self.output_channel.display_solo_buttons:

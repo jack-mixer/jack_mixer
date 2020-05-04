@@ -260,7 +260,6 @@ Channel_set_out_mute(ChannelObject *self, PyObject *value, void *closure)
 static PyObject*
 Channel_get_solo(ChannelObject *self, void *closure)
 {
-    printf ("get_solo\n");
 	PyObject *result;
 
 	if (channel_is_soloed(self->channel)) {
@@ -458,6 +457,29 @@ Channel_set_mute_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 }
 
 static PyObject*
+Channel_get_solo_midi_cc(ChannelObject *self, void *closure)
+{
+	return PyInt_FromLong(channel_get_solo_midi_cc(self->channel));
+}
+
+static int
+Channel_set_solo_midi_cc(ChannelObject *self, PyObject *value, void *closure)
+{
+	int new_cc;
+	unsigned int result;
+
+	new_cc = PyInt_AsLong(value);
+	result = channel_set_solo_midi_cc(self->channel, new_cc);
+	if (result == 0) {
+		return 0;
+	}
+	if (result == 2) {
+		PyErr_SetString(PyExc_RuntimeError, "value out of range");
+	}
+	return -1;
+}
+
+static PyObject*
 Channel_get_midi_in_got_events(ChannelObject *self, void *closure)
 {
 	PyObject *result;
@@ -515,6 +537,10 @@ static PyGetSetDef Channel_getseters[] = {
 	{"mute_midi_cc",
 		(getter)Channel_get_mute_midi_cc,
 		(setter)Channel_set_mute_midi_cc,
+		"Mute MIDI CC", NULL},
+	{"solo_midi_cc",
+		(getter)Channel_get_solo_midi_cc,
+		(setter)Channel_set_solo_midi_cc,
 		"Mute MIDI CC", NULL},
 	{"midi_in_got_events",
 		(getter)Channel_get_midi_in_got_events, NULL,

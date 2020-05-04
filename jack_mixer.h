@@ -145,6 +145,15 @@ channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
   int new_cc);
 
+int
+channel_get_solo_midi_cc(
+  jack_mixer_channel_t channel);
+
+unsigned int
+channel_set_solo_midi_cc(
+  jack_mixer_channel_t channel,
+  int new_cc);
+
 void
 channel_autoset_midi_cc(
   jack_mixer_channel_t channel);

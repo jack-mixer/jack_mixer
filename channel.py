@@ -48,6 +48,7 @@ class Channel(gtk.VBox, SerializedObject):
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
+        self.future_solo_midi_cc = None
 
     def get_channel_name(self):
         return self._channel_name
@@ -245,6 +246,9 @@ class Channel(gtk.VBox, SerializedObject):
             object_backend.add_property('balance_midi_cc', str(self.channel.balance_midi_cc))
         if self.channel.mute_midi_cc != -1:
             object_backend.add_property('mute_midi_cc', str(self.channel.mute_midi_cc))
+        if self.channel.solo_midi_cc != -1:
+            object_backend.add_property('solo_midi_cc', str(self.channel.solo_midi_cc))
+
 
     def unserialize_property(self, name, value):
         if name == "volume":
@@ -264,6 +268,9 @@ class Channel(gtk.VBox, SerializedObject):
             return True
         if name == 'mute_midi_cc':
             self.future_mute_midi_cc = int(value)
+            return True
+        if name == 'solo_midi_cc':
+            self.future_solo_midi_cc = int(value)
             return True
         return False
 
@@ -304,6 +311,8 @@ class InputChannel(Channel):
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         if self.future_mute_midi_cc != None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
+        if self.future_solo_midi_cc != None:
+            self.channel.solo_midi_cc = self.future_solo_midi_cc
         if self.app._init_solo_channels and self.channel_name in self.app._init_solo_channels:
             self.channel.solo = True
 
@@ -424,6 +433,7 @@ class InputChannel(Channel):
     def midi_events_check(self):
         if self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
+            self.solo.set_active(self.channel.solo)
             Channel.on_midi_event_received(self)
 
     def on_solo_button_pressed(self, button, event, *args):
@@ -517,6 +527,8 @@ class OutputChannel(Channel):
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         if self.future_mute_midi_cc != None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
+        if self.future_solo_midi_cc != None:
+            self.channel.solo_midi_cc = self.future_solo_midi_cc
 
 
         self.channel.midi_scale = self.slider_scale.scale
@@ -759,6 +771,17 @@ class ChannelPropertiesDialog(gtk.Dialog):
                         self.on_sense_midi_mute_clicked)
         table.attach(self.button_sense_midi_mute, 2, 3, 2, 3)
 
+        table.attach(gtk.Label('Solo'), 0, 1, 3, 4)
+        self.entry_solo_cc = gtk.Entry()
+        self.entry_solo_cc.set_activates_default(True)
+        self.entry_solo_cc.set_editable(False)
+        self.entry_solo_cc.set_width_chars(3)
+        table.attach(self.entry_solo_cc, 1, 2, 3, 4)
+        self.button_sense_midi_solo = gtk.Button('Autoset')
+        self.button_sense_midi_solo.connect('clicked',
+                        self.on_sense_midi_solo_clicked)
+        table.attach(self.button_sense_midi_solo, 2, 3, 3, 4)
+
         self.vbox.show_all()
 
     def fill_ui(self):
@@ -771,6 +794,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
         self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
         self.entry_mute_cc.set_text('%s' % self.channel.channel.mute_midi_cc)
+        self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -810,6 +834,10 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.mixer.last_midi_channel = int(self.entry_mute_cc.get_text())
         self.sense_popup_dialog(self.entry_mute_cc)
 
+    def on_sense_midi_solo_clicked(self, *args):
+        self.mixer.last_midi_channel = int(self.entry_solo_cc.get_text())
+        self.sense_popup_dialog(self.entry_solo_cc)
+
     def on_response_cb(self, dlg, response_id, *args):
         self.channel.channel_properties_dialog = None
         name = self.entry_name.get_text()
@@ -828,6 +856,11 @@ class ChannelPropertiesDialog(gtk.Dialog):
             try:
                 if self.entry_mute_cc.get_text() != '-1':
                     self.channel.channel.mute_midi_cc = int(self.entry_mute_cc.get_text())
+            except ValueError:
+                pass
+            try:
+                if self.entry_solo_cc.get_text() != '-1':
+                    self.channel.channel.solo_midi_cc = int(self.entry_solo_cc.get_text())
             except ValueError:
                 pass
         self.destroy()
@@ -862,13 +895,15 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.entry_volume_cc.set_text('-1')
         self.entry_balance_cc.set_text('-1')
         self.entry_mute_cc.set_text('-1')
+        self.entry_solo_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': self.entry_volume_cc.get_text(),
                 'balance_cc': self.entry_balance_cc.get_text(),
-                'mute_cc': self.entry_mute_cc.get_text()
+                'mute_cc': self.entry_mute_cc.get_text(),
+                'solo_cc': self.entry_solo_cc.get_text()
                }
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
@@ -915,6 +950,7 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.entry_volume_cc.set_text('-1')
         self.entry_balance_cc.set_text('-1')
         self.entry_mute_cc.set_text('-1')
+        self.entry_solo_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
@@ -922,6 +958,7 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
                 'volume_cc': self.entry_volume_cc.get_text(),
                 'balance_cc': self.entry_balance_cc.get_text(),
                 'mute_cc': self.entry_mute_cc.get_text(),
+                'solo_cc': self.entry_solo_cc.get_text(),
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
                }
 

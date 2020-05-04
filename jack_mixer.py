@@ -511,7 +511,7 @@ class JackMixer(SerializedObject):
             channel.midi_events_check()
         return True
 
-    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, display_solo_buttons):
+    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons):
         try:
             channel = OutputChannel(self, name, stereo)
             channel.display_solo_buttons = display_solo_buttons
@@ -531,8 +531,6 @@ class JackMixer(SerializedObject):
             channel.channel.balance_midi_cc = int(balance_cc)
         if mute_cc != '-1':
             channel.channel.mute_midi_cc = int(mute_cc)
-        if solo_cc != '-1':
-            channel.channel.solo_midi_cc = int(solo_cc)
         return channel
 
     def add_output_channel_precreated(self, channel):

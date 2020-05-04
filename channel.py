@@ -527,10 +527,6 @@ class OutputChannel(Channel):
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         if self.future_mute_midi_cc != None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
-        if self.future_solo_midi_cc != None:
-            self.channel.solo_midi_cc = self.future_solo_midi_cc
-
-
         self.channel.midi_scale = self.slider_scale.scale
 
         self.on_volume_changed(self.slider_adjustment)
@@ -610,9 +606,6 @@ class OutputChannel(Channel):
 
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
-
-    def on_solo_button_pressed(self, button, event, *args):
-        self.channel.solo = self.solo.get_active()
 
     def midi_events_check(self):
         if self.channel.midi_in_got_events:
@@ -771,16 +764,18 @@ class ChannelPropertiesDialog(gtk.Dialog):
                         self.on_sense_midi_mute_clicked)
         table.attach(self.button_sense_midi_mute, 2, 3, 2, 3)
 
-        table.attach(gtk.Label('Solo'), 0, 1, 3, 4)
-        self.entry_solo_cc = gtk.Entry()
-        self.entry_solo_cc.set_activates_default(True)
-        self.entry_solo_cc.set_editable(False)
-        self.entry_solo_cc.set_width_chars(3)
-        table.attach(self.entry_solo_cc, 1, 2, 3, 4)
-        self.button_sense_midi_solo = gtk.Button('Autoset')
-        self.button_sense_midi_solo.connect('clicked',
-                        self.on_sense_midi_solo_clicked)
-        table.attach(self.button_sense_midi_solo, 2, 3, 3, 4)
+        if (isinstance(self, NewChannelDialog) or (self.channel and
+            isinstance(self.channel, InputChannel))):
+            table.attach(gtk.Label('Solo'), 0, 1, 3, 4)
+            self.entry_solo_cc = gtk.Entry()
+            self.entry_solo_cc.set_activates_default(True)
+            self.entry_solo_cc.set_editable(False)
+            self.entry_solo_cc.set_width_chars(3)
+            table.attach(self.entry_solo_cc, 1, 2, 3, 4)
+            self.button_sense_midi_solo = gtk.Button('Autoset')
+            self.button_sense_midi_solo.connect('clicked',
+                            self.on_sense_midi_solo_clicked)
+            table.attach(self.button_sense_midi_solo, 2, 3, 3, 4)
 
         self.vbox.show_all()
 
@@ -794,7 +789,8 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
         self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
         self.entry_mute_cc.set_text('%s' % self.channel.channel.mute_midi_cc)
-        self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
+        if (self.channel and isinstance(self.channel, InputChannel)):
+            self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -859,7 +855,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
             except ValueError:
                 pass
             try:
-                if self.entry_solo_cc.get_text() != '-1':
+                if hasattr(self, 'entry_solo_cc') and self.entry_solo_cc.get_text() != '-1':
                     self.channel.channel.solo_midi_cc = int(self.entry_solo_cc.get_text())
             except ValueError:
                 pass
@@ -950,7 +946,6 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.entry_volume_cc.set_text('-1')
         self.entry_balance_cc.set_text('-1')
         self.entry_mute_cc.set_text('-1')
-        self.entry_solo_cc.set_text('-1')
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
@@ -958,7 +953,6 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
                 'volume_cc': self.entry_volume_cc.get_text(),
                 'balance_cc': self.entry_balance_cc.get_text(),
                 'mute_cc': self.entry_mute_cc.get_text(),
-                'solo_cc': self.entry_solo_cc.get_text(),
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
                }
 

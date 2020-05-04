@@ -175,6 +175,18 @@ channel_is_out_muted(
   jack_mixer_channel_t channel);
 
 void
+channel_solo(
+  jack_mixer_channel_t channel);
+
+void
+channel_unsolo(
+  jack_mixer_channel_t channel);
+
+bool
+channel_is_soloed(
+  jack_mixer_channel_t channel);
+
+void
 channel_rename(
   jack_mixer_channel_t channel,
   const char * name);

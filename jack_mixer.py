@@ -103,6 +103,8 @@ class JackMixer(SerializedObject):
     # name of settngs file that is currently open
     current_filename = None
 
+    _init_solo_channels = None
+
     def __init__(self, name, lash_client):
         self.mixer = jack_mixer_c.Mixer(name)
         if not self.mixer:
@@ -684,7 +686,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         s.unserialize(self, b)
         for channel in self.unserialized_channels:
             if isinstance(channel, InputChannel):
+                print self._init_solo_channels, hasattr(channel, 'name'), channel.channel_name
+                if self._init_solo_channels and channel.channel_name in self._init_solo_channels:
+                    channel.solo = True
+                    print channel.channel_name, 'solo ', channel.solo
                 self.add_channel_precreated(channel)
+        self._init_solo_channels = None
         for channel in self.unserialized_channels:
             if isinstance(channel, OutputChannel):
                 self.add_output_channel_precreated(channel)
@@ -694,11 +701,20 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
     def serialize(self, object_backend):
         object_backend.add_property('geometry',
                         '%sx%s' % (self.window.allocation.width, self.window.allocation.height))
+        solo_channels = []
+        for input_channel in self.channels:
+            if input_channel.channel.solo:
+                solo_channels.append(input_channel)
+        if solo_channels:
+            object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
 
     def unserialize_property(self, name, value):
         if name == 'geometry':
             width, height = value.split('x')
             self.window.resize(int(width), int(height))
+            return True
+        if name == 'solo_channels':
+            self._init_solo_channels = value.split('|')
             return True
 
     def unserialize_child(self, name):

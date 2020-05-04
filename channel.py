@@ -304,7 +304,9 @@ class InputChannel(Channel):
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         if self.future_mute_midi_cc != None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
-        self.channel.midi_scale = self.slider_scale.scale
+        if self.app._init_solo_channels and self.channel_name in self.app._init_solo_channels:
+            self.channel.solo = True
+
         self.channel.midi_scale = self.slider_scale.scale
 
         self.on_volume_changed(self.slider_adjustment)
@@ -328,11 +330,21 @@ class InputChannel(Channel):
 #         self.label_stereo.set_size_request(0, -1)
 #         self.vbox.pack_start(self.label_stereo, True)
 
+        self.hbox_mutesolo = gtk.HBox()
+
         self.mute = gtk.ToggleButton()
         self.mute.set_label("M")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
-        self.vbox.pack_start(self.mute, True)
+        self.hbox_mutesolo.pack_start(self.mute, True)
+
+        self.solo = gtk.ToggleButton()
+        self.solo.set_label("S")
+        self.solo.set_active(self.channel.solo)
+        self.solo.connect("toggled", self.on_solo_toggled)
+        self.hbox_mutesolo.pack_start(self.solo, True)
+
+        self.vbox.pack_start(self.hbox_mutesolo, False)
 
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)

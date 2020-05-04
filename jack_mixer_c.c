@@ -258,6 +258,32 @@ Channel_set_out_mute(ChannelObject *self, PyObject *value, void *closure)
 }
 
 static PyObject*
+Channel_get_solo(ChannelObject *self, void *closure)
+{
+    printf ("get_solo\n");
+	PyObject *result;
+
+	if (channel_is_soloed(self->channel)) {
+		result = Py_True;
+	} else {
+		result = Py_False;
+	}
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+Channel_set_solo(ChannelObject *self, PyObject *value, void *closure)
+{
+	if (value == Py_True) {
+		channel_solo(self->channel);
+	} else {
+		channel_unsolo(self->channel);
+	}
+	return 0;
+}
+
+static PyObject*
 Channel_get_meter(ChannelObject *self, void *closure)
 {
 	PyObject *result;
@@ -445,7 +471,6 @@ Channel_get_midi_in_got_events(ChannelObject *self, void *closure)
 	return result;
 }
 
-
 static PyGetSetDef Channel_getseters[] = {
 	{"is_stereo",
 		(getter)Channel_get_is_stereo, NULL,
@@ -459,6 +484,9 @@ static PyGetSetDef Channel_getseters[] = {
 	{"out_mute",
 		(getter)Channel_get_out_mute, (setter)Channel_set_out_mute,
 		"out_mute", NULL},
+	{"solo",
+		(getter)Channel_get_solo, (setter)Channel_set_solo,
+		"solo", NULL},
 	{"meter",
 		(getter)Channel_get_meter, NULL,
 		"meter", NULL},

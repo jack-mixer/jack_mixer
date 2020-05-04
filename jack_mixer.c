@@ -119,6 +119,7 @@ struct jack_mixer
   jack_client_t * jack_client;
   GSList *input_channels_list;
   GSList *output_channels_list;
+  GSList *soloed_channels;
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
@@ -534,6 +535,33 @@ channel_is_out_muted(
 }
 
 void
+channel_solo(
+  jack_mixer_channel_t channel)
+{
+  if (g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel) != NULL)
+    return;
+  channel_ptr->mixer_ptr->soloed_channels = g_slist_prepend(channel_ptr->mixer_ptr->soloed_channels, channel);
+}
+
+void
+channel_unsolo(
+  jack_mixer_channel_t channel)
+{
+  if (g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel) == NULL)
+    return;
+  channel_ptr->mixer_ptr->soloed_channels = g_slist_remove(channel_ptr->mixer_ptr->soloed_channels, channel);
+}
+
+bool
+channel_is_soloed(
+  jack_mixer_channel_t channel)
+{
+  if (g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel))
+    return true;
+  return false;
+}
+
+void
 channel_set_midi_scale(
   jack_mixer_channel_t channel,
   jack_mixer_scale_t scale)
@@ -593,40 +621,36 @@ mix_one(
       continue;
     }
 
-    if (output_mix_channel->soloed_channels &&
-        g_slist_find(output_mix_channel->soloed_channels, channel_ptr) == NULL) {
-      /* skip channels that are not soloed, when some are */
-      continue;
-    }
+    if ((!channel_ptr->mixer_ptr->soloed_channels && !output_mix_channel->soloed_channels) ||
+        (channel_ptr->mixer_ptr->soloed_channels && 
+         g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel_ptr) != NULL) ||
+        (output_mix_channel->soloed_channels &&
+        g_slist_find(output_mix_channel->soloed_channels, channel_ptr) != NULL)) {
 
-    for (i = start ; i < end ; i++)
-    {
-      if (! output_mix_channel->prefader) {
-        frame_left = channel_ptr->frames_left[i-start];
-      } else {
-        frame_left = channel_ptr->prefader_frames_left[i-start];
-      }
-      if (frame_left == NAN)
-        break;
-      mix_channel->tmp_mixed_frames_left[i] += frame_left;
-
-      if (mix_channel->stereo)
+      for (i = start ; i < end ; i++)
       {
         if (! output_mix_channel->prefader) {
-          frame_right = channel_ptr->frames_right[i-start];
+          frame_left = channel_ptr->frames_left[i-start];
         } else {
-          frame_right = channel_ptr->prefader_frames_right[i-start];
+          frame_left = channel_ptr->prefader_frames_left[i-start];
         }
-        if (frame_right == NAN)
+        if (frame_left == NAN)
           break;
-
-        mix_channel->tmp_mixed_frames_right[i] += frame_right;
+        mix_channel->tmp_mixed_frames_left[i] += frame_left;
+        if (mix_channel->stereo)
+        {
+          if (! output_mix_channel->prefader) {
+            frame_right = channel_ptr->frames_right[i-start];
+          } else {
+            frame_right = channel_ptr->prefader_frames_right[i-start];
+          }
+          if (frame_right == NAN)
+            break;
+          mix_channel->tmp_mixed_frames_right[i] += frame_right;
+        }
       }
-
     }
-
   }
-
 
   /* process main mix channel */
   unsigned int steps = mix_channel->num_volume_transition_steps;
@@ -1091,6 +1115,8 @@ create(
 
   mixer_ptr->input_channels_list = NULL;
   mixer_ptr->output_channels_list = NULL;
+
+  mixer_ptr->soloed_channels = NULL;
 
   mixer_ptr->last_midi_channel = -1;
 

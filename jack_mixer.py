@@ -21,8 +21,8 @@
 
 from optparse import OptionParser
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 import sys
 import os
 import signal
@@ -55,25 +55,25 @@ from serialization import SerializedObject, Serializator
 sys.path = old_path
 
 
-class TrayIcon(gtk.StatusIcon):
+class TrayIcon(Gtk.StatusIcon):
     mixer = None
 
     def __init__(self, mixer):
-        gtk.StatusIcon.__init__(self)
+        GObject.GObject.__init__(self)
         self.mixer = mixer
         self.set_from_icon_name( mixer.window.get_icon_name() )
-        self.set_tooltip('Jack Mixer ('+mixer.mixer.client_name()+')')
+        self.set_tooltip_text('Jack Mixer ('+mixer.mixer.client_name()+')')
         self.set_visible(True)
 
-        self.menu = menu = gtk.Menu()
+        self.menu = menu = Gtk.Menu()
 
-        window_item = gtk.MenuItem("Show Mixer")
+        window_item = Gtk.MenuItem("Show Mixer")
         window_item.connect("activate", self.show_window, "Jack Mixer")
         menu.append(window_item)
 
-        menu.append(gtk.SeparatorMenuItem())
+        menu.append(Gtk.SeparatorMenuItem())
 
-        quit_item = gtk.MenuItem("Quit")
+        quit_item = Gtk.MenuItem("Quit")
         quit_item.connect("activate", self.mixer.on_quit_cb, "quit")
         menu.append(quit_item)
         menu.show_all()
@@ -121,7 +121,7 @@ class JackMixer(SerializedObject):
 
             lash.lash_jack_client_name(lash_client, name)
 
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
         if name != self.mixer.client_name():
             self.window.set_title(name + " ("+ self.mixer.client_name()+")" )
         else:
@@ -130,96 +130,96 @@ class JackMixer(SerializedObject):
         self.window.set_icon_name('jack_mixer')
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
 
-        self.vbox_top = gtk.VBox()
+        self.vbox_top = Gtk.VBox()
         self.window.add(self.vbox_top)
 
-        self.menubar = gtk.MenuBar()
-        self.vbox_top.pack_start(self.menubar, False)
+        self.menubar = Gtk.MenuBar()
+        self.vbox_top.pack_start(self.menubar, False, True, 0)
 
-        mixer_menu_item = gtk.MenuItem("_Mixer")
+        mixer_menu_item = Gtk.MenuItem("_Mixer")
         self.menubar.append(mixer_menu_item)
-        edit_menu_item = gtk.MenuItem('_Edit')
+        edit_menu_item = Gtk.MenuItem('_Edit')
         self.menubar.append(edit_menu_item)
-        help_menu_item = gtk.MenuItem('_Help')
+        help_menu_item = Gtk.MenuItem('_Help')
         self.menubar.append(help_menu_item)
 
         self.window.set_default_size(120, 300)
 
-        mixer_menu = gtk.Menu()
+        mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(mixer_menu)
 
-        add_input_channel = gtk.ImageMenuItem('New _Input Channel')
+        add_input_channel = Gtk.ImageMenuItem('New _Input Channel')
         mixer_menu.append(add_input_channel)
         add_input_channel.connect("activate", self.on_add_input_channel)
 
-        add_output_channel = gtk.ImageMenuItem('New _Output Channel')
+        add_output_channel = Gtk.ImageMenuItem('New _Output Channel')
         mixer_menu.append(add_output_channel)
         add_output_channel.connect("activate", self.on_add_output_channel)
 
-        mixer_menu.append(gtk.SeparatorMenuItem())
-        open = gtk.ImageMenuItem(gtk.STOCK_OPEN)
+        mixer_menu.append(Gtk.SeparatorMenuItem())
+        open = Gtk.ImageMenuItem(Gtk.STOCK_OPEN)
         mixer_menu.append(open)
         open.connect('activate', self.on_open_cb)
-        save = gtk.ImageMenuItem(gtk.STOCK_SAVE)
+        save = Gtk.ImageMenuItem(Gtk.STOCK_SAVE)
         mixer_menu.append(save)
         save.connect('activate', self.on_save_cb)
-        save_as = gtk.ImageMenuItem(gtk.STOCK_SAVE_AS)
+        save_as = Gtk.ImageMenuItem(Gtk.STOCK_SAVE_AS)
         mixer_menu.append(save_as)
         save_as.connect('activate', self.on_save_as_cb)
 
-        mixer_menu.append(gtk.SeparatorMenuItem())
+        mixer_menu.append(Gtk.SeparatorMenuItem())
 
-        quit = gtk.ImageMenuItem(gtk.STOCK_QUIT)
+        quit = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
         mixer_menu.append(quit)
         quit.connect('activate', self.on_quit_cb)
 
-        edit_menu = gtk.Menu()
+        edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
-        self.channel_edit_input_menu_item = gtk.MenuItem('_Edit Input Channel')
+        self.channel_edit_input_menu_item = Gtk.MenuItem('_Edit Input Channel')
         edit_menu.append(self.channel_edit_input_menu_item)
-        self.channel_edit_input_menu = gtk.Menu()
+        self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
 
-        self.channel_edit_output_menu_item = gtk.MenuItem('Edit _Output Channel')
+        self.channel_edit_output_menu_item = Gtk.MenuItem('Edit _Output Channel')
         edit_menu.append(self.channel_edit_output_menu_item)
-        self.channel_edit_output_menu = gtk.Menu()
+        self.channel_edit_output_menu = Gtk.Menu()
         self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
 
-        self.channel_remove_input_menu_item = gtk.MenuItem('Remove _Input Channel')
+        self.channel_remove_input_menu_item = Gtk.MenuItem('Remove _Input Channel')
         edit_menu.append(self.channel_remove_input_menu_item)
-        self.channel_remove_input_menu = gtk.Menu()
+        self.channel_remove_input_menu = Gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
-        self.channel_remove_output_menu_item = gtk.MenuItem('_Remove Output Channel')
+        self.channel_remove_output_menu_item = Gtk.MenuItem('_Remove Output Channel')
         edit_menu.append(self.channel_remove_output_menu_item)
-        self.channel_remove_output_menu = gtk.Menu()
+        self.channel_remove_output_menu = Gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
-        channel_remove_all_menu_item = gtk.ImageMenuItem(gtk.STOCK_CLEAR)
+        channel_remove_all_menu_item = Gtk.ImageMenuItem(Gtk.STOCK_CLEAR)
         edit_menu.append(channel_remove_all_menu_item)
         channel_remove_all_menu_item.connect("activate", self.on_channels_clear)
 
-        edit_menu.append(gtk.SeparatorMenuItem())
+        edit_menu.append(Gtk.SeparatorMenuItem())
 
-        preferences = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES)
+        preferences = Gtk.ImageMenuItem(Gtk.STOCK_PREFERENCES)
         preferences.connect('activate', self.on_preferences_cb)
         edit_menu.append(preferences)
 
-        help_menu = gtk.Menu()
+        help_menu = Gtk.Menu()
         help_menu_item.set_submenu(help_menu)
 
-        about = gtk.ImageMenuItem(gtk.STOCK_ABOUT)
+        about = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
         help_menu.append(about)
         about.connect("activate", self.on_about)
 
-        self.hbox_top = gtk.HBox()
-        self.vbox_top.pack_start(self.hbox_top, True)
+        self.hbox_top = Gtk.HBox()
+        self.vbox_top.pack_start(self.hbox_top, True, True, 0)
 
-        self.scrolled_window = gtk.ScrolledWindow()
-        self.hbox_top.pack_start(self.scrolled_window, True)
+        self.scrolled_window = Gtk.ScrolledWindow()
+        self.hbox_top.pack_start(self.scrolled_window, True, True, 0)
 
-        self.hbox_inputs = gtk.HBox()
+        self.hbox_inputs = Gtk.HBox()
         self.hbox_inputs.set_spacing(0)
         self.hbox_inputs.set_border_width(0)
         self.hbox_top.set_spacing(0)
@@ -227,27 +227,27 @@ class JackMixer(SerializedObject):
         self.channels = []
         self.output_channels = []
 
-        self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.scrolled_window.add_with_viewport(self.hbox_inputs)
 
-        self.hbox_outputs = gtk.HBox()
+        self.hbox_outputs = Gtk.HBox()
         self.hbox_outputs.set_spacing(0)
         self.hbox_outputs.set_border_width(0)
-        frame = gtk.Frame()
-        self.hbox_outputs.pack_start(frame, False)
-        self.hbox_top.pack_start(self.hbox_outputs, False)
+        frame = Gtk.Frame()
+        self.hbox_outputs.pack_start(frame, False, True, 0)
+        self.hbox_top.pack_start(self.hbox_outputs, False, True, 0)
 
-        self.window.connect("destroy", gtk.main_quit)
+        self.window.connect("destroy", Gtk.main_quit)
 
         self.trayicon = TrayIcon(self)
         self.window.connect('delete-event', self.on_delete_event)
 
-        gobject.timeout_add(80, self.read_meters)
+        GObject.timeout_add(80, self.read_meters)
         self.lash_client = lash_client
 
-        gobject.timeout_add(200, self.lash_check_events)
+        GObject.timeout_add(200, self.lash_check_events)
 
-        gobject.timeout_add(50, self.midi_events_check)
+        GObject.timeout_add(50, self.midi_events_check)
 
 
     def on_delete_event(self, widget, event):
@@ -264,9 +264,9 @@ class JackMixer(SerializedObject):
         if signum == signal.SIGUSR1:
             self.save = True
         elif signum == signal.SIGTERM:
-            gtk.main_quit()
+            Gtk.main_quit()
         elif signum == signal.SIGINT:
-            gtk.main_quit()
+            Gtk.main_quit()
         else:
             print "Unknown signal %d received" % signum
 
@@ -281,21 +281,21 @@ class JackMixer(SerializedObject):
         self.mixer.destroy()
 
     def on_open_cb(self, *args):
-        dlg = gtk.FileChooserDialog(title='Open', parent=self.window,
-                        action=gtk.FILE_CHOOSER_ACTION_OPEN,
-                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        dlg.set_default_response(gtk.RESPONSE_OK)
-        if dlg.run() == gtk.RESPONSE_OK:
+        dlg = Gtk.FileChooserDialog(title='Open', parent=self.window,
+                        action=Gtk.FileChooserAction.OPEN,
+                        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dlg.set_default_response(Gtk.ResponseType.OK)
+        if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             try:
                 f = file(filename, 'r')
                 self.load_from_xml(f)
             except:
-                err = gtk.MessageDialog(self.window,
-                            gtk.DIALOG_MODAL,
-                            gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK,
+                err = Gtk.MessageDialog(self.window,
+                            Gtk.DialogFlags.MODAL,
+                            Gtk.MessageType.ERROR,
+                            Gtk.ButtonsType.OK,
                             "Failed loading settings.")
                 err.run()
                 err.destroy()
@@ -313,18 +313,18 @@ class JackMixer(SerializedObject):
         f.close()
 
     def on_save_as_cb(self, *args):
-        dlg = gtk.FileChooserDialog(title='Save', parent=self.window,
-                        action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                 gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        dlg.set_default_response(gtk.RESPONSE_OK)
-        if dlg.run() == gtk.RESPONSE_OK:
+        dlg = Gtk.FileChooserDialog(title='Save', parent=self.window,
+                        action=Gtk.FileChooserAction.SAVE,
+                        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        dlg.set_default_response(Gtk.ResponseType.OK)
+        if dlg.run() == Gtk.ResponseType.OK:
             self.current_filename = dlg.get_filename()
             self.on_save_cb()
         dlg.destroy()
 
     def on_quit_cb(self, *args):
-        gtk.main_quit()
+        Gtk.main_quit()
 
     preferences_dialog = None
     def on_preferences_cb(self, widget):
@@ -340,7 +340,7 @@ class JackMixer(SerializedObject):
         ret = dialog.run()
         dialog.hide()
 
-        if ret == gtk.RESPONSE_OK:
+        if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
             channel = self.add_channel(**result)
             self.window.show_all()
@@ -352,8 +352,9 @@ class JackMixer(SerializedObject):
         ret = dialog.run()
         dialog.hide()
 
-        if ret == gtk.RESPONSE_OK:
+        if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
+            print result
             channel = self.add_output_channel(**result)
             self.window.show_all()
 
@@ -433,16 +434,16 @@ class JackMixer(SerializedObject):
             self.hbox_inputs.remove(channel.parent)
         self.channels = []
         self.output_channels = []
-        self.channel_edit_input_menu = gtk.Menu()
+        self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
         self.channel_edit_input_menu_item.set_sensitive(False)
-        self.channel_remove_input_menu = gtk.Menu()
+        self.channel_remove_input_menu = Gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
         self.channel_remove_input_menu_item.set_sensitive(False)
-        self.channel_edit_output_menu = gtk.Menu()
+        self.channel_edit_output_menu = Gtk.Menu()
         self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
         self.channel_edit_output_menu_item.set_sensitive(False)
-        self.channel_remove_output_menu = gtk.Menu()
+        self.channel_remove_output_menu = Gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
         self.channel_remove_output_menu_item.set_sensitive(False)
 
@@ -451,11 +452,13 @@ class JackMixer(SerializedObject):
             channel = InputChannel(self, name, stereo)
             self.add_channel_precreated(channel)
         except Exception:
-            err = gtk.MessageDialog(self.window,
-                            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                            gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK,
-                            "Channel creation failed")
+            e = sys.exc_info()[0]
+            print( "<p>Error: %s</p>" % e )
+            #err = Gtk.MessageDialog(self.window,
+            #                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            #                Gtk.MessageType.ERROR,
+            #                Gtk.ButtonsType.OK,
+            #                "Channel creation failed")
             err.run()
             err.destroy()
             return
@@ -473,17 +476,17 @@ class JackMixer(SerializedObject):
         return channel
 
     def add_channel_precreated(self, channel):
-        frame = gtk.Frame()
+        frame = Gtk.Frame()
         frame.add(channel)
-        self.hbox_inputs.pack_start(frame, False)
+        self.hbox_inputs.pack_start(frame, False, True, 0)
         channel.realize()
 
-        channel_edit_menu_item = gtk.MenuItem(channel.channel_name)
+        channel_edit_menu_item = Gtk.MenuItem(channel.channel_name)
         self.channel_edit_input_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_input_channel, channel)
         self.channel_edit_input_menu_item.set_sensitive(True)
 
-        channel_remove_menu_item = gtk.MenuItem(channel.channel_name)
+        channel_remove_menu_item = Gtk.MenuItem(channel.channel_name)
         self.channel_remove_input_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_input_channel, channel)
         self.channel_remove_input_menu_item.set_sensitive(True)
@@ -512,19 +515,21 @@ class JackMixer(SerializedObject):
         return True
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons):
-        try:
-            channel = OutputChannel(self, name, stereo)
-            channel.display_solo_buttons = display_solo_buttons
-            self.add_output_channel_precreated(channel)
-        except Exception:
-            err = gtk.MessageDialog(self.window,
-                            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                            gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK,
-                            "Channel creation failed")
-            err.run()
-            err.destroy()
-            return
+        #try:
+        channel = OutputChannel(self, name, stereo)
+        channel.display_solo_buttons = display_solo_buttons
+        self.add_output_channel_precreated(channel)
+        #except Exception:
+        #    e = sys.exc_info()[0]
+        #    print( "<p>Error: %s</p>" % e )
+        #    err = Gtk.MessageDialog(self.window,
+        #                    Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+        #                    Gtk.MessageType.ERROR,
+        #                    Gtk.ButtonsType.OK,
+        #                    "Channel creation failed")
+        #    err.run()
+        #    err.destroy()
+        #    return
         if volume_cc != '-1':
             channel.channel.volume_midi_cc = int(volume_cc)
         if balance_cc != '-1':
@@ -534,17 +539,17 @@ class JackMixer(SerializedObject):
         return channel
 
     def add_output_channel_precreated(self, channel):
-        frame = gtk.Frame()
+        frame = Gtk.Frame()
         frame.add(channel)
-        self.hbox_outputs.pack_start(frame, False)
+        self.hbox_outputs.pack_start(frame, False, True, 0)
         channel.realize()
 
-        channel_edit_menu_item = gtk.MenuItem(channel.channel_name)
+        channel_edit_menu_item = Gtk.MenuItem(channel.channel_name)
         self.channel_edit_output_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
         self.channel_edit_output_menu_item.set_sensitive(True)
 
-        channel_remove_menu_item = gtk.MenuItem(channel.channel_name)
+        channel_remove_menu_item = Gtk.MenuItem(channel.channel_name)
         self.channel_remove_output_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_output_channel, channel)
         self.channel_remove_output_menu_item.set_sensitive(True)
@@ -593,7 +598,7 @@ class JackMixer(SerializedObject):
         return None
 
     def on_about(self, *args):
-        about = gtk.AboutDialog()
+        about = Gtk.AboutDialog()
         about.set_name('jack_mixer')
         about.set_copyright('Copyright © 2006-2010\nNedko Arnaudov, Frederic Peters, Arnout Engelen')
         about.set_license('''\
@@ -640,7 +645,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             event_type = lash.lash_event_get_type(event)
             if event_type == lash.LASH_Quit:
                 print "jack_mixer: LASH ordered quit."
-                gtk.main_quit()
+                Gtk.main_quit()
                 return False
             elif event_type == lash.LASH_Save_File:
                 directory = lash.lash_event_get_string(event)
@@ -749,7 +754,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         signal.signal(signal.SIGINT, self.sighandler)
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
-        gtk.main()
+        Gtk.main()
 
         #f = file("/dev/stdout", "w")
         #self.save_to_xml(f)
@@ -798,10 +803,10 @@ def main():
     try:
         mixer = JackMixer(name, lash_client)
     except Exception, e:
-        err = gtk.MessageDialog(None,
-                            gtk.DIALOG_MODAL,
-                            gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK,
+        err = Gtk.MessageDialog(None,
+                            Gtk.DialogFlags.MODAL,
+                            Gtk.MessageType.ERROR,
+                            Gtk.ButtonsType.OK,
                             "Mixer creation failed (%s)" % str(e))
         err.run()
         err.destroy()
@@ -813,10 +818,10 @@ def main():
         try:
             mixer.load_from_xml(f)
         except:
-            err = gtk.MessageDialog(mixer.window,
-                            gtk.DIALOG_MODAL,
-                            gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK,
+            err = Gtk.MessageDialog(mixer.window,
+                            Gtk.DialogFlags.MODAL,
+                            Gtk.MessageType.ERROR,
+                            Gtk.ButtonsType.OK,
                             "Failed loading settings.")
             err.run()
             err.destroy()

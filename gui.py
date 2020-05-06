@@ -15,13 +15,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import gobject
+import gi
+gi.require_version('GConf', '2.0')
+from gi.repository import GObject
 
 try:
-    import gconf
+    from gi.repository import GConf
 except:
     print "Cannot load Python bindings for GConf, your preferences will not be preserved across jack_mixer invocations"
-    gconf = None
+    GConf = None
 
 def lookup_scale(scales, scale_id):
     for scale in scales:
@@ -29,15 +31,15 @@ def lookup_scale(scales, scale_id):
             return scale
     return None
 
-class Factory(gobject.GObject):
+class Factory(GObject.GObject):
     def __init__(self, topwindow, meter_scales, slider_scales):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
         self.topwindow = topwindow
         self.meter_scales = meter_scales
         self.slider_scales = slider_scales
 
-        if gconf:
-            self.gconf_client = gconf.client_get_default()
+        if GConf:
+            self.gconf_client = GConf.Client.get_default()
 
             scale_id = self.gconf_client.get_string("/apps/jack_mixer/default_meter_scale")
             self.default_meter_scale = lookup_scale(meter_scales, scale_id)
@@ -62,7 +64,7 @@ class Factory(gobject.GObject):
             self.minimize_to_tray = self.gconf_client.get_bool(
                             '/apps/jack_mixer/minimize_to_tray')
 
-            self.gconf_client.add_dir("/apps/jack_mixer", gconf.CLIENT_PRELOAD_NONE)
+            self.gconf_client.add_dir("/apps/jack_mixer", GConf.ClientPreloadType.PRELOAD_NONE)
             self.gconf_client.notify_add("/apps/jack_mixer/default_meter_scale", self.on_gconf_default_meter_scale_changed)
             self.gconf_client.notify_add("/apps/jack_mixer/default_slider_scale", self.on_gconf_default_slider_scale_changed)
             self.gconf_client.notify_add('/apps/jack_mixer/vumeter_color',
@@ -89,7 +91,7 @@ class Factory(gobject.GObject):
 
     def set_default_meter_scale(self, scale, from_gconf=False):
         if scale:
-            if gconf and not from_gconf:
+            if GConf and not from_gconf:
                 self.gconf_client.set_string("/apps/jack_mixer/default_meter_scale", scale.scale_id)
             else:
                 self.default_meter_scale = scale
@@ -105,7 +107,7 @@ class Factory(gobject.GObject):
 
     def set_default_slider_scale(self, scale, from_gconf=False):
         if scale:
-            if gconf and not from_gconf:
+            if GConf and not from_gconf:
                 self.gconf_client.set_string("/apps/jack_mixer/default_slider_scale", scale.scale_id)
             else:
                 self.default_slider_scale = scale
@@ -114,7 +116,7 @@ class Factory(gobject.GObject):
             print "Ignoring GConf default_slider_scale setting, because \"%s\" scale is not known" % scale_id
 
     def set_vumeter_color(self, color, from_gconf=False):
-        if gconf and not from_gconf:
+        if GConf and not from_gconf:
             self.gconf_client.set_string('/apps/jack_mixer/vumeter_color', color)
         else:
             self.vumeter_color = color
@@ -125,7 +127,7 @@ class Factory(gobject.GObject):
         self.set_vumeter_color(color, from_gconf=True)
 
     def set_vumeter_color_scheme(self, color_scheme, from_gconf=False):
-        if gconf and not from_gconf:
+        if GConf and not from_gconf:
             self.gconf_client.set_string('/apps/jack_mixer/vumeter_color_scheme', color_scheme)
         else:
             self.vumeter_color_scheme = color_scheme
@@ -136,7 +138,7 @@ class Factory(gobject.GObject):
         self.set_vumeter_color_scheme(color_scheme, from_gconf=True)
 
     def set_use_custom_widgets(self, use_custom, from_gconf=False):
-        if gconf and not from_gconf:
+        if GConf and not from_gconf:
             self.gconf_client.set_bool('/apps/jack_mixer/use_custom_widgets', use_custom)
         else:
             self.use_custom_widgets = use_custom
@@ -147,7 +149,7 @@ class Factory(gobject.GObject):
         self.set_use_custom_widgets(use_custom, from_gconf=True)
 
     def set_minimize_to_tray(self, minimize_to_tray, from_gconf=False):
-        if gconf and not from_gconf:
+        if GConf and not from_gconf:
             self.gconf_client.set_bool('/apps/jack_mixer/minimize_to_tray', minimize_to_tray)
         else:
             self.minimize_to_tray = minimize_to_tray
@@ -175,21 +177,21 @@ class Factory(gobject.GObject):
     def get_minimize_to_tray(self):
         return self.minimize_to_tray
 
-gobject.signal_new("default-meter-scale-changed", Factory,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
-gobject.signal_new("default-slider-scale-changed", Factory,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT])
-gobject.signal_new('vumeter-color-changed', Factory,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, [str])
-gobject.signal_new('vumeter-color-scheme-changed', Factory,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, [str])
-gobject.signal_new('use-custom-widgets-changed', Factory,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, [bool])
-gobject.signal_new('minimize-to-tray-changed', Factory,
-                gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION,
-                gobject.TYPE_NONE, [bool])
+GObject.signal_new("default-meter-scale-changed", Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [GObject.TYPE_PYOBJECT])
+GObject.signal_new("default-slider-scale-changed", Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [GObject.TYPE_PYOBJECT])
+GObject.signal_new('vumeter-color-changed', Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [str])
+GObject.signal_new('vumeter-color-scheme-changed', Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [str])
+GObject.signal_new('use-custom-widgets-changed', Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [bool])
+GObject.signal_new('minimize-to-tray-changed', Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [bool])

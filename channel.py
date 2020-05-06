@@ -15,8 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import gtk
-import gobject
+import gi
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
 import slider
 import meter
 import abspeak
@@ -28,13 +30,13 @@ except:
     phat = None
 
 
-class Channel(gtk.VBox, SerializedObject):
+class Channel(Gtk.VBox, SerializedObject):
     '''Widget with slider and meter used as base class for more specific
        channel widgets'''
     monitor_button = None
 
     def __init__(self, app, name, stereo):
-        gtk.VBox.__init__(self)
+        Gtk.VBox.__init__(self)
         self.app = app
         self.mixer = app.mixer
         self.gui_factory = app.gui_factory
@@ -43,7 +45,7 @@ class Channel(gtk.VBox, SerializedObject):
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0)
-        self.balance_adjustment = gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
+        self.balance_adjustment = Gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
         self.future_out_mute = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
@@ -84,7 +86,7 @@ class Channel(gtk.VBox, SerializedObject):
             self.meter = meter.MonoMeterWidget(self.meter_scale)
         self.on_vumeter_color_changed(self.gui_factory)
 
-        self.meter.set_events(gtk.gdk.SCROLL_MASK)
+        self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
 
         self.gui_factory.connect("default-meter-scale-changed", self.on_default_meter_scale_changed)
         self.gui_factory.connect("default-slider-scale-changed", self.on_default_slider_scale_changed)
@@ -96,7 +98,7 @@ class Channel(gtk.VBox, SerializedObject):
         self.abspeak.connect("reset", self.on_abspeak_reset)
         self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
 
-        self.volume_digits = gtk.Entry()
+        self.volume_digits = Gtk.Entry()
         self.volume_digits.connect("key-press-event", self.on_volume_digits_key_pressed)
         self.volume_digits.connect("focus-out-event", self.on_volume_digits_focus_out)
 
@@ -107,15 +109,22 @@ class Channel(gtk.VBox, SerializedObject):
         #print "Unrealizing channel \"%s\"" % self.channel_name
         pass
 
+    def balance_preferred_width(self):
+        return 2000, 2000
+
+
     def create_balance_widget(self):
         if self.gui_factory.use_custom_widgets and phat:
             self.balance = phat.HFanSlider()
             self.balance.set_default_value(0)
             self.balance.set_adjustment(self.balance_adjustment)
         else:
-            self.balance = gtk.HScale(self.balance_adjustment)
+            self.balance = Gtk.Scale()
+            self.balance.get_preferred_width = self.balance_preferred_width
+            self.balance.set_orientation(Gtk.Orientation.HORIZONTAL)
+            self.balance.set_adjustment(self.balance_adjustment)
             self.balance.set_draw_value(False)
-        self.pack_start(self.balance, False)
+        self.pack_start(self.balance, False, True, 0)
         if self.monitor_button:
             self.reorder_child(self.monitor_button, -1)
         self.balance.show()
@@ -130,7 +139,7 @@ class Channel(gtk.VBox, SerializedObject):
         else:
             self.slider = slider.GtkSlider(self.slider_adjustment)
         if parent:
-            parent.pack_start(self.slider)
+            parent.pack_start(self.slider, True, True, 0)
             parent.reorder_child(self.slider, 0)
         self.slider.show()
 
@@ -150,7 +159,7 @@ class Channel(gtk.VBox, SerializedObject):
         if color_scheme != 'solid':
             self.meter.set_color(None)
         else:
-            self.meter.set_color(gtk.gdk.color_parse(color))
+            self.meter.set_color(Gdk.color_parse(color))
 
     def on_custom_widgets_changed(self, gui_factory, value):
         self.balance.destroy()
@@ -168,7 +177,7 @@ class Channel(gtk.VBox, SerializedObject):
         self.channel.abspeak = None
 
     def on_volume_digits_key_pressed(self, widget, event):
-        if (event.keyval == gtk.keysyms.Return or event.keyval == gtk.keysyms.KP_Enter):
+        if (event.keyval == Gdk.KEY_Return or event.keyval == Gdk.KEY_KP_Enter):
             db_text = self.volume_digits.get_text()
             try:
                 db = float(db_text)
@@ -197,9 +206,9 @@ class Channel(gtk.VBox, SerializedObject):
         self.abspeak.set_peak(self.channel.abspeak)
 
     def on_scroll(self, widget, event):
-        if event.direction == gtk.gdk.SCROLL_DOWN:
+        if event.direction == Gdk.ScrollDirection.DOWN:
             self.slider_adjustment.step_down()
-        elif event.direction == gtk.gdk.SCROLL_UP:
+        elif event.direction == Gdk.ScrollDirection.UP:
             self.slider_adjustment.step_up()
         return True
 
@@ -223,11 +232,11 @@ class Channel(gtk.VBox, SerializedObject):
         self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):
-        if (event.keyval == gtk.keysyms.Up):
+        if (event.keyval == Gdk.KEY_Up):
             #print self.channel_name + " Up"
             self.slider_adjustment.step_up()
             return True
-        elif (event.keyval == gtk.keysyms.Down):
+        elif (event.keyval == Gdk.KEY_Down):
             #print self.channel_name + " Down"
             self.slider_adjustment.step_down()
             return True
@@ -322,16 +331,16 @@ class InputChannel(Channel):
         self.on_balance_changed(self.balance_adjustment)
 
         # vbox child at upper part
-        self.vbox = gtk.VBox()
-        self.pack_start(self.vbox, False)
-        self.label_name = gtk.Label()
+        self.vbox = Gtk.VBox()
+        self.pack_start(self.vbox, False, True, 0)
+        self.label_name = Gtk.Label()
         self.label_name.set_text(self.channel_name)
         self.label_name.set_size_request(0, -1)
-        self.label_name_event_box = gtk.EventBox()
+        self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect("button-press-event", self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
-        self.vbox.pack_start(self.label_name_event_box, True)
-#         self.label_stereo = gtk.Label()
+        self.vbox.pack_start(self.label_name_event_box, True, True, 0)
+#         self.label_stereo = Gtk.Label()
 #         if self.stereo:
 #             self.label_stereo.set_text("stereo")
 #         else:
@@ -339,52 +348,52 @@ class InputChannel(Channel):
 #         self.label_stereo.set_size_request(0, -1)
 #         self.vbox.pack_start(self.label_stereo, True)
 
-        self.hbox_mutesolo = gtk.HBox()
+        self.hbox_mutesolo = Gtk.HBox()
 
-        self.mute = gtk.ToggleButton()
+        self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
-        self.hbox_mutesolo.pack_start(self.mute, True)
+        self.hbox_mutesolo.pack_start(self.mute, True, True, 0)
 
-        self.solo = gtk.ToggleButton()
+        self.solo = Gtk.ToggleButton()
         self.solo.set_label("S")
         self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
-        self.hbox_mutesolo.pack_start(self.solo, True)
+        self.hbox_mutesolo.pack_start(self.solo, True, True, 0)
 
-        self.vbox.pack_start(self.hbox_mutesolo, False)
+        self.vbox.pack_start(self.hbox_mutesolo, False, True, 0)
 
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.abspeak);
-        self.pack_start(frame, False)
+        self.pack_start(frame, False, True, 0)
 
         # hbox child at lower part
-        self.hbox = gtk.HBox()
-        self.hbox.pack_start(self.slider, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
+        self.hbox = Gtk.HBox()
+        self.hbox.pack_start(self.slider, True, True, 0)
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.meter);
-        self.hbox.pack_start(frame, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
+        self.hbox.pack_start(frame, True, True, 0)
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.hbox);
-        self.pack_start(frame, True)
+        self.pack_start(frame, True, True, 0)
 
         self.volume_digits.set_size_request(0, -1)
-        self.pack_start(self.volume_digits, False)
+        self.pack_start(self.volume_digits, False, True, 0)
 
         self.create_balance_widget()
 
-        self.monitor_button = gtk.ToggleButton('MON')
+        self.monitor_button = Gtk.ToggleButton('MON')
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
-        self.pack_start(self.monitor_button, False, False)
+        self.pack_start(self.monitor_button, False, False, 0)
 
     def add_control_group(self, channel):
         control_group = ControlGroup(channel, self)
         control_group.show_all()
-        self.vbox.pack_start(control_group, False)
+        self.vbox.pack_start(control_group, False, True, 0)
         return control_group
 
     def remove_control_group(self, channel):
@@ -420,7 +429,7 @@ class InputChannel(Channel):
         self.channel_properties_dialog.present()
 
     def on_label_mouse(self, widget, event):
-        if event.type == gtk.gdk._2BUTTON_PRESS:
+        if event.type == Gdk._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
 
@@ -431,7 +440,7 @@ class InputChannel(Channel):
         self.channel.solo = self.solo.get_active()
 
     def midi_events_check(self):
-        if self.channel.midi_in_got_events:
+        if hasattr(self, 'channel') and self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
             self.solo.set_active(self.channel.solo)
             Channel.on_midi_event_received(self)
@@ -486,13 +495,13 @@ class InputChannel(Channel):
 
 
 available_colours = [
-    ('#ef2929', '#cc0000', '#840000'),
-    ('#729fcf', '#3465a4', '#204a67'),
-    ('#8aa234', '#73d216', '#4e7a06'),
-    ('#fce84f', '#edd400', '#c48000'),
-    ('#fcaf3e', '#f57900', '#ae5c00'),
-    ('#ad7fa8', '#75507b', '#4c3556'),
-    ('#e9b96e', '#c17d11', '#6f4902'),
+    ('#000000', '#204c98', '#000000'),
+    ('#000000', '#542656', '#000000'),
+    ('#ef2929', '#3f5677', '#840000'),
+    ('#729fcf', '#7b4d5b', '#204a67'),
+    ('#8aa234', '#762945', '#4e7a06'),
+    ('#ad7fa8', '#0c5156', '#4c3556'),
+    ('#e9b96e', '#166280', '#6f4902'),
 ]
 
 class OutputChannel(Channel):
@@ -533,53 +542,53 @@ class OutputChannel(Channel):
         self.on_balance_changed(self.balance_adjustment)
 
         # vbox child at upper part
-        self.vbox = gtk.VBox()
-        self.pack_start(self.vbox, False)
-        self.label_name = gtk.Label()
+        self.vbox = Gtk.VBox()
+        self.pack_start(self.vbox, False, True, 0)
+        self.label_name = Gtk.Label()
         self.label_name.set_text(self.channel_name)
         self.label_name.set_size_request(0, -1)
-        self.label_name_event_box = gtk.EventBox()
+        self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
         if not self.colours:
             OutputChannel.colours = available_colours[:]
         for color in self.colours:
-            self.color_tuple = [gtk.gdk.color_parse(color[x]) for x in range(3)]
+            self.color_tuple = [Gdk.color_parse(color[x]) for x in range(3)]
             self.colours.remove(color)
             break
-        self.label_name_event_box.modify_bg(gtk.STATE_NORMAL, self.color_tuple[1])
-        self.vbox.pack_start(self.label_name_event_box, True)
-        self.mute = gtk.ToggleButton()
+        self.label_name_event_box.modify_bg(Gtk.StateType.NORMAL, self.color_tuple[1])
+        self.vbox.pack_start(self.label_name_event_box, True, True, 0)
+        self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
-        self.vbox.pack_start(self.mute, False)
+        self.vbox.pack_start(self.mute, False, True, 0)
 
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.abspeak);
-        self.vbox.pack_start(frame, False)
+        self.vbox.pack_start(frame, False, True, 0)
 
         # hbox child at lower part
-        self.hbox = gtk.HBox()
-        self.hbox.pack_start(self.slider, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
+        self.hbox = Gtk.HBox()
+        self.hbox.pack_start(self.slider, True, True, 0)
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.meter);
-        self.hbox.pack_start(frame, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
+        self.hbox.pack_start(frame, True, True, 0)
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.hbox);
-        self.pack_start(frame, True)
+        self.pack_start(frame, True, True, 0)
 
         self.volume_digits.set_size_request(0, -1)
-        self.pack_start(self.volume_digits, False)
+        self.pack_start(self.volume_digits, False, True, 0)
 
         self.create_balance_widget()
 
-        self.monitor_button = gtk.ToggleButton('MON')
+        self.monitor_button = Gtk.ToggleButton('MON')
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
-        self.pack_start(self.monitor_button, False, False)
+        self.pack_start(self.monitor_button, False, False, 0)
 
         # add control groups to the input channels, and initialize them
         # appropriately
@@ -600,7 +609,7 @@ class OutputChannel(Channel):
         self.channel_properties_dialog.present()
 
     def on_label_mouse(self, widget, event):
-        if event.type == gtk.gdk._2BUTTON_PRESS:
+        if event.type == Gdk._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
 
@@ -669,20 +678,20 @@ class OutputChannel(Channel):
             return True
         return Channel.unserialize_property(self, name, value)
 
-class ChannelPropertiesDialog(gtk.Dialog):
+class ChannelPropertiesDialog(Gtk.Dialog):
     channel = None
 
     def __init__(self, parent, app):
         self.channel = parent
         self.app = app
         self.mixer = self.channel.mixer
-        gtk.Dialog.__init__(self,
+        GObject.GObject.__init__(self,
                         'Channel "%s" Properties' % self.channel.channel_name,
                         self.channel.gui_factory.topwindow)
 
-        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.ok_button = self.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
-        self.set_default_response(gtk.RESPONSE_APPLY);
+        self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        self.ok_button = self.add_button(Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY)
+        self.set_default_response(Gtk.ResponseType.APPLY);
 
         self.create_ui()
         self.fill_ui()
@@ -691,12 +700,13 @@ class ChannelPropertiesDialog(gtk.Dialog):
         self.connect('delete-event', self.on_response_cb)
 
     def create_frame(self, label, child):
-        frame = gtk.Frame('')
+        frame = Gtk.Frame()
+        frame.set_label('')
         frame.set_border_width(3)
-        #frame.set_shadow_type(gtk.SHADOW_NONE)
+        #frame.set_shadow_type(Gtk.ShadowType.NONE)
         frame.get_label_widget().set_markup('<b>%s</b>' % label)
 
-        alignment = gtk.Alignment(0, 0, 1, 1)
+        alignment = Gtk.Alignment.new(0, 0, 1, 1)
         alignment.set_padding(0, 0, 12, 0)
         frame.add(alignment)
         alignment.add(child)
@@ -704,75 +714,75 @@ class ChannelPropertiesDialog(gtk.Dialog):
         return frame
 
     def create_ui(self):
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         self.vbox.add(vbox)
 
-        table = gtk.Table(2, 3, False)
-        vbox.pack_start(self.create_frame('Properties', table))
+        table = Gtk.Table(2, 3, False)
+        vbox.pack_start(self.create_frame('Properties', table), True, True, 0)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(gtk.Label('Name'), 0, 1, 0, 1)
-        self.entry_name = gtk.Entry()
+        table.attach(Gtk.Label(label='Name'), 0, 1, 0, 1)
+        self.entry_name = Gtk.Entry()
         self.entry_name.set_activates_default(True)
         self.entry_name.connect('changed', self.on_entry_name_changed)
         table.attach(self.entry_name, 1, 2, 0, 1)
 
-        table.attach(gtk.Label('Mode'), 0, 1, 1, 2)
-        self.mode_hbox = gtk.HBox()
+        table.attach(Gtk.Label(label='Mode'), 0, 1, 1, 2)
+        self.mode_hbox = Gtk.HBox()
         table.attach(self.mode_hbox, 1, 2, 1, 2)
-        self.mono = gtk.RadioButton(label='Mono')
-        self.stereo = gtk.RadioButton(label='Stereo', group=self.mono)
-        self.mode_hbox.pack_start(self.mono)
-        self.mode_hbox.pack_start(self.stereo)
+        self.mono = Gtk.RadioButton(label='Mono')
+        self.stereo = Gtk.RadioButton(label='Stereo', group=self.mono)
+        self.mode_hbox.pack_start(self.mono, True, True, 0)
+        self.mode_hbox.pack_start(self.stereo, True, True, 0)
 
-        table = gtk.Table(2, 3, False)
-        vbox.pack_start(self.create_frame('MIDI Control Channels', table))
+        table = Gtk.Table(2, 3, False)
+        vbox.pack_start(self.create_frame('MIDI Control Channels', table), True, True, 0)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(gtk.Label('Volume'), 0, 1, 0, 1)
-        self.entry_volume_cc = gtk.Entry()
+        table.attach(Gtk.Label(label='Volume'), 0, 1, 0, 1)
+        self.entry_volume_cc = Gtk.Entry()
         self.entry_volume_cc.set_activates_default(True)
         self.entry_volume_cc.set_editable(False)
         self.entry_volume_cc.set_width_chars(3)
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
-        self.button_sense_midi_volume = gtk.Button('Autoset')
+        self.button_sense_midi_volume = Gtk.Button('Autoset')
         self.button_sense_midi_volume.connect('clicked',
                         self.on_sense_midi_volume_clicked)
         table.attach(self.button_sense_midi_volume, 2, 3, 0, 1)
 
-        table.attach(gtk.Label('Balance'), 0, 1, 1, 2)
-        self.entry_balance_cc = gtk.Entry()
+        table.attach(Gtk.Label(label='Balance'), 0, 1, 1, 2)
+        self.entry_balance_cc = Gtk.Entry()
         self.entry_balance_cc.set_activates_default(True)
         self.entry_balance_cc.set_width_chars(3)
         self.entry_balance_cc.set_editable(False)
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
-        self.button_sense_midi_balance = gtk.Button('Autoset')
+        self.button_sense_midi_balance = Gtk.Button('Autoset')
         self.button_sense_midi_balance.connect('clicked',
                         self.on_sense_midi_balance_clicked)
         table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
 
-        table.attach(gtk.Label('Mute'), 0, 1, 2, 3)
-        self.entry_mute_cc = gtk.Entry()
+        table.attach(Gtk.Label(label='Mute'), 0, 1, 2, 3)
+        self.entry_mute_cc = Gtk.Entry()
         self.entry_mute_cc.set_activates_default(True)
         self.entry_mute_cc.set_editable(False)
         self.entry_mute_cc.set_width_chars(3)
         table.attach(self.entry_mute_cc, 1, 2, 2, 3)
-        self.button_sense_midi_mute = gtk.Button('Autoset')
+        self.button_sense_midi_mute = Gtk.Button('Autoset')
         self.button_sense_midi_mute.connect('clicked',
                         self.on_sense_midi_mute_clicked)
         table.attach(self.button_sense_midi_mute, 2, 3, 2, 3)
 
         if (isinstance(self, NewChannelDialog) or (self.channel and
             isinstance(self.channel, InputChannel))):
-            table.attach(gtk.Label('Solo'), 0, 1, 3, 4)
-            self.entry_solo_cc = gtk.Entry()
+            table.attach(Gtk.Label(label='Solo'), 0, 1, 3, 4)
+            self.entry_solo_cc = Gtk.Entry()
             self.entry_solo_cc.set_activates_default(True)
             self.entry_solo_cc.set_editable(False)
             self.entry_solo_cc.set_width_chars(3)
             table.attach(self.entry_solo_cc, 1, 2, 3, 4)
-            self.button_sense_midi_solo = gtk.Button('Autoset')
+            self.button_sense_midi_solo = Gtk.Button('Autoset')
             self.button_sense_midi_solo.connect('clicked',
                             self.on_sense_midi_solo_clicked)
             table.attach(self.button_sense_midi_solo, 2, 3, 3, 4)
@@ -793,20 +803,20 @@ class ChannelPropertiesDialog(gtk.Dialog):
             self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
-        window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
         window.set_destroy_with_parent(True)
         window.set_transient_for(self)
         window.set_decorated(False)
         window.set_modal(True)
-        window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+        window.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
         window.set_border_width(10)
 
-        vbox = gtk.VBox(10)
+        vbox = Gtk.VBox(10)
         window.add(vbox)
         window.timeout = 5
-        vbox.pack_start(gtk.Label('Please move the MIDI control you want to use for this function.'))
-        timeout_label = gtk.Label('This window will close in 5 seconds')
-        vbox.pack_start(timeout_label)
+        vbox.pack_start(Gtk.Label('Please move the MIDI control you want to use for this function.', True, True, 0))
+        timeout_label = Gtk.Label(label='This window will close in 5 seconds')
+        vbox.pack_start(timeout_label, True, True, 0)
         def close_sense_timeout(window, entry):
             window.timeout -= 1
             timeout_label.set_text('This window will close in %d seconds.' % window.timeout)
@@ -816,7 +826,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
                 return False
             return True
         window.show_all()
-        gobject.timeout_add_seconds(1, close_sense_timeout, window, entry)
+        GObject.timeout_add_seconds(1, close_sense_timeout, window, entry)
 
     def on_sense_midi_volume_clicked(self, *args):
         self.mixer.last_midi_channel = int(self.entry_volume_cc.get_text())
@@ -837,7 +847,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
     def on_response_cb(self, dlg, response_id, *args):
         self.channel.channel_properties_dialog = None
         name = self.entry_name.get_text()
-        if response_id == gtk.RESPONSE_APPLY:
+        if response_id == Gtk.ResponseType.APPLY:
             self.channel.channel_name = name
             try:
                 if self.entry_volume_cc.get_text() != '-1':
@@ -874,7 +884,7 @@ class ChannelPropertiesDialog(gtk.Dialog):
 
 class NewChannelDialog(ChannelPropertiesDialog):
     def __init__(self, app):
-        gtk.Dialog.__init__(self, 'New Channel', app.window)
+        Gtk.Dialog.__init__(self, 'New Channel', app.window)
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
@@ -882,10 +892,10 @@ class NewChannelDialog(ChannelPropertiesDialog):
 
         self.stereo.set_active(True) # default to stereo
 
-        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.ok_button = self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        self.ok_button = self.add_button(Gtk.STOCK_ADD, Gtk.ResponseType.OK)
         self.ok_button.set_sensitive(False)
-        self.set_default_response(gtk.RESPONSE_OK);
+        self.set_default_response(Gtk.ResponseType.OK);
 
     def fill_ui(self):
         self.entry_volume_cc.set_text('-1')
@@ -906,11 +916,11 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
         ChannelPropertiesDialog.create_ui(self)
 
-        vbox = gtk.VBox()
-        self.vbox.pack_start(self.create_frame('Input Channels', vbox))
+        vbox = Gtk.VBox()
+        self.vbox.pack_start(self.create_frame('Input Channels', vbox), True, True, 0)
 
-        self.display_solo_buttons = gtk.CheckButton('Display solo buttons')
-        vbox.pack_start(self.display_solo_buttons)
+        self.display_solo_buttons = Gtk.CheckButton('Display solo buttons')
+        vbox.pack_start(self.display_solo_buttons, True, True, 0)
 
         self.vbox.show_all()
 
@@ -919,14 +929,14 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         self.display_solo_buttons.set_active(self.channel.display_solo_buttons)
 
     def on_response_cb(self, dlg, response_id, *args):
-        if response_id == gtk.RESPONSE_APPLY:
+        if response_id == Gtk.ResponseType.APPLY:
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
         ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
 
 
 class NewOutputChannelDialog(OutputChannelPropertiesDialog):
     def __init__(self, app):
-        gtk.Dialog.__init__(self, 'New Output Channel', app.window)
+        Gtk.Dialog.__init__(self, 'New Output Channel', app.window)
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
@@ -937,10 +947,10 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.mode_hbox.set_sensitive(False)
         self.stereo.set_active(True) # default to stereo
 
-        self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.ok_button = self.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
+        self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        self.ok_button = self.add_button(Gtk.STOCK_ADD, Gtk.ResponseType.OK)
         self.ok_button.set_sensitive(False)
-        self.set_default_response(gtk.RESPONSE_OK);
+        self.set_default_response(Gtk.ResponseType.OK);
 
     def fill_ui(self):
         self.entry_volume_cc.set_text('-1')
@@ -957,46 +967,47 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
                }
 
 
-class ControlGroup(gtk.Alignment):
+class ControlGroup(Gtk.Alignment):
     def __init__(self, output_channel, input_channel):
-        gtk.Alignment.__init__(self, 0.5, 0.5, 0, 0)
+        GObject.GObject.__init__(self)
+        self.set(0.5, 0.5, 0, 0)
         self.output_channel = output_channel
         self.input_channel = input_channel
         self.app = input_channel.app
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         self.hbox = hbox
         self.add(hbox)
 
-        mute = gtk.ToggleButton()
+        mute_button = Gtk.ToggleButton()
+        mute_button.set_label("M")
+        mute_button.connect("toggled", self.on_mute_toggled)
+        mute = Gtk.EventBox()
         self.mute = mute
-        mute.set_label("M")
-        mute.connect("toggled", self.on_mute_toggled)
-        muteevent = gtk.EventBox()
-        muteevent.add(mute)
-        hbox.pack_start(muteevent, False)
+        mute.add(mute_button)
+        hbox.pack_start(mute, False, True, 0)
 
-        solo = gtk.ToggleButton()
+        solo_button = Gtk.ToggleButton()
+        solo_button.set_label("S")
+        solo_button.set_name("button1")
+        solo_button.connect("toggled", self.on_solo_toggled)
+        solo = Gtk.EventBox()
         self.solo = solo
-        solo.set_label("S")
-        solo.connect("toggled", self.on_solo_toggled)
-        soloevent = gtk.EventBox()
-        soloevent.add(solo)
+        solo.add(solo_button)
         if self.output_channel.display_solo_buttons:
-            hbox.pack_start(soloevent, True)
+            hbox.pack_start(solo, True, True, 0)
 
-        print output_channel.color_tuple
-        muteevent.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
-        muteevent.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
-        muteevent.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
-        soloevent.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
-        soloevent.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
-        soloevent.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
+        mute.modify_bg(Gtk.StateType.PRELIGHT, output_channel.color_tuple[0])
+        mute.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
+        mute.modify_bg(Gtk.StateType.ACTIVE, output_channel.color_tuple[2])
+        solo.modify_bg(Gtk.StateType.PRELIGHT, output_channel.color_tuple[0])
+        solo.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
+        solo.modify_bg(Gtk.StateType.ACTIVE, output_channel.color_tuple[2])
 
     def update(self):
         if self.output_channel.display_solo_buttons:
             if not self.solo in self.hbox.get_children():
-                self.hbox.pack_start(self.solo, True)
+                self.hbox.pack_start(self.solo, True, True, 0)
                 self.solo.show()
         else:
             if self.solo in self.hbox.get_children():

@@ -15,15 +15,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 
-class AdjustmentdBFS(gtk.Adjustment):
+class AdjustmentdBFS(Gtk.Adjustment):
     def __init__(self, scale, default_db):
         self.default_value = scale.db_to_scale(default_db)
         self.db = default_db
         self.scale = scale
-        gtk.Adjustment.__init__(self, self.default_value, 0.0, 1.0, 0.02)
+        Gtk.Adjustment.__init__(self, self.default_value, 0.0, 1.0, 0.02)
         self.connect("value-changed", self.on_value_changed)
         self.disable_value_notify = False
 
@@ -57,13 +57,14 @@ class AdjustmentdBFS(gtk.Adjustment):
         self.set_value(self.scale.db_to_scale(self.db))
         self.disable_value_notify = False
 
-gobject.signal_new("volume-changed", AdjustmentdBFS,
-                   gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
+GObject.signal_new("volume-changed", AdjustmentdBFS,
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 
 
-class GtkSlider(gtk.VScale):
+class GtkSlider(Gtk.VScale):
     def __init__(self, adjustment):
-        gtk.VScale.__init__(self, adjustment)
+        Gtk.VScale.__init__(self)#, adjustment)
+        self.set_adjustment(adjustment)
         self.set_draw_value(False)
         self.set_inverted(True)
 
@@ -75,17 +76,18 @@ class GtkSlider(gtk.VScale):
         self.connect('button-release-event', self.button_release_event)
 
     def button_press_event(self, widget, event):
-        event.button = 2
+        print "button press", event.button
+       # event.button = 2
         return False
 
     def button_release_event(self, widget, event):
-        event.button = 2
+        #event.button = 2
         return False
 
 
-class CustomSliderWidget(gtk.DrawingArea):
+class CustomSliderWidget(Gtk.DrawingArea):
     def __init__(self, adjustment):
-        gtk.DrawingArea.__init__(self)
+        Gtk.DrawingArea.__init__(self)
 
         self.adjustment = adjustment
 
@@ -95,17 +97,17 @@ class CustomSliderWidget(gtk.DrawingArea):
         adjustment.connect("value-changed", self.on_value_changed)
         self.connect("button-press-event", self.on_mouse)
         self.connect("motion-notify-event", self.on_mouse)
-        self.set_events(gtk.gdk.BUTTON1_MOTION_MASK | gtk.gdk.BUTTON1_MOTION_MASK | gtk.gdk.BUTTON_PRESS_MASK)
+        self.set_events(Gdk.EventMask.BUTTON1_MOTION_MASK | Gdk.EventMask.BUTTON1_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
 
     def on_mouse(self, widget, event):
-        if event.type == gtk.gdk.BUTTON_PRESS:
+        if event.type == Gdk.EventType.BUTTON_PRESS:
             #print "mouse button %u pressed %u:%u" % (event.button, event.x, event.y)
             if event.button == 1:
                 if event.y >= self.slider_rail_up and event.y < self.slider_rail_up + self.slider_rail_height:
                     self.adjustment.set_value(1 - float(event.y - self.slider_rail_up)/float(self.slider_rail_height))
             elif event.button == 2:
                 self.adjustment.reset()
-        elif event.type == gtk.gdk.MOTION_NOTIFY:
+        elif event.type == Gdk.MOTION_NOTIFY:
             #print "mouse motion %u:%u" % (event.x, event.y)
             if event.y < self.slider_rail_up:
                 y = self.slider_rail_up
@@ -145,11 +147,11 @@ class CustomSliderWidget(gtk.DrawingArea):
     def invalidate_all(self):
         self.queue_draw_area(0, 0, int(self.width), int(self.height))
 
-    def draw(self, cairo_ctx):
-        if self.flags() & gtk.HAS_FOCUS:
-            state = gtk.STATE_PRELIGHT
+    def draw(self, widget, cairo_ctx):
+        if self.flags() & Gtk.HAS_FOCUS:
+            state = Gtk.StateType.PRELIGHT
         else:
-            state = gtk.STATE_NORMAL
+            state = Gtk.StateType.NORMAL
 
         #cairo_ctx.rectangle(0, 0, self.width, self.height)
         #cairo_ctx.set_source_color(self.style.bg[state])

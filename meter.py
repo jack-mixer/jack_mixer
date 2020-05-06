@@ -15,25 +15,33 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import gtk
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
 import cairo
 
-class MeterWidget(gtk.DrawingArea):
+class MeterWidget(Gtk.DrawingArea):
     def __init__(self, scale):
-        gtk.DrawingArea.__init__(self)
+        GObject.GObject.__init__(self)
 
         self.scale = scale
 
-        self.connect("expose-event", self.on_expose)
-        self.connect("size-request", self.on_size_request)
-        self.connect("size_allocate", self.on_size_allocate)
+        self.connect("draw", self.draw)
+        #self.connect("size-request", self.on_size_request)
+        self.connect("size-allocate", self.on_size_allocate)
 
-        self.color_bg = gtk.gdk.Color(0,0,0)
+        self.color_bg = Gdk.Color(0,0,0)
         self.color_value = None
-        self.color_mark = gtk.gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
+        self.color_mark = Gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
         self.width = 0
         self.height = 0
         self.cache_surface = None
+
+    def get_preferred_width(self):
+        return 2
+
+    def get_preferred_height(self):
+        return 200
 
     def set_color(self, color):
         self.color_value = color
@@ -52,7 +60,7 @@ class MeterWidget(gtk.DrawingArea):
         return False
 
     def on_size_allocate(self, widget, allocation):
-        #print allocation.x, allocation.y, allocation.width, allocation.height
+        print allocation.x, allocation.y, allocation.width, allocation.height
         self.width = float(allocation.width)
         self.height = float(allocation.height)
         self.font_size = 10
@@ -98,7 +106,7 @@ class MeterWidget(gtk.DrawingArea):
         if self.color_value is not None:
             cairo_ctx.set_source_color(self.color_value)
         else:
-            height = self.allocation.height
+            height = self.height
             gradient = cairo.LinearGradient(1, 1, width-1, height-1)
             gradient.add_color_stop_rgb(0, 1, 0, 0)
             gradient.add_color_stop_rgb(0.2, 1, 1, 0)
@@ -118,7 +126,7 @@ class MonoMeterWidget(MeterWidget):
         self.value = 0.0
         self.raw_value = 0.0
 
-    def draw(self, cairo_ctx):
+    def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
         self.draw_value(cairo_ctx, self.value, self.width/4.0, self.width/2.0)
 
@@ -144,7 +152,7 @@ class StereoMeterWidget(MeterWidget):
         self.raw_left = 0.0
         self.raw_right = 0.0
 
-    def draw(self, cairo_ctx):
+    def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
         self.draw_value(cairo_ctx, self.left, self.width/5.0, self.width/5.0)
         self.draw_value(cairo_ctx, self.right, self.width/5.0 * 3.0, self.width/5.0)

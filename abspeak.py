@@ -15,25 +15,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import gtk
+from gi.repository import Gtk
 import fpconst
-import pango
-import gobject
+from gi.repository import Pango
+from gi.repository import GObject
 
-class AbspeakWidget(gtk.EventBox):
+class AbspeakWidget(Gtk.EventBox):
     def __init__(self):
-        gtk.EventBox.__init__(self)
-        self.label = gtk.Label()
-        attrs = pango.AttrList()
-        font_attr =  pango.AttrFamily("monospace")
-        attrs.insert(font_attr)
-        self.label.set_attributes(attrs)
+        GObject.GObject.__init__(self)
+        self.label = Gtk.Label()
+        #attrs = Pango.AttrList()
+        #font_attr =  Pango.AttrFamily("monospace")
+        #attrs.insert(font_attr)
+        #self.label.set_attributes(attrs)
         self.add(self.label)
         self.connect("button-press-event", self.on_mouse)
         self.peak = fpconst.NegInf
 
     def on_mouse(self, widget, event):
-        if event.type == gtk.gdk.BUTTON_PRESS:
+        if event.type == Gdk.EventType.BUTTON_PRESS:
             if event.button == 1:
                 self.emit("reset")
             elif event.button == 2:
@@ -44,19 +44,20 @@ class AbspeakWidget(gtk.EventBox):
     def set_peak(self, peak):
         self.peak = peak
         if fpconst.isNaN(peak):
-            self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(int(65535 * 0.7), 0, 0))
+            self.modify_bg(Gtk.StateType.NORMAL, Gdk.Color(int(65535 * 0.7), 0, 0))
             self.label.set_text("NaN")
         else:
             text = "%+.1f" % peak
 
             if peak > 0:
-                self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(int(65535 * 0.8), int(65535 * 0.3), 0))
+                self.modify_bg(Gtk.StateType.NORMAL, Gdk.Color(int(65535 * 0.8), int(65535 * 0.3), 0))
             else:
-                self.modify_bg(gtk.STATE_NORMAL, self.label.style.bg[gtk.STATE_NORMAL])
+                pass
+                #self.modify_bg(Gtk.StateType.NORMAL, self.label.style.bg[Gtk.StateType.NORMAL])
 
             self.label.set_text(text)
 
-gobject.signal_new("reset", AbspeakWidget,
-                   gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [])
-gobject.signal_new("volume-adjust", AbspeakWidget,
-                   gobject.SIGNAL_RUN_FIRST | gobject.SIGNAL_ACTION, gobject.TYPE_NONE, [gobject.TYPE_FLOAT])
+GObject.signal_new("reset", AbspeakWidget,
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+GObject.signal_new("volume-adjust", AbspeakWidget,
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [GObject.TYPE_FLOAT])

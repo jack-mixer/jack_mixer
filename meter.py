@@ -38,6 +38,7 @@ class MeterWidget(Gtk.DrawingArea):
         self.cache_surface = None
 
     def get_preferred_width(self):
+        print 'get_preferred_width called'
         return 2
 
     def get_preferred_height(self):
@@ -104,7 +105,8 @@ class MeterWidget(Gtk.DrawingArea):
 
     def draw_value(self, cairo_ctx, value, x, width):
         if self.color_value is not None:
-            cairo_ctx.set_source_color(self.color_value)
+            cairo_ctx.set_source_rgb(self.color_value.red/65535.,
+                    self.color_value.green/65535., self.color_value.blue/65535.)
         else:
             height = self.height
             gradient = cairo.LinearGradient(1, 1, width-1, height-1)

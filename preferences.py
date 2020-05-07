@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import GObject
 
 try:
@@ -33,19 +34,20 @@ def lookup_scale(scales, scale_id):
 class PreferencesDialog(Gtk.Dialog):
     def __init__(self, parent):
         self.app = parent
-        GObject.GObject.__init__(self, '', self.app.window)
+        GObject.GObject.__init__(self)
+        self.set_title( '')
         self.create_ui()
         self.connect('response', self.on_response_cb)
         self.connect('delete-event', self.on_response_cb)
 
     def create_frame(self, label, child):
-        frame = Gtk.Frame('')
+        frame = Gtk.Frame()
+        frame.set_label('')
         frame.set_border_width(3)
         frame.set_shadow_type(Gtk.ShadowType.NONE)
         frame.get_label_widget().set_markup('<b>%s</b>' % label)
 
-        alignment = Gtk.Alignment.new()
-        alignment.set_padding(0, 0, 12, 0)
+        alignment = Gtk.Alignment.new(0, 0, 12, 0)
         frame.add(alignment)
         alignment.add(child)
 
@@ -74,7 +76,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.custom_color_box = hbox
         self.custom_color_box.set_sensitive(
                         self.vumeter_color_checkbutton.get_active() == True)
-        hbox.pack_start(Gtk.Label('Custom color:', True, True, 0))
+        hbox.pack_start(Gtk.Label('Custom color:'), True, True, 0)
         self.vumeter_color_picker = Gtk.ColorButton()
         self.vumeter_color_picker.set_color(Gdk.color_parse(
                                 self.app.gui_factory.get_vumeter_color()))
@@ -88,7 +90,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.minimize_to_tray_checkbutton.connect('toggled', self.on_minimize_to_tray_toggled)
         interface_vbox.pack_start(self.minimize_to_tray_checkbutton, True, True, 0)
 
-        vbox.pack_start(self.create_frame('Interface', interface_vbox))
+        vbox.pack_start(self.create_frame('Interface', interface_vbox), True, True, 0)
 
         table = Gtk.Table(2, 2, False)
         table.set_row_spacings(5)
@@ -102,7 +104,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.slider_scale_combo = self.create_slider_store_and_combo()
         table.attach(self.slider_scale_combo, 1, 2, 1, 2)
 
-        vbox.pack_start(self.create_frame('Scales', table))
+        vbox.pack_start(self.create_frame('Scales', table), True, True, 0)
 
         self.vbox.show_all()
 
@@ -117,9 +119,9 @@ class PreferencesDialog(Gtk.Dialog):
                 active_iter = current_iter
         self.meter_store = store
 
-        meter_scale_combo = Gtk.ComboBox(store)
+        meter_scale_combo = Gtk.ComboBox.new_with_model(store)
         cell = Gtk.CellRendererText()
-        meter_scale_combo.pack_start(cell, True, True, 0)
+        meter_scale_combo.pack_start(cell, True)
         meter_scale_combo.add_attribute(cell, 'text', 0)
         meter_scale_combo.set_active_iter(active_iter)
         meter_scale_combo.connect('changed',
@@ -136,9 +138,9 @@ class PreferencesDialog(Gtk.Dialog):
                 active_iter = current_iter
         self.slider_store = store
 
-        slider_scale_combo = Gtk.ComboBox(store)
+        slider_scale_combo = Gtk.ComboBox.new_with_model(store)
         cell = Gtk.CellRendererText()
-        slider_scale_combo.pack_start(cell, True, True, 0)
+        slider_scale_combo.pack_start(cell, True)
         slider_scale_combo.add_attribute(cell, 'text', 0)
         slider_scale_combo.set_active_iter(active_iter)
         slider_scale_combo.connect('changed',

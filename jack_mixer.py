@@ -706,8 +706,9 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         self.window.show_all()
 
     def serialize(self, object_backend):
+        width, height = self.window.get_size()
         object_backend.add_property('geometry',
-                        '%sx%s' % (self.window.allocation.width, self.window.allocation.height))
+                        '%sx%s' % (width, height))
         solo_channels = []
         for input_channel in self.channels:
             if input_channel.channel.solo:

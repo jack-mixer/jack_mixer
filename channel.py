@@ -110,8 +110,10 @@ class Channel(Gtk.VBox, SerializedObject):
         pass
 
     def balance_preferred_width(self):
-        return 2000, 2000
+        return (20, 20)
 
+    def _preferred_height(self):
+        return (0, 100)
 
     def create_balance_widget(self):
         if self.gui_factory.use_custom_widgets and phat:
@@ -121,6 +123,7 @@ class Channel(Gtk.VBox, SerializedObject):
         else:
             self.balance = Gtk.Scale()
             self.balance.get_preferred_width = self.balance_preferred_width
+            self.balance.get_preferred_height = self._preferred_height
             self.balance.set_orientation(Gtk.Orientation.HORIZONTAL)
             self.balance.set_adjustment(self.balance_adjustment)
             self.balance.set_draw_value(False)
@@ -335,7 +338,7 @@ class InputChannel(Channel):
         self.pack_start(self.vbox, False, True, 0)
         self.label_name = Gtk.Label()
         self.label_name.set_text(self.channel_name)
-        self.label_name.set_size_request(0, -1)
+        self.label_name.set_width_chars(0)
         self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect("button-press-event", self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
@@ -381,8 +384,8 @@ class InputChannel(Channel):
         frame.add(self.hbox);
         self.pack_start(frame, True, True, 0)
 
-        self.volume_digits.set_size_request(0, -1)
-        self.pack_start(self.volume_digits, False, True, 0)
+        self.volume_digits.set_width_chars(0)
+        self.pack_start(self.volume_digits, False, False, 0)
 
         self.create_balance_widget()
 
@@ -429,7 +432,7 @@ class InputChannel(Channel):
         self.channel_properties_dialog.present()
 
     def on_label_mouse(self, widget, event):
-        if event.type == Gdk._2BUTTON_PRESS:
+        if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
 
@@ -495,13 +498,13 @@ class InputChannel(Channel):
 
 
 available_colours = [
-    ('#000000', '#204c98', '#000000'),
-    ('#000000', '#542656', '#000000'),
-    ('#ef2929', '#3f5677', '#840000'),
-    ('#729fcf', '#7b4d5b', '#204a67'),
-    ('#8aa234', '#762945', '#4e7a06'),
-    ('#ad7fa8', '#0c5156', '#4c3556'),
-    ('#e9b96e', '#166280', '#6f4902'),
+    ('#648fcb', '#204c98', '#426cb8'),
+    ('#984a9a', '#542656', '#744676'),
+    ('#7f9abb', '#3f5677', '#5f7697'),
+    ('#bf8f9f', '#7b4d5b', '#9b6f7b'),
+    ('#ba6d89', '#762945', '#964965'),
+    ('#4c9196', '#0c5156', '#2c7176'),
+    ('#56a2c0', '#166280', '#3682a0'),
 ]
 
 class OutputChannel(Channel):
@@ -546,7 +549,7 @@ class OutputChannel(Channel):
         self.pack_start(self.vbox, False, True, 0)
         self.label_name = Gtk.Label()
         self.label_name.set_text(self.channel_name)
-        self.label_name.set_size_request(0, -1)
+        self.label_name.set_width_chars(0)
         self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
@@ -581,7 +584,7 @@ class OutputChannel(Channel):
         frame.add(self.hbox);
         self.pack_start(frame, True, True, 0)
 
-        self.volume_digits.set_size_request(0, -1)
+        self.volume_digits.set_width_chars(0)
         self.pack_start(self.volume_digits, False, True, 0)
 
         self.create_balance_widget()
@@ -609,7 +612,7 @@ class OutputChannel(Channel):
         self.channel_properties_dialog.present()
 
     def on_label_mouse(self, widget, event):
-        if event.type == Gdk._2BUTTON_PRESS:
+        if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
 
@@ -617,7 +620,7 @@ class OutputChannel(Channel):
         self.channel.out_mute = self.mute.get_active()
 
     def midi_events_check(self):
-        if self.channel.midi_in_got_events:
+        if self.channel != None and self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
             Channel.on_midi_event_received(self)
 
@@ -685,9 +688,8 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.channel = parent
         self.app = app
         self.mixer = self.channel.mixer
-        GObject.GObject.__init__(self,
-                        'Channel "%s" Properties' % self.channel.channel_name,
-                        self.channel.gui_factory.topwindow)
+        GObject.GObject.__init__(self)
+        self.set_title('Channel "%s" Properties' % self.channel.channel_name)
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY)
@@ -975,34 +977,66 @@ class ControlGroup(Gtk.Alignment):
         self.input_channel = input_channel
         self.app = input_channel.app
 
+        space = 5
         hbox = Gtk.HBox()
+        vbox = Gtk.VBox()
         self.hbox = hbox
-        self.add(hbox)
+        vbox.pack_start(hbox, False, False, space)
+        self.add(vbox)
 
-        mute_button = Gtk.ToggleButton()
-        mute_button.set_label("M")
-        mute_button.connect("toggled", self.on_mute_toggled)
-        mute = Gtk.EventBox()
+        vbox.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
+        mute_name = "%s_mute" % output_channel.channel.name
+        mute = Gtk.ToggleButton()
+        mute.set_name(mute_name)
+        mute_css = """
+#%s { background-color: rgb(%d, %d, %d); }
+#%s:hover { background-color: rgb(%d, %d, %d); }
+#%s:checked { background-color: rgb(%d, %d, %d); }""" % (mute_name,
+                    int(output_channel.color_tuple[1].red * 255/65535.),
+                    int(output_channel.color_tuple[1].green * 255/65535.),
+                    int(output_channel.color_tuple[1].blue * 255/65535.),
+                    mute_name, int(output_channel.color_tuple[0].red *
+                        255/65535.), int(output_channel.color_tuple[0].green
+                             * 255/65535.),
+                        int(output_channel.color_tuple[0].blue *
+                            255/65535.), mute_name,
+                        int(output_channel.color_tuple[2].red * 255/65535.),
+                        int(output_channel.color_tuple[2].green *
+                            255/65535.), int(output_channel.color_tuple[2].blue * 255/65535.))
+        solo_name = "%s_solo" % output_channel.channel.name
+        solo_css = """
+#%s { background-color: rgb(%d, %d, %d); }
+#%s:hover { background-color: rgb(%d, %d, %d); }
+#%s:checked { background-color: rgb(%d, %d, %d); }""" % (solo_name,
+                    int(output_channel.color_tuple[1].red * 255/65535.),
+                    int(output_channel.color_tuple[1].green * 255/65535.),
+                    int(output_channel.color_tuple[1].blue * 255/65535.),
+                    solo_name, int(output_channel.color_tuple[0].red *
+                        255/65535.), int(output_channel.color_tuple[0].green
+                             * 255/65535.),
+                        int(output_channel.color_tuple[0].blue *
+                            255/65535.), solo_name,
+                        int(output_channel.color_tuple[2].red * 255/65535.),
+                        int(output_channel.color_tuple[2].green *
+                            255/65535.), int(output_channel.color_tuple[2].blue * 255/65535.))
+        css = mute_css + solo_css
+        mute.set_label("M")
+        mute.connect("toggled", self.on_mute_toggled)
         self.mute = mute
-        mute.add(mute_button)
-        hbox.pack_start(mute, False, True, 0)
-
-        solo_button = Gtk.ToggleButton()
-        solo_button.set_label("S")
-        solo_button.set_name("button1")
-        solo_button.connect("toggled", self.on_solo_toggled)
-        solo = Gtk.EventBox()
+        hbox.pack_start(mute, False, False, space)
+        solo = Gtk.ToggleButton()
+        solo.set_name(solo_name)
+        solo.set_label("S")
+        solo.connect("toggled", self.on_solo_toggled)
         self.solo = solo
-        solo.add(solo_button)
         if self.output_channel.display_solo_buttons:
-            hbox.pack_start(solo, True, True, 0)
-
-        mute.modify_bg(Gtk.StateType.PRELIGHT, output_channel.color_tuple[0])
-        mute.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
-        mute.modify_bg(Gtk.StateType.ACTIVE, output_channel.color_tuple[2])
-        solo.modify_bg(Gtk.StateType.PRELIGHT, output_channel.color_tuple[0])
-        solo.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
-        solo.modify_bg(Gtk.StateType.ACTIVE, output_channel.color_tuple[2])
+            hbox.pack_start(solo, False, False, 10)
+        css_provider = Gtk.CssProvider()
+        #css_provider.load_from_data(mute_css)
+        css_provider.load_from_data(css)
+        context = Gtk.StyleContext()
+        screen = Gdk.Screen.get_default()
+        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     def update(self):
         if self.output_channel.display_solo_buttons:

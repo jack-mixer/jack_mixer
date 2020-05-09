@@ -29,6 +29,18 @@ try:
 except:
     phat = None
 
+button_padding = 1
+
+css = """
+:not(button) > label {min-width: 100px;}
+button {padding: 0px}
+"""
+
+css_provider = Gtk.CssProvider()
+css_provider.load_from_data(css)
+context = Gtk.StyleContext()
+screen = Gdk.Screen.get_default()
+context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 class Channel(Gtk.VBox, SerializedObject):
     '''Widget with slider and meter used as base class for more specific
@@ -99,6 +111,7 @@ class Channel(Gtk.VBox, SerializedObject):
         self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
 
         self.volume_digits = Gtk.Entry()
+        self.volume_digits.set_property('xalign', 0.5)
         self.volume_digits.connect("key-press-event", self.on_volume_digits_key_pressed)
         self.volume_digits.connect("focus-out-event", self.on_volume_digits_focus_out)
 
@@ -314,6 +327,7 @@ class InputChannel(Channel):
 
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
+
         if self.channel == None:
             raise Exception,"Cannot create a channel"
         Channel.realize(self)
@@ -352,20 +366,25 @@ class InputChannel(Channel):
 #         self.vbox.pack_start(self.label_stereo, True)
 
         self.hbox_mutesolo = Gtk.HBox()
+        vbox_mutesolo = Gtk.VBox()
+        vbox_mutesolo.pack_start(self.hbox_mutesolo, True, True, button_padding)
+        self.vbox.pack_start(vbox_mutesolo, True, True, 0)
 
         self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
+        self.mute.set_name("mute")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
-        self.hbox_mutesolo.pack_start(self.mute, True, True, 0)
+        self.hbox_mutesolo.pack_start(self.mute, True, True, button_padding)
 
         self.solo = Gtk.ToggleButton()
         self.solo.set_label("S")
+        self.solo.set_name("solo")
         self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
-        self.hbox_mutesolo.pack_start(self.solo, True, True, 0)
+        self.hbox_mutesolo.pack_start(self.solo, True, True, button_padding)
 
-        self.vbox.pack_start(self.hbox_mutesolo, False, True, 0)
+        self.vbox.pack_start(self.hbox_mutesolo, True, True, 0)
 
         frame = Gtk.Frame()
         frame.set_shadow_type(Gtk.ShadowType.IN)
@@ -384,7 +403,7 @@ class InputChannel(Channel):
         frame.add(self.hbox);
         self.pack_start(frame, True, True, 0)
 
-        self.volume_digits.set_width_chars(0)
+        self.volume_digits.set_width_chars(6)
         self.pack_start(self.volume_digits, False, False, 0)
 
         self.create_balance_widget()
@@ -396,7 +415,7 @@ class InputChannel(Channel):
     def add_control_group(self, channel):
         control_group = ControlGroup(channel, self)
         control_group.show_all()
-        self.vbox.pack_start(control_group, False, True, 0)
+        self.vbox.pack_start(control_group, True, True, 0)
         return control_group
 
     def remove_control_group(self, channel):
@@ -563,9 +582,12 @@ class OutputChannel(Channel):
         self.vbox.pack_start(self.label_name_event_box, True, True, 0)
         self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
+        self.mute.set_name("mute")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
-        self.vbox.pack_start(self.mute, False, True, 0)
+        hbox = Gtk.HBox()
+        hbox.pack_start(self.mute, True, True, button_padding)
+        self.vbox.pack_start(hbox, True, True, button_padding)
 
         frame = Gtk.Frame()
         frame.set_shadow_type(Gtk.ShadowType.IN)
@@ -584,7 +606,7 @@ class OutputChannel(Channel):
         frame.add(self.hbox);
         self.pack_start(frame, True, True, 0)
 
-        self.volume_digits.set_width_chars(0)
+        self.volume_digits.set_width_chars(6)
         self.pack_start(self.volume_digits, False, True, 0)
 
         self.create_balance_widget()
@@ -968,75 +990,35 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
                }
 
-
 class ControlGroup(Gtk.Alignment):
     def __init__(self, output_channel, input_channel):
         GObject.GObject.__init__(self)
-        self.set(0.5, 0.5, 0, 0)
+        self.set(0.5, 0.5, 1, 1)
         self.output_channel = output_channel
         self.input_channel = input_channel
         self.app = input_channel.app
 
-        space = 5
         hbox = Gtk.HBox()
         vbox = Gtk.VBox()
         self.hbox = hbox
-        vbox.pack_start(hbox, False, False, space)
+        vbox.pack_start(hbox, True, True, button_padding)
         self.add(vbox)
 
         vbox.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
         mute_name = "%s_mute" % output_channel.channel.name
         mute = Gtk.ToggleButton()
-        mute.set_name(mute_name)
-        mute_css = """
-#%s { background-color: rgb(%d, %d, %d); }
-#%s:hover { background-color: rgb(%d, %d, %d); }
-#%s:checked { background-color: rgb(%d, %d, %d); }""" % (mute_name,
-                    int(output_channel.color_tuple[1].red * 255/65535.),
-                    int(output_channel.color_tuple[1].green * 255/65535.),
-                    int(output_channel.color_tuple[1].blue * 255/65535.),
-                    mute_name, int(output_channel.color_tuple[0].red *
-                        255/65535.), int(output_channel.color_tuple[0].green
-                             * 255/65535.),
-                        int(output_channel.color_tuple[0].blue *
-                            255/65535.), mute_name,
-                        int(output_channel.color_tuple[2].red * 255/65535.),
-                        int(output_channel.color_tuple[2].green *
-                            255/65535.), int(output_channel.color_tuple[2].blue * 255/65535.))
-        solo_name = "%s_solo" % output_channel.channel.name
-        solo_css = """
-#%s { background-color: rgb(%d, %d, %d); }
-#%s:hover { background-color: rgb(%d, %d, %d); }
-#%s:checked { background-color: rgb(%d, %d, %d); }""" % (solo_name,
-                    int(output_channel.color_tuple[1].red * 255/65535.),
-                    int(output_channel.color_tuple[1].green * 255/65535.),
-                    int(output_channel.color_tuple[1].blue * 255/65535.),
-                    solo_name, int(output_channel.color_tuple[0].red *
-                        255/65535.), int(output_channel.color_tuple[0].green
-                             * 255/65535.),
-                        int(output_channel.color_tuple[0].blue *
-                            255/65535.), solo_name,
-                        int(output_channel.color_tuple[2].red * 255/65535.),
-                        int(output_channel.color_tuple[2].green *
-                            255/65535.), int(output_channel.color_tuple[2].blue * 255/65535.))
-        css = mute_css + solo_css
         mute.set_label("M")
+        mute.set_name("mute")
         mute.connect("toggled", self.on_mute_toggled)
         self.mute = mute
-        hbox.pack_start(mute, False, False, space)
+        hbox.pack_start(mute, True, True, button_padding)
         solo = Gtk.ToggleButton()
-        solo.set_name(solo_name)
+        solo.set_name("solo")
         solo.set_label("S")
         solo.connect("toggled", self.on_solo_toggled)
         self.solo = solo
         if self.output_channel.display_solo_buttons:
-            hbox.pack_start(solo, False, False, 10)
-        css_provider = Gtk.CssProvider()
-        #css_provider.load_from_data(mute_css)
-        css_provider.load_from_data(css)
-        context = Gtk.StyleContext()
-        screen = Gdk.Screen.get_default()
-        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            hbox.pack_start(solo, True, True, button_padding)
 
     def update(self):
         if self.output_channel.display_solo_buttons:

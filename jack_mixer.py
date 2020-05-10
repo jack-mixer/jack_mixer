@@ -136,11 +136,11 @@ class JackMixer(SerializedObject):
         self.menubar = Gtk.MenuBar()
         self.vbox_top.pack_start(self.menubar, False, True, 0)
 
-        mixer_menu_item = Gtk.MenuItem("_Mixer")
+        mixer_menu_item = Gtk.MenuItem.new_with_mnemonic("_Mixer")
         self.menubar.append(mixer_menu_item)
-        edit_menu_item = Gtk.MenuItem('_Edit')
+        edit_menu_item = Gtk.MenuItem.new_with_mnemonic('_Edit')
         self.menubar.append(edit_menu_item)
-        help_menu_item = Gtk.MenuItem('_Help')
+        help_menu_item = Gtk.MenuItem.new_with_mnemonic('_Help')
         self.menubar.append(help_menu_item)
 
         self.window.set_default_size(120, 300)
@@ -148,68 +148,68 @@ class JackMixer(SerializedObject):
         mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(mixer_menu)
 
-        add_input_channel = Gtk.ImageMenuItem('New _Input Channel')
+        add_input_channel = Gtk.MenuItem.new_with_mnemonic('New _Input Channel')
         mixer_menu.append(add_input_channel)
         add_input_channel.connect("activate", self.on_add_input_channel)
 
-        add_output_channel = Gtk.ImageMenuItem('New _Output Channel')
+        add_output_channel = Gtk.MenuItem.new_with_mnemonic('New _Output Channel')
         mixer_menu.append(add_output_channel)
         add_output_channel.connect("activate", self.on_add_output_channel)
 
         mixer_menu.append(Gtk.SeparatorMenuItem())
-        open = Gtk.ImageMenuItem(Gtk.STOCK_OPEN)
+        open = Gtk.MenuItem.new_with_mnemonic('_Open')
         mixer_menu.append(open)
         open.connect('activate', self.on_open_cb)
-        save = Gtk.ImageMenuItem(Gtk.STOCK_SAVE)
+        save = Gtk.MenuItem.new_with_mnemonic('_Save')
         mixer_menu.append(save)
         save.connect('activate', self.on_save_cb)
-        save_as = Gtk.ImageMenuItem(Gtk.STOCK_SAVE_AS)
+        save_as = Gtk.MenuItem.new_with_mnemonic('Save_As')
         mixer_menu.append(save_as)
         save_as.connect('activate', self.on_save_as_cb)
 
         mixer_menu.append(Gtk.SeparatorMenuItem())
 
-        quit = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
+        quit = Gtk.MenuItem.new_with_mnemonic('_Quit')
         mixer_menu.append(quit)
         quit.connect('activate', self.on_quit_cb)
 
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
-        self.channel_edit_input_menu_item = Gtk.MenuItem('_Edit Input Channel')
+        self.channel_edit_input_menu_item = Gtk.MenuItem.new_with_mnemonic('_Edit Input Channel')
         edit_menu.append(self.channel_edit_input_menu_item)
         self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
 
-        self.channel_edit_output_menu_item = Gtk.MenuItem('Edit _Output Channel')
+        self.channel_edit_output_menu_item = Gtk.MenuItem.new_with_mnemonic('Edit _Output Channel')
         edit_menu.append(self.channel_edit_output_menu_item)
         self.channel_edit_output_menu = Gtk.Menu()
         self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
 
-        self.channel_remove_input_menu_item = Gtk.MenuItem('Remove _Input Channel')
+        self.channel_remove_input_menu_item = Gtk.MenuItem.new_with_mnemonic('Remove _Input Channel')
         edit_menu.append(self.channel_remove_input_menu_item)
         self.channel_remove_input_menu = Gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
-        self.channel_remove_output_menu_item = Gtk.MenuItem('_Remove Output Channel')
+        self.channel_remove_output_menu_item = Gtk.MenuItem.new_with_mnemonic('_Remove Output Channel')
         edit_menu.append(self.channel_remove_output_menu_item)
         self.channel_remove_output_menu = Gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
-        channel_remove_all_menu_item = Gtk.ImageMenuItem(Gtk.STOCK_CLEAR)
+        channel_remove_all_menu_item = Gtk.MenuItem.new_with_mnemonic('Clear')
         edit_menu.append(channel_remove_all_menu_item)
         channel_remove_all_menu_item.connect("activate", self.on_channels_clear)
 
         edit_menu.append(Gtk.SeparatorMenuItem())
 
-        preferences = Gtk.ImageMenuItem(Gtk.STOCK_PREFERENCES)
+        preferences = Gtk.MenuItem.new_with_mnemonic('_Preferences')
         preferences.connect('activate', self.on_preferences_cb)
         edit_menu.append(preferences)
 
         help_menu = Gtk.Menu()
         help_menu_item.set_submenu(help_menu)
 
-        about = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
+        about = Gtk.MenuItem.new_with_mnemonic('_About')
         help_menu.append(about)
         about.connect("activate", self.on_about)
 
@@ -515,21 +515,19 @@ class JackMixer(SerializedObject):
         return True
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons):
-        #try:
-        channel = OutputChannel(self, name, stereo)
-        channel.display_solo_buttons = display_solo_buttons
-        self.add_output_channel_precreated(channel)
-        #except Exception:
-        #    e = sys.exc_info()[0]
-        #    print( "<p>Error: %s</p>" % e )
-        #    err = Gtk.MessageDialog(self.window,
-        #                    Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-        #                    Gtk.MessageType.ERROR,
-        #                    Gtk.ButtonsType.OK,
-        #                    "Channel creation failed")
-        #    err.run()
-        #    err.destroy()
-        #    return
+        try:
+            channel = OutputChannel(self, name, stereo)
+            channel.display_solo_buttons = display_solo_buttons
+            self.add_output_channel_precreated(channel)
+        except Exception:
+            err = Gtk.MessageDialog(self.window,
+                            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                            Gtk.MessageType.ERROR,
+                            Gtk.ButtonsType.OK,
+                            "Channel creation failed")
+            err.run()
+            err.destroy()
+            return
         if volume_cc != '-1':
             channel.channel.volume_midi_cc = int(volume_cc)
         if balance_cc != '-1':

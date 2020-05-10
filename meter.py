@@ -61,7 +61,6 @@ class MeterWidget(Gtk.DrawingArea):
         return False
 
     def on_size_allocate(self, widget, allocation):
-        print allocation.x, allocation.y, allocation.width, allocation.height
         self.width = float(allocation.width)
         self.height = float(allocation.height)
         self.font_size = 10

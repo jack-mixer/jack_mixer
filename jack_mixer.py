@@ -354,7 +354,6 @@ class JackMixer(SerializedObject):
 
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
-            print result
             channel = self.add_output_channel(**result)
             self.window.show_all()
 
@@ -378,7 +377,7 @@ class JackMixer(SerializedObject):
             if self.channels[i] is channel:
                 channel.unrealize()
                 del self.channels[i]
-                self.hbox_inputs.remove(channel.parent)
+                self.hbox_inputs.remove(channel.get_parent())
                 break
         if len(self.channels) == 0:
             self.channel_remove_input_menu_item.set_sensitive(False)
@@ -403,7 +402,7 @@ class JackMixer(SerializedObject):
             if self.output_channels[i] is channel:
                 channel.unrealize()
                 del self.output_channels[i]
-                self.hbox_outputs.remove(channel.parent)
+                self.hbox_outputs.remove(channel.get_parent())
                 break
         if len(self.output_channels) == 0:
             self.channel_remove_output_menu_item.set_sensitive(False)
@@ -428,10 +427,10 @@ class JackMixer(SerializedObject):
     def on_channels_clear(self, widget):
         for channel in self.output_channels:
             channel.unrealize()
-            self.hbox_outputs.remove(channel.parent)
+            self.hbox_outputs.remove(channel.get_parent())
         for channel in self.channels:
             channel.unrealize()
-            self.hbox_inputs.remove(channel.parent)
+            self.hbox_inputs.remove(channel.get_parent())
         self.channels = []
         self.output_channels = []
         self.channel_edit_input_menu = Gtk.Menu()
@@ -453,12 +452,11 @@ class JackMixer(SerializedObject):
             self.add_channel_precreated(channel)
         except Exception:
             e = sys.exc_info()[0]
-            print( "<p>Error: %s</p>" % e )
-            #err = Gtk.MessageDialog(self.window,
-            #                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            #                Gtk.MessageType.ERROR,
-            #                Gtk.ButtonsType.OK,
-            #                "Channel creation failed")
+            err = Gtk.MessageDialog(self.window,
+                            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                            Gtk.MessageType.ERROR,
+                            Gtk.ButtonsType.OK,
+                            "Channel creation failed")
             err.run()
             err.destroy()
             return
@@ -691,10 +689,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         s.unserialize(self, b)
         for channel in self.unserialized_channels:
             if isinstance(channel, InputChannel):
-                print self._init_solo_channels, hasattr(channel, 'name'), channel.channel_name
                 if self._init_solo_channels and channel.channel_name in self._init_solo_channels:
                     channel.solo = True
-                    print channel.channel_name, 'solo ', channel.solo
                 self.add_channel_precreated(channel)
         self._init_solo_channels = None
         for channel in self.unserialized_channels:

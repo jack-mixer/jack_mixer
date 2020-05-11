@@ -1004,29 +1004,22 @@ class ControlGroup(Gtk.Alignment):
         vbox.pack_start(hbox, True, True, button_padding)
         self.add(vbox)
 
-        mute_button = gtk.ToggleButton()
-        mute_button.set_label("M")
-        mute_button.connect("toggled", self.on_mute_toggled)
-        mute = gtk.EventBox()
+        vbox.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
+        mute_name = "%s_mute" % output_channel.channel.name
+        mute = Gtk.ToggleButton()
+        mute.set_label("M")
+        mute.set_name("mute")
+        mute.connect("toggled", self.on_mute_toggled)
         self.mute = mute
-        mute.add(mute_button)
-        hbox.pack_start(mute, False)
-
-        solo_button = gtk.ToggleButton()
-        solo_button.set_label("S")
-        solo_button.connect("toggled", self.on_solo_toggled)
-        solo = gtk.EventBox()
+        hbox.pack_start(mute, True, True, button_padding)
+        solo = Gtk.ToggleButton()
+        solo.set_name("solo")
+        solo.set_label("S")
+        solo.connect("toggled", self.on_solo_toggled)
         self.solo = solo
-        solo.add(solo_button)
-        if self.output_channel.display_solo_buttons:
-            hbox.pack_start(solo, True)
 
-        mute.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
-        mute.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
-        mute.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
-        solo.modify_bg(gtk.STATE_PRELIGHT, output_channel.color_tuple[0])
-        solo.modify_bg(gtk.STATE_NORMAL, output_channel.color_tuple[1])
-        solo.modify_bg(gtk.STATE_ACTIVE, output_channel.color_tuple[2])
+        if self.output_channel.display_solo_buttons:
+            hbox.pack_start(solo, True, True, button_padding)
 
     def update(self):
         if self.output_channel.display_solo_buttons:

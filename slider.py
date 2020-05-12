@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import GObject
 
 class AdjustmentdBFS(Gtk.Adjustment):
@@ -91,8 +92,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
         self.adjustment = adjustment
 
-        self.connect("expose-event", self.on_expose)
-        self.connect("size-request", self.on_size_request)
+        self.connect("draw", self.on_expose)
+        #self.connect("size-request", self.on_size_request)
         self.connect("size_allocate", self.on_size_allocate)
         adjustment.connect("value-changed", self.on_value_changed)
         self.connect("button-press-event", self.on_mouse)
@@ -107,7 +108,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
                     self.adjustment.set_value(1 - float(event.y - self.slider_rail_up)/float(self.slider_rail_height))
             elif event.button == 2:
                 self.adjustment.reset()
-        elif event.type == Gdk.MOTION_NOTIFY:
+        elif event.type == Gdk.EventType.MOTION_NOTIFY:
             #print "mouse motion %u:%u" % (event.x, event.y)
             if event.y < self.slider_rail_up:
                 y = self.slider_rail_up
@@ -122,19 +123,24 @@ class CustomSliderWidget(Gtk.DrawingArea):
     def on_value_changed(self, adjustment):
         self.invalidate_all()
 
-    def on_expose(self, widget, event):
-        cairo_ctx = widget.window.cairo_create()
-
-        # set a clip region for the expose event
-        cairo_ctx.rectangle(event.area.x, event.area.y, event.area.width, event.area.height)
-        cairo_ctx.clip()
+    def on_expose(self, widget, cairo_ctx):
 
         self.draw(cairo_ctx)
 
         return False
 
+    def get_preferred_width(self, widget):
+        minimal_width = natural_width = self.width
+        return (minimal_width, natural_width)
+
+    def get_preferred_height(self, widget):
+        requisition = Gtk.Requisition()
+        on_size_request(self, widget, requisition)
+        minimal_height = natural_heigt = requisition.height
+        return (minimal_height, natural_height)
+
+
     def on_size_allocate(self, widget, allocation):
-        #print allocation.x, allocation.y, allocation.width, allocation.height
         self.width = float(allocation.width)
         self.height = float(allocation.height)
         self.font_size = 10
@@ -147,8 +153,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
     def invalidate_all(self):
         self.queue_draw_area(0, 0, int(self.width), int(self.height))
 
-    def draw(self, widget, cairo_ctx):
-        if self.flags() & Gtk.HAS_FOCUS:
+    def draw(self, cairo_ctx):
+        if self.has_focus():
             state = Gtk.StateType.PRELIGHT
         else:
             state = Gtk.StateType.NORMAL
@@ -156,7 +162,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
         #cairo_ctx.rectangle(0, 0, self.width, self.height)
         #cairo_ctx.set_source_color(self.style.bg[state])
         #cairo_ctx.fill_preserve()
-        cairo_ctx.set_source_color(self.style.fg[state])
+        #Gdk.cairo_set_source_color(cairo_ctx,
+        #        self.get_style_context().get_color(state).to_color())
         #cairo_ctx.stroke()
 
         slider_knob_width = self.width * 3 / 4
@@ -169,7 +176,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
         cairo_ctx.set_line_width(1)
 
         # slider rail
-        cairo_ctx.set_source_color(self.style.dark[state])
+        Gdk.cairo_set_source_color(cairo_ctx,
+                self.get_style_context().get_color(state).to_color())
         self.slider_rail_up = slider_knob_height/2 + (self.width - slider_knob_width)/2
         self.slider_rail_height = self.height - 2 * self.slider_rail_up
         cairo_ctx.move_to(slider_x, self.slider_rail_up)
@@ -182,12 +190,13 @@ class CustomSliderWidget(Gtk.DrawingArea):
                             slider_y - slider_knob_height/2,
                             float(slider_knob_width),
                             slider_knob_height)
-        cairo_ctx.set_source_color(self.style.bg[state])
+        Gdk.cairo_set_source_color(cairo_ctx,
+                self.get_style_context().get_background_color(state).to_color())
         cairo_ctx.fill_preserve()
-        cairo_ctx.set_source_color(self.style.fg[state])
+        Gdk.cairo_set_source_color(cairo_ctx,
+                self.get_style_context().get_color(state).to_color())
         cairo_ctx.stroke()
         # slider knob marks
-        cairo_ctx.set_source_color(self.style.fg[state])
         for i in range(int(slider_knob_height/2))[8:]:
             if i % 2 == 0:
                 correction = 1.0 + (float(slider_knob_height)/2.0 - float(i)) / 10.0

@@ -18,6 +18,7 @@
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
+import cairo
 
 class AdjustmentdBFS(Gtk.Adjustment):
     def __init__(self, scale, default_db):
@@ -186,6 +187,25 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
         # slider knob
         slider_y = round(self.slider_rail_up + self.slider_rail_height * (1 - self.adjustment.get_value()))
+        lg = cairo.LinearGradient(slider_x -
+                float(slider_knob_width)/2, slider_y - slider_knob_height/2,
+                slider_x - float(slider_knob_width)/2, slider_y +
+                slider_knob_height/2)
+        slider_alpha = 1.0
+        lg.add_color_stop_rgba(0, 0.55, 0.55, 0.55, slider_alpha)
+        lg.add_color_stop_rgba(0.1, 0.65, 0.65, 0.65, slider_alpha)
+        lg.add_color_stop_rgba(0.1, 0.75, 0.75, 0.75, slider_alpha)
+        lg.add_color_stop_rgba(0.125, 0.75, 0.75, 0.75, slider_alpha)
+        lg.add_color_stop_rgba(0.125, 0.15, 0.15, 0.15, slider_alpha)
+        lg.add_color_stop_rgba(0.475, 0.35, 0.35, 0.35, slider_alpha)
+        lg.add_color_stop_rgba(0.475, 0, 0, 0, slider_alpha)
+        lg.add_color_stop_rgba(0.525, 0, 0, 0, slider_alpha)
+        lg.add_color_stop_rgba(0.525, 0.35, 0.35, 0.35, slider_alpha)
+        lg.add_color_stop_rgba(0.875, 0.65, 0.65, 0.65, slider_alpha)
+        lg.add_color_stop_rgba(0.875, 0.75, 0.75, 0.75, slider_alpha)
+        lg.add_color_stop_rgba(0.900, 0.75, 0.75, 0.75, slider_alpha)
+        lg.add_color_stop_rgba(0.900, 0.15, 0.15, 0.15, slider_alpha)
+        lg.add_color_stop_rgba(1.000, 0.10, 0.10, 0.10, slider_alpha)
         cairo_ctx.rectangle(slider_x - float(slider_knob_width)/2,
                             slider_y - slider_knob_height/2,
                             float(slider_knob_width),
@@ -193,27 +213,5 @@ class CustomSliderWidget(Gtk.DrawingArea):
         Gdk.cairo_set_source_color(cairo_ctx,
                 self.get_style_context().get_background_color(state).to_color())
         cairo_ctx.fill_preserve()
-        Gdk.cairo_set_source_color(cairo_ctx,
-                self.get_style_context().get_color(state).to_color())
-        cairo_ctx.stroke()
-        # slider knob marks
-        for i in range(int(slider_knob_height/2))[8:]:
-            if i % 2 == 0:
-                correction = 1.0 + (float(slider_knob_height)/2.0 - float(i)) / 10.0
-                correction *= 2
-                y = slider_y - i
-                w = float(slider_knob_width)/2.0 - correction
-                x1 = slider_x - w
-                x2 = slider_x + w
-                cairo_ctx.move_to(x1, y+0.5)
-                cairo_ctx.line_to(x2, y+0.5)
-                y = slider_y + i
-                cairo_ctx.move_to(x1, y-0.5)
-                cairo_ctx.line_to(x2, y-0.5)
-        cairo_ctx.set_line_width(1)
-        cairo_ctx.stroke()
-        # slider knob middle mark
-        cairo_ctx.move_to(slider_x - float(slider_knob_width)/2, slider_y)
-        cairo_ctx.line_to(slider_x + float(slider_knob_width)/2, slider_y)
-        cairo_ctx.set_line_width(2)
-        cairo_ctx.stroke()
+        cairo_ctx.set_source(lg)
+        cairo_ctx.fill()

@@ -94,12 +94,27 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self.adjustment = adjustment
 
         self.connect("draw", self.on_expose)
-        #self.connect("size-request", self.on_size_request)
         self.connect("size_allocate", self.on_size_allocate)
         adjustment.connect("value-changed", self.on_value_changed)
         self.connect("button-press-event", self.on_mouse)
         self.connect("motion-notify-event", self.on_mouse)
-        self.set_events(Gdk.EventMask.BUTTON1_MOTION_MASK | Gdk.EventMask.BUTTON1_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.connect("scroll-event", self.on_scroll)
+        self.set_events(Gdk.EventMask.BUTTON1_MOTION_MASK |
+                Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
+
+    def on_scroll(self, widget, event):
+        delta = 0.05
+        value = self.adjustment.get_value()
+        if event.direction == Gdk.ScrollDirection.UP:
+            y = value + delta
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            y = value - delta
+        if y >= 1:
+            y = 1
+        elif y <= 0:
+            y = 0
+        self.adjustment.set_value(y)
+        return True
 
     def on_mouse(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS:
@@ -107,8 +122,6 @@ class CustomSliderWidget(Gtk.DrawingArea):
             if event.button == 1:
                 if event.y >= self.slider_rail_up and event.y < self.slider_rail_up + self.slider_rail_height:
                     self.adjustment.set_value(1 - float(event.y - self.slider_rail_up)/float(self.slider_rail_height))
-            elif event.button == 2:
-                self.adjustment.reset()
         elif event.type == Gdk.EventType.MOTION_NOTIFY:
             #print "mouse motion %u:%u" % (event.x, event.y)
             if event.y < self.slider_rail_up:

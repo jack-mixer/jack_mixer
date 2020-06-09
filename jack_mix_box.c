@@ -83,6 +83,9 @@ main(int argc, char *argv[])
 	}
 
 	mixer = create(jack_cli_name, false);
+	main_mix_channel = add_output_channel(mixer, "MAIN", true, false);
+	channel_set_midi_scale(main_mix_channel, scale);
+	channel_volume_write(main_mix_channel, 0.0);
 
 	channel_index = 0;
 	while (optind < argc) {
@@ -94,14 +97,14 @@ main(int argc, char *argv[])
 		if (snprintf(channel_name, 15, "Channel %d", channel_index) >= 15) {
 			abort();
 		}
-		channel = add_channel(mixer, channel_name, false);
+		channel = add_channel(mixer, channel_name, true);
 		if (channel == NULL) {
 			fprintf(stderr, "Failed to add channel %d, aborting\n", channel_index);
 			exit(1);
 		}
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));
 		channel_set_midi_scale(channel, scale);
-		channel_volume_write(channel, 0);
+		channel_volume_write(channel, -70);
 	}
 
 	while (true) {

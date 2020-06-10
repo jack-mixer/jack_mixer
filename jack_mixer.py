@@ -21,8 +21,11 @@
 
 from optparse import OptionParser
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import GObject
+from gi.repository import GLib
 import sys
 import os
 import signal
@@ -83,7 +86,7 @@ class JackMixer(SerializedObject):
 
             lash.lash_jack_client_name(lash_client, name)
 
-        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         if name != self.mixer.client_name():
             self.window.set_title(name + " ("+ self.mixer.client_name()+")" )
         else:
@@ -190,7 +193,7 @@ class JackMixer(SerializedObject):
         self.output_channels = []
 
         self.scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        self.scrolled_window.add_with_viewport(self.hbox_inputs)
+        self.scrolled_window.add(self.hbox_inputs)
 
         self.hbox_outputs = Gtk.HBox()
         self.hbox_outputs.set_spacing(0)
@@ -203,12 +206,12 @@ class JackMixer(SerializedObject):
 
         self.window.connect('delete-event', self.on_delete_event)
 
-        GObject.timeout_add(80, self.read_meters)
+        GLib.timeout_add(80, self.read_meters)
         self.lash_client = lash_client
 
-        GObject.timeout_add(200, self.lash_check_events)
+        GLib.timeout_add(200, self.lash_check_events)
 
-        GObject.timeout_add(50, self.midi_events_check)
+        GLib.timeout_add(50, self.midi_events_check)
 
 
     def on_delete_event(self, widget, event):
@@ -440,12 +443,12 @@ class JackMixer(SerializedObject):
         self.hbox_inputs.pack_start(frame, False, True, 0)
         channel.realize()
 
-        channel_edit_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_edit_input_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_input_channel, channel)
         self.channel_edit_input_menu_item.set_sensitive(True)
 
-        channel_remove_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_remove_input_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_input_channel, channel)
         self.channel_remove_input_menu_item.set_sensitive(True)
@@ -501,12 +504,12 @@ class JackMixer(SerializedObject):
         self.hbox_outputs.pack_start(frame, False, True, 0)
         channel.realize()
 
-        channel_edit_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_edit_output_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
         self.channel_edit_output_menu_item.set_sensitive(True)
 
-        channel_remove_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_remove_output_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_output_channel, channel)
         self.channel_remove_output_menu_item.set_sensitive(True)

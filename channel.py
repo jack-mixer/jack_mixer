@@ -31,7 +31,7 @@ except:
 
 button_padding = 1
 
-css = """
+css = b"""
 :not(button) > label {min-width: 100px;}
 button {padding: 0px}
 """
@@ -198,7 +198,7 @@ class Channel(Gtk.VBox, SerializedObject):
             try:
                 db = float(db_text)
                 #print "Volume digits confirmation \"%f dBFS\"" % db
-            except (ValueError), e:
+            except (ValueError) as e:
                 #print "Volume digits confirmation ignore, reset to current"
                 self.update_volume(False)
                 return
@@ -329,7 +329,7 @@ class InputChannel(Channel):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
 
         if self.channel == None:
-            raise Exception,"Cannot create a channel"
+            raise Exception("Cannot create a channel")
         Channel.realize(self)
         if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
@@ -550,7 +550,7 @@ class OutputChannel(Channel):
     def realize(self):
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
         if self.channel == None:
-            raise Exception,"Cannot create a channel"
+            raise Exception("Cannot create a channel")
         Channel.realize(self)
         if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc

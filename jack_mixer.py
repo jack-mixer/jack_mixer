@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # This file is part of jack_mixer
@@ -34,7 +34,7 @@ try:
     import lash
 except:
     lash = None
-    print >> sys.stderr, "Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app"
+    print("Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app", file=sys.stderr)
 
 # temporary change Python modules lookup path to look into installation
 # directory ($prefix/share/jack_mixer/)
@@ -232,10 +232,10 @@ class JackMixer(SerializedObject):
         elif signum == signal.SIGINT:
             Gtk.main_quit()
         else:
-            print "Unknown signal %d received" % signum
+            print("Unknown signal %d received" % signum)
 
     def cleanup(self):
-        print "Cleaning jack_mixer"
+        print("Cleaning jack_mixer")
         if not self.mixer:
             return
 
@@ -322,7 +322,7 @@ class JackMixer(SerializedObject):
             self.window.show_all()
 
     def on_edit_input_channel(self, widget, channel):
-        print 'Editing channel "%s"' % channel.channel_name
+        print('Editing channel "%s"' % channel.channel_name)
         channel.on_channel_properties()
 
     def remove_channel_edit_input_menuitem_by_label(self, widget, label):
@@ -330,7 +330,7 @@ class JackMixer(SerializedObject):
             self.channel_edit_input_menu.remove(widget)
 
     def on_remove_input_channel(self, widget, channel):
-        print 'Removing channel "%s"' % channel.channel_name
+        print('Removing channel "%s"' % channel.channel_name)
         self.channel_remove_input_menu.remove(widget)
         self.channel_edit_input_menu.foreach(
             self.remove_channel_edit_input_menuitem_by_label,
@@ -347,7 +347,7 @@ class JackMixer(SerializedObject):
             self.channel_remove_input_menu_item.set_sensitive(False)
 
     def on_edit_output_channel(self, widget, channel):
-        print 'Editing channel "%s"' % channel.channel_name
+        print('Editing channel "%s"' % channel.channel_name)
         channel.on_channel_properties()
 
     def remove_channel_edit_output_menuitem_by_label(self, widget, label):
@@ -355,7 +355,7 @@ class JackMixer(SerializedObject):
             self.channel_edit_output_menu.remove(widget)
 
     def on_remove_output_channel(self, widget, channel):
-        print 'Removing channel "%s"' % channel.channel_name
+        print('Removing channel "%s"' % channel.channel_name)
         self.channel_remove_output_menu.remove(widget)
         self.channel_edit_output_menu.foreach(
             self.remove_channel_edit_output_menuitem_by_label,
@@ -385,7 +385,7 @@ class JackMixer(SerializedObject):
             rename_parameters)
         self.channel_remove_output_menu.foreach(self.rename_channels,
             rename_parameters)
-        print "Renaming channel from %s to %s\n" % (oldname, newname)
+        print("Renaming channel from %s to %s\n" % (oldname, newname))
 
 
     def on_channels_clear(self, widget):
@@ -587,11 +587,11 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if self.save:
             self.save = False
             if self.current_filename:
-                print "saving on SIGUSR1 request"
+                print("saving on SIGUSR1 request")
                 self.on_save_cb()
-                print "save done"
+                print("save done")
             else:
-                print "not saving because filename is not known"
+                print("not saving because filename is not known")
             return True
 
         if not self.lash_client:
@@ -604,12 +604,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
 
             event_type = lash.lash_event_get_type(event)
             if event_type == lash.LASH_Quit:
-                print "jack_mixer: LASH ordered quit."
+                print("jack_mixer: LASH ordered quit.")
                 Gtk.main_quit()
                 return False
             elif event_type == lash.LASH_Save_File:
                 directory = lash.lash_event_get_string(event)
-                print "jack_mixer: LASH ordered to save data in directory %s" % directory
+                print("jack_mixer: LASH ordered to save data in directory %s" % directory)
                 filename = directory + os.sep + "jack_mixer.xml"
                 f = file(filename, "w")
                 self.save_to_xml(f)
@@ -617,14 +617,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 lash.lash_send_event(self.lash_client, event) # we crash with double free
             elif event_type == lash.LASH_Restore_File:
                 directory = lash.lash_event_get_string(event)
-                print "jack_mixer: LASH ordered to restore data from directory %s" % directory
+                print("jack_mixer: LASH ordered to restore data from directory %s" % directory)
                 filename = directory + os.sep + "jack_mixer.xml"
                 f = file(filename, "r")
                 self.load_from_xml(f, silence_errors=True)
                 f.close()
                 lash.lash_send_event(self.lash_client, event)
             else:
-                print "jack_mixer: Got unhandled LASH event, type " + str(event_type)
+                print("jack_mixer: Got unhandled LASH event, type " + str(event_type))
                 return True
 
             #lash.lash_event_destroy(event)
@@ -720,7 +720,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         #f.close
 
 def help():
-    print "Usage: %s [mixer_name]" % sys.argv[0]
+    print("Usage: %s [mixer_name]" % sys.argv[0])
 
 def main():
     # Connect to LASH if Python bindings are available, and the user did not
@@ -745,7 +745,7 @@ def main():
     if lash_client:
         server_name = lash.lash_get_server_name(lash_client)
         if server_name:
-            print "Successfully connected to LASH server at " + server_name
+            print("Successfully connected to LASH server at " + server_name)
         else:
             # getting the server name failed, probably not worth trying to do
             # further things with as a lash client.
@@ -761,7 +761,7 @@ def main():
 
     try:
         mixer = JackMixer(name, lash_client)
-    except Exception, e:
+    except Exception as e:
         err = Gtk.MessageDialog(None,
                             Gtk.DialogFlags.MODAL,
                             Gtk.MessageType.ERROR,
@@ -772,7 +772,7 @@ def main():
         sys.exit(1)
 
     if options.config:
-        f = file(options.config)
+        f = open(options.config)
         mixer.current_filename = options.config
         try:
             mixer.load_from_xml(f)

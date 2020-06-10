@@ -132,15 +132,15 @@ class Linear30dB(Base):
 def scale_test1(scale):
     for i in range(-97 * 2, 1, 1):
         db = float(i)/2.0
-        print "%5.1f dB maps to %f" % (db, scale.db_to_scale(db))
+        print("%5.1f dB maps to %f" % (db, scale.db_to_scale(db)))
 
 def scale_test2(scale):
     for i in range(101):
         s = float(i)/100.0
-        print "%.2f maps to %.1f dB" % (s, scale.scale_to_db(s))
+        print("%.2f maps to %.1f dB" % (s, scale.scale_to_db(s)))
 
 def print_db_to_scale(db):
-    print "%-.1f dB maps to %f" % (db, scale.db_to_scale(db))
+    print("%-.1f dB maps to %f" % (db, scale.db_to_scale(db)))
 
 def scale_test3(scale):
     print_db_to_scale(+77.0)

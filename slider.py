@@ -78,7 +78,7 @@ class GtkSlider(Gtk.VScale):
         self.connect('button-release-event', self.button_release_event)
 
     def button_press_event(self, widget, event):
-        print "button press", event.button
+        print("button press", event.button)
        # event.button = 2
         return False
 

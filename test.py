@@ -21,7 +21,7 @@ import jack_mixer_c
 
 mixer = jack_mixer_c.Mixer("test")
 
-print "Channels count: %u" % mixer.channels_count
+print("Channels count: %u" % mixer.channels_count)
 channel = mixer.add_channel("Channel 1", True)
 
 if channel.is_stereo:
@@ -31,12 +31,12 @@ else:
 
 channel_name = channel.name
 
-print "%s channel \"%s\"" % (channel_type, channel_name)
+print("%s channel \"%s\"" % (channel_type, channel_name))
 
-print "Channel meter read %s" % repr(channel.meter)
-print "Channels count: %u" % mixer.channels_count
+print("Channel meter read %s" % repr(channel.meter))
+print("Channels count: %u" % mixer.channels_count)
 
 channel.remove()
 
-print "Channels count: %u" % mixer.channels_count
+print("Channels count: %u" % mixer.channels_count)
 

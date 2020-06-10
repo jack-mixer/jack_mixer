@@ -22,7 +22,7 @@ from gi.repository import GObject
 try:
     from gi.repository import GConf
 except:
-    print "Cannot load Python bindings for GConf, your preferences will not be preserved across jack_mixer invocations"
+    print("Cannot load Python bindings for GConf, your preferences will not be preserved across jack_mixer invocations")
     GConf = None
 
 def lookup_scale(scales, scale_id):
@@ -93,7 +93,7 @@ class Factory(GObject.GObject):
                 self.default_meter_scale = scale
                 self.emit("default-meter-scale-changed", self.default_meter_scale)
         else:
-            print "Ignoring GConf default_meter_scale setting, because \"%s\" scale is not known" % scale_id
+            print("Ignoring GConf default_meter_scale setting, because \"%s\" scale is not known" % scale_id)
 
     def on_gconf_default_slider_scale_changed(self, client, connection_id, entry):
         #print "GConf default_slider_scale changed"
@@ -109,7 +109,7 @@ class Factory(GObject.GObject):
                 self.default_slider_scale = scale
                 self.emit("default-slider-scale-changed", self.default_slider_scale)
         else:
-            print "Ignoring GConf default_slider_scale setting, because \"%s\" scale is not known" % scale_id
+            print("Ignoring GConf default_slider_scale setting, because \"%s\" scale is not known" % scale_id)
 
     def set_vumeter_color(self, color, from_gconf=False):
         if GConf and not from_gconf:

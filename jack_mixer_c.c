@@ -40,7 +40,7 @@ Scale_dealloc(ScaleObject *self)
 {
 	if (self->scale)
 		scale_destroy(self->scale);
-	self->ob_type->tp_free((PyObject*)self);
+	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static int
@@ -108,8 +108,7 @@ static PyMethodDef Scale_methods[] = {
 };
 
 static PyTypeObject ScaleType = {
-	PyObject_HEAD_INIT(NULL)
-	0,       /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"jack_mixer_c.Scale",    /*tp_name*/
 	sizeof(ScaleObject), /*tp_basicsize*/
 	0,       /*tp_itemsize*/
@@ -162,7 +161,7 @@ static void
 Channel_dealloc(ChannelObject *self)
 {
 	Py_XDECREF(self->midi_change_callback);
-	self->ob_type->tp_free((PyObject*)self);
+	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static int
@@ -377,20 +376,20 @@ Channel_set_midi_change_callback(ChannelObject *self, PyObject *value, void *clo
 static PyObject*
 Channel_get_name(ChannelObject *self, void *closure)
 {
-	return PyString_FromString(channel_get_name(self->channel));
+	return PyUnicode_FromString(channel_get_name(self->channel));
 }
 
 static int
 Channel_set_name(ChannelObject *self, PyObject *value, void *closure)
 {
-	channel_rename(self->channel, PyString_AsString(value));
+	channel_rename(self->channel, PyUnicode_AsUTF8(value));
 	return 0;
 }
 
 static PyObject*
 Channel_get_balance_midi_cc(ChannelObject *self, void *closure)
 {
-	return PyInt_FromLong(channel_get_balance_midi_cc(self->channel));
+	return PyLong_FromLong(channel_get_balance_midi_cc(self->channel));
 }
 
 static int
@@ -399,7 +398,7 @@ Channel_set_balance_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	int new_cc;
 	unsigned int result;
 
-	new_cc = PyInt_AsLong(value);
+	new_cc = PyLong_AsLong(value);
 	result = channel_set_balance_midi_cc(self->channel, new_cc);
 	if (result == 0) {
 		return 0;
@@ -413,7 +412,7 @@ Channel_set_balance_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 static PyObject*
 Channel_get_volume_midi_cc(ChannelObject *self, void *closure)
 {
-	return PyInt_FromLong(channel_get_volume_midi_cc(self->channel));
+	return PyLong_FromLong(channel_get_volume_midi_cc(self->channel));
 }
 
 static int
@@ -422,7 +421,7 @@ Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	int new_cc;
 	unsigned int result;
 
-	new_cc = PyInt_AsLong(value);
+	new_cc = PyLong_AsLong(value);
 	result = channel_set_volume_midi_cc(self->channel, new_cc);
 	if (result == 0) {
 		return 0;
@@ -436,7 +435,7 @@ Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 static PyObject*
 Channel_get_mute_midi_cc(ChannelObject *self, void *closure)
 {
-	return PyInt_FromLong(channel_get_mute_midi_cc(self->channel));
+	return PyLong_FromLong(channel_get_mute_midi_cc(self->channel));
 }
 
 static int
@@ -445,7 +444,7 @@ Channel_set_mute_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	int new_cc;
 	unsigned int result;
 
-	new_cc = PyInt_AsLong(value);
+	new_cc = PyLong_AsLong(value);
 	result = channel_set_mute_midi_cc(self->channel, new_cc);
 	if (result == 0) {
 		return 0;
@@ -459,7 +458,7 @@ Channel_set_mute_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 static PyObject*
 Channel_get_solo_midi_cc(ChannelObject *self, void *closure)
 {
-	return PyInt_FromLong(channel_get_solo_midi_cc(self->channel));
+	return PyLong_FromLong(channel_get_solo_midi_cc(self->channel));
 }
 
 static int
@@ -468,7 +467,7 @@ Channel_set_solo_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	int new_cc;
 	unsigned int result;
 
-	new_cc = PyInt_AsLong(value);
+	new_cc = PyLong_AsLong(value);
 	result = channel_set_solo_midi_cc(self->channel, new_cc);
 	if (result == 0) {
 		return 0;
@@ -573,8 +572,7 @@ static PyMethodDef channel_methods[] = {
 };
 
 static PyTypeObject ChannelType = {
-	PyObject_HEAD_INIT(NULL)
-	0,       /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"jack_mixer_c.Channel",    /*tp_name*/
 	sizeof(ChannelObject), /*tp_basicsize*/
 	0,       /*tp_itemsize*/
@@ -755,8 +753,7 @@ static PyMethodDef output_channel_methods[] = {
 };
 
 static PyTypeObject OutputChannelType = {
-	PyObject_HEAD_INIT(NULL)
-	0,       /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"jack_mixer_c.OutputChannel",    /*tp_name*/
 	sizeof(OutputChannelObject), /*tp_basicsize*/
 	0,       /*tp_itemsize*/
@@ -821,7 +818,7 @@ Mixer_dealloc(MixerObject *self)
 {
 	if (self->mixer)
 		destroy(self->mixer);
-	self->ob_type->tp_free((PyObject*)self);
+	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject*
@@ -865,19 +862,19 @@ static PyMemberDef Mixer_members[] = {
 static PyObject*
 Mixer_get_channels_count(MixerObject *self, void *closure)
 {
-	return PyInt_FromLong(get_channels_count(self->mixer));
+	return PyLong_FromLong(get_channels_count(self->mixer));
 }
 
 static PyObject*
 Mixer_get_client_name(MixerObject *self, void *closure)
 {
-	return PyString_FromString(get_client_name(self->mixer));
+	return PyUnicode_FromString(get_client_name(self->mixer));
 }
 
 static PyObject*
 Mixer_get_last_midi_channel(MixerObject *self, void *closure)
 {
-	return PyInt_FromLong(get_last_midi_channel(self->mixer));
+	return PyLong_FromLong(get_last_midi_channel(self->mixer));
 }
 
 static int
@@ -886,7 +883,7 @@ Mixer_set_last_midi_channel(MixerObject *self, PyObject *value, void *closure)
 	int new_channel;
 	unsigned int result;
 
-	new_channel = PyInt_AsLong(value);
+	new_channel = PyLong_AsLong(value);
 	result = set_last_midi_channel(self->mixer, new_channel);
 	if (result == 0) {
 		return 0;
@@ -957,8 +954,7 @@ static PyMethodDef Mixer_methods[] = {
 };
 
 static PyTypeObject MixerType = {
-	PyObject_HEAD_INIT(NULL)
-	0,       /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"jack_mixer_c.Mixer",    /*tp_name*/
 	sizeof(MixerObject), /*tp_basicsize*/
 	0,       /*tp_itemsize*/
@@ -1000,26 +996,38 @@ static PyTypeObject MixerType = {
 
 
 static PyMethodDef jack_mixer_methods[] = {
-	{NULL}  /* Sentinel */
+	{NULL, NULL, 0, NULL}  /* Sentinel */
 };
 
 
+static struct PyModuleDef moduledef = {
+	PyModuleDef_HEAD_INIT,
+	"jack_mixer_c",                /* m_name */
+	"Jack Mixer C Helper Module",  /* m_doc */
+	-1,                            /* m_size */
+	jack_mixer_methods,            /* m_methods */
+	NULL,                          /* m_reload */
+	NULL,                          /* m_traverse */
+	NULL,                          /* m_clear */
+	NULL,                          /* m_free */
+};
 
-PyMODINIT_FUNC initjack_mixer_c(void)
+PyMODINIT_FUNC PyInit_jack_mixer_c(void)
 {
 	PyObject *m;
 
 	if (PyType_Ready(&MixerType) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&ChannelType) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&OutputChannelType) < 0)
-		return;
+		return NULL;
 	if (PyType_Ready(&ScaleType) < 0)
-		return;
-
-	m = Py_InitModule3("jack_mixer_c", jack_mixer_methods, "Jack Mixer C Helper Module");
-
+		return NULL;
+		
+	m = PyModule_Create(&moduledef);
+	//m = Py_InitModule3("jack_mixer_c", jack_mixer_methods, "module doc");
+	
 	Py_INCREF(&MixerType);
 	PyModule_AddObject(m, "Mixer", (PyObject*)&MixerType);
 	Py_INCREF(&ChannelType);
@@ -1028,5 +1036,7 @@ PyMODINIT_FUNC initjack_mixer_c(void)
 	PyModule_AddObject(m, "OutputChannel", (PyObject*)&OutputChannelType);
 	Py_INCREF(&ScaleType);
 	PyModule_AddObject(m, "Scale", (PyObject*)&ScaleType);
+	
+	return m;
 }
 

@@ -21,12 +21,10 @@
  *****************************************************************************/
 
 /*
- * jack_mix_box is a most minimalistic jack mixer, a set of mono input
+ * jack_mix_box is a most minimalistic jack mixer, a set of mono/sterero input
  * channels, mixed to a single output channel, with the volume of the
  * input channels controlled by MIDI control change (CC) codes.
  *
- * Usage:
- *   jack_mix_box [ -n JACK_CLI_NAME ] MIDI_CC_1 MIDI_CC_2 ....
  */
 
 #include <stdlib.h>
@@ -36,6 +34,14 @@
 #include <getopt.h>
 #include "jack_mixer.h"
 
+void
+usage()
+{
+
+	printf("Usage:\n");
+	printf("\tjack_mix_box [ -n|--name JACK_CLI_NAME ] [ -s|--stereo ] MIDI_CC_1 MIDI_CC_2 ....\n\n");
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -44,23 +50,33 @@ main(int argc, char *argv[])
 	jack_mixer_channel_t main_mix_channel;
 	char *jack_cli_name = NULL;
 	int channel_index;
+	bool bStereo = false;
 
 	while (1) {
 		int c;
 		static struct option long_options[] =
 		{
 			{"name",  required_argument, 0, 'n'},
+			{"help",  required_argument, 0, 'h'},
+			{"stereo",  required_argument, 0, 's'},
 			{0, 0, 0, 0}
 		};
 		int option_index = 0;
 
-		c = getopt_long (argc, argv, "n:", long_options, &option_index);
+		c = getopt_long (argc, argv, "shn:", long_options, &option_index);
 		if (c == -1)
 			break;
 
 		switch (c) {
 			case 'n':
 				jack_cli_name = strdup(optarg);
+				break;
+			case 's':
+				bStereo = true;
+				break;
+			case 'h':
+				usage();
+				exit(0);
 				break;
 			default:
 				fprintf(stderr, "Unknown argument, aborting.\n");
@@ -97,7 +113,7 @@ main(int argc, char *argv[])
 		if (snprintf(channel_name, 15, "Channel %d", channel_index) >= 15) {
 			abort();
 		}
-		channel = add_channel(mixer, channel_name, true);
+		channel = add_channel(mixer, channel_name, bStereo);
 		if (channel == NULL) {
 			fprintf(stderr, "Failed to add channel %d, aborting\n", channel_index);
 			exit(1);

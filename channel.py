@@ -838,7 +838,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         vbox = Gtk.VBox(10)
         window.add(vbox)
         window.timeout = 5
-        vbox.pack_start(Gtk.Label('Please move the MIDI control you want to use for this function.', True, True, 0))
+        vbox.pack_start(Gtk.Label(label='Please move the MIDI control you want to use for this function.'), True, True, 0)
         timeout_label = Gtk.Label(label='This window will close in 5 seconds')
         vbox.pack_start(timeout_label, True, True, 0)
         def close_sense_timeout(window, entry):

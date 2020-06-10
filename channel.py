@@ -710,8 +710,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.channel = parent
         self.app = app
         self.mixer = self.channel.mixer
-        GObject.GObject.__init__(self)
-        self.set_title('Channel "%s" Properties' % self.channel.channel_name)
+        Gtk.Dialog.__init__(self, 'Channel "%s" Properties' % self.channel.channel_name, app.window)
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY)
@@ -827,7 +826,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
-        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        window = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
         window.set_destroy_with_parent(True)
         window.set_transient_for(self)
         window.set_decorated(False)

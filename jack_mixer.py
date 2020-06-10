@@ -54,44 +54,6 @@ from serialization import SerializedObject, Serializator
 # restore Python modules lookup path
 sys.path = old_path
 
-
-class TrayIcon(Gtk.StatusIcon):
-    mixer = None
-
-    def __init__(self, mixer):
-        GObject.GObject.__init__(self)
-        self.mixer = mixer
-        self.set_from_icon_name( mixer.window.get_icon_name() )
-        self.set_tooltip_text('Jack Mixer ('+mixer.mixer.client_name()+')')
-        self.set_visible(True)
-
-        self.menu = menu = Gtk.Menu()
-
-        window_item = Gtk.MenuItem("Show Mixer")
-        window_item.connect("activate", self.show_window, "Jack Mixer")
-        menu.append(window_item)
-
-        menu.append(Gtk.SeparatorMenuItem())
-
-        quit_item = Gtk.MenuItem("Quit")
-        quit_item.connect("activate", self.mixer.on_quit_cb, "quit")
-        menu.append(quit_item)
-        menu.show_all()
-
-        self.connect("activate", self.show_window)
-        self.connect('popup-menu', self.icon_clicked)
-
-    def show_window(self, widget, event=None):
-        if self.mixer.window.get_property("visible"):
-            self.mixer.window.hide()
-        else:
-            self.mixer.window.present()
-
-    def icon_clicked(self, status, button, time):
-        self.menu.popup(None, None, None, button, time)
-
-
-
 class JackMixer(SerializedObject):
 
     # scales suitable as meter scales
@@ -239,7 +201,6 @@ class JackMixer(SerializedObject):
 
         self.window.connect("destroy", Gtk.main_quit)
 
-        self.trayicon = TrayIcon(self)
         self.window.connect('delete-event', self.on_delete_event)
 
         GObject.timeout_add(80, self.read_meters)

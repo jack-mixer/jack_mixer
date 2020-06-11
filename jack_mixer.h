@@ -33,10 +33,11 @@
 %}
 #endif
 
+#include "scale.h"
+
 typedef void * jack_mixer_t;
 typedef void * jack_mixer_channel_t;
 typedef void * jack_mixer_output_channel_t;
-typedef void * jack_mixer_scale_t;
 typedef void * jack_mixer_threshold_t;
 
 jack_mixer_t
@@ -208,33 +209,6 @@ channel_set_midi_scale(
 bool
 channel_get_midi_in_got_events(
   jack_mixer_channel_t channel);
-
-jack_mixer_scale_t
-scale_create();
-
-bool
-scale_add_threshold(
-  jack_mixer_scale_t scale,
-  float db,
-  float scale_value);
-
-void
-scale_calculate_coefficients(
-  jack_mixer_scale_t scale);
-
-double
-scale_db_to_scale(
-  jack_mixer_scale_t scale,
-  double db);
-
-double
-scale_scale_to_db(
-  jack_mixer_scale_t scale,
-  double scale_value);
-
-void
-scale_destroy(
-  jack_mixer_scale_t scale);
 
 jack_mixer_output_channel_t
 add_output_channel(

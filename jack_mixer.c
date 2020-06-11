@@ -851,10 +851,7 @@ calc_channel_frames(
 
       frame_right = channel_ptr->right_buffer_ptr[i] * vol_r;
     }
-    else
-    {
-      frame_right = channel_ptr->right_buffer_ptr[i] * vol_r;
-    }
+
     channel_ptr->frames_left[i-start] = frame_left;
     channel_ptr->frames_right[i-start] = frame_right;
 

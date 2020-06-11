@@ -109,6 +109,9 @@ double
 channel_volume_read(
   jack_mixer_channel_t channel);
 
+void
+channels_volumes_read(jack_mixer_t mixer_ptr);
+
 /* balance is from -1.0 (full left) to +1.0 (full right) */
 void
 channel_balance_write(

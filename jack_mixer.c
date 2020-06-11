@@ -510,6 +510,21 @@ channel_volume_read(
 }
 
 void
+channels_volumes_read(jack_mixer_t mixer_ptr)
+{
+    GSList *node_ptr;
+    struct channel *pChannel;
+    struct jack_mixer * pMixer = (struct jack_mixer *)mixer_ptr;
+
+    for (node_ptr = pMixer->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
+    {
+        pChannel = (struct channel *)node_ptr->data;
+        double vol = channel_volume_read( (jack_mixer_channel_t)pChannel);
+        printf("volume is %f dbFS for mixer channel: %s\n", vol, pChannel->name);
+    }
+}
+
+void
 channel_balance_write(
   jack_mixer_channel_t channel,
   double balance)

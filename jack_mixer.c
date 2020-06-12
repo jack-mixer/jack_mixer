@@ -782,7 +782,8 @@ mix_one(
 
     if (!mix_channel->out_mute) {
         mix_channel->left_buffer_ptr[i] = mix_channel->tmp_mixed_frames_left[i];
-        mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
+        if (mix_channel->stereo)
+          mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
 }
@@ -853,7 +854,7 @@ calc_channel_frames(
     }
     else
     {
-      frame_right = channel_ptr->right_buffer_ptr[i] * vol_r;
+      frame_right = channel_ptr->left_buffer_ptr[i] * vol_r;
     }
     channel_ptr->frames_left[i-start] = frame_left;
     channel_ptr->frames_right[i-start] = frame_right;

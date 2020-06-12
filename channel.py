@@ -56,7 +56,7 @@ class Channel(Gtk.VBox, SerializedObject):
         self.stereo = stereo
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
-        self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0)
+        self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
         self.balance_adjustment = Gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
         self.future_out_mute = None
         self.future_volume_midi_cc = None

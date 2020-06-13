@@ -809,8 +809,8 @@ calc_channel_frames(
   jack_nframes_t end)
 {
   jack_nframes_t i;
-  jack_default_audio_sample_t frame_left;
-  jack_default_audio_sample_t frame_right;
+  jack_default_audio_sample_t frame_left = 0.0f;
+  jack_default_audio_sample_t frame_right = 0.0f;
   unsigned int steps = channel_ptr->num_volume_transition_steps;
   for (i = start ; i < end ; i++)
   {

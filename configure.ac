@@ -80,9 +80,8 @@ AC_ARG_ENABLE(pymod-checks, [AS_HELP_STRING(--disable-pymod-checks, [Force disab
 
 if test "$disable_pymod_checks" != "yes"
 then
-  AM_CHECK_PYMOD(gtk,,,[AC_MSG_ERROR(Could not find PyGTK)])
+  AM_CHECK_PYMOD(gi,,,[AC_MSG_ERROR(Could not find Pygi)])
   AM_CHECK_PYMOD(cairo,,,[AC_MSG_ERROR(Could not find Pycairo)])
-  AM_CHECK_PYMOD(fpconst,,,[AC_MSG_ERROR(Could not find fpconst Python module)])
 else
   AC_MSG_WARN([Checks for python modules required runtime have been force disabled])
 fi

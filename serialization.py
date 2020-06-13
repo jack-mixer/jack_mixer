@@ -79,7 +79,7 @@ class Serializator:
     def unserialize_one(self, backend, object, backend_object):
         #print "Unserializing " + repr(object)
         properties = backend_object.get_properties()
-        for name, value in properties.iteritems():
+        for name, value in properties.items():
             #print "%s = %s" % (name, value)
             if not object.unserialize_property(name, value):
                 return False

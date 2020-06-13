@@ -17,9 +17,9 @@
 
 from gi.repository import Gtk
 from gi.repository import Gdk
-import fpconst
 from gi.repository import Pango
 from gi.repository import GObject
+import math
 
 class AbspeakWidget(Gtk.EventBox):
     def __init__(self):
@@ -31,7 +31,7 @@ class AbspeakWidget(Gtk.EventBox):
         #self.label.set_attributes(attrs)
         self.add(self.label)
         self.connect("button-press-event", self.on_mouse)
-        self.peak = fpconst.NegInf
+        self.peak = -math.inf
 
     def on_mouse(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS:
@@ -44,7 +44,7 @@ class AbspeakWidget(Gtk.EventBox):
 
     def set_peak(self, peak):
         self.peak = peak
-        if fpconst.isNaN(peak):
+        if math.isnan(peak):
             self.modify_bg(Gtk.StateType.NORMAL, Gdk.Color(int(65535 * 0.7), 0, 0))
             self.label.set_text("NaN")
         else:

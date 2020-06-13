@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # This file is part of jack_mixer
@@ -21,8 +21,11 @@
 
 from optparse import OptionParser
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import GObject
+from gi.repository import GLib
 import sys
 import os
 import signal
@@ -31,7 +34,7 @@ try:
     import lash
 except:
     lash = None
-    print >> sys.stderr, "Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app"
+    print("Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app", file=sys.stderr)
 
 # temporary change Python modules lookup path to look into installation
 # directory ($prefix/share/jack_mixer/)
@@ -53,44 +56,6 @@ from serialization import SerializedObject, Serializator
 
 # restore Python modules lookup path
 sys.path = old_path
-
-
-class TrayIcon(Gtk.StatusIcon):
-    mixer = None
-
-    def __init__(self, mixer):
-        GObject.GObject.__init__(self)
-        self.mixer = mixer
-        self.set_from_icon_name( mixer.window.get_icon_name() )
-        self.set_tooltip_text('Jack Mixer ('+mixer.mixer.client_name()+')')
-        self.set_visible(True)
-
-        self.menu = menu = Gtk.Menu()
-
-        window_item = Gtk.MenuItem("Show Mixer")
-        window_item.connect("activate", self.show_window, "Jack Mixer")
-        menu.append(window_item)
-
-        menu.append(Gtk.SeparatorMenuItem())
-
-        quit_item = Gtk.MenuItem("Quit")
-        quit_item.connect("activate", self.mixer.on_quit_cb, "quit")
-        menu.append(quit_item)
-        menu.show_all()
-
-        self.connect("activate", self.show_window)
-        self.connect('popup-menu', self.icon_clicked)
-
-    def show_window(self, widget, event=None):
-        if self.mixer.window.get_property("visible"):
-            self.mixer.window.hide()
-        else:
-            self.mixer.window.present()
-
-    def icon_clicked(self, status, button, time):
-        self.menu.popup(None, None, None, button, time)
-
-
 
 class JackMixer(SerializedObject):
 
@@ -121,7 +86,7 @@ class JackMixer(SerializedObject):
 
             lash.lash_jack_client_name(lash_client, name)
 
-        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         if name != self.mixer.client_name():
             self.window.set_title(name + " ("+ self.mixer.client_name()+")" )
         else:
@@ -228,7 +193,7 @@ class JackMixer(SerializedObject):
         self.output_channels = []
 
         self.scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        self.scrolled_window.add_with_viewport(self.hbox_inputs)
+        self.scrolled_window.add(self.hbox_inputs)
 
         self.hbox_outputs = Gtk.HBox()
         self.hbox_outputs.set_spacing(0)
@@ -239,15 +204,14 @@ class JackMixer(SerializedObject):
 
         self.window.connect("destroy", Gtk.main_quit)
 
-        self.trayicon = TrayIcon(self)
         self.window.connect('delete-event', self.on_delete_event)
 
-        GObject.timeout_add(80, self.read_meters)
+        GLib.timeout_add(80, self.read_meters)
         self.lash_client = lash_client
 
-        GObject.timeout_add(200, self.lash_check_events)
+        GLib.timeout_add(200, self.lash_check_events)
 
-        GObject.timeout_add(50, self.midi_events_check)
+        GLib.timeout_add(50, self.midi_events_check)
 
 
     def on_delete_event(self, widget, event):
@@ -268,10 +232,10 @@ class JackMixer(SerializedObject):
         elif signum == signal.SIGINT:
             Gtk.main_quit()
         else:
-            print "Unknown signal %d received" % signum
+            print("Unknown signal %d received" % signum)
 
     def cleanup(self):
-        print "Cleaning jack_mixer"
+        print("Cleaning jack_mixer")
         if not self.mixer:
             return
 
@@ -358,7 +322,7 @@ class JackMixer(SerializedObject):
             self.window.show_all()
 
     def on_edit_input_channel(self, widget, channel):
-        print 'Editing channel "%s"' % channel.channel_name
+        print('Editing channel "%s"' % channel.channel_name)
         channel.on_channel_properties()
 
     def remove_channel_edit_input_menuitem_by_label(self, widget, label):
@@ -366,7 +330,7 @@ class JackMixer(SerializedObject):
             self.channel_edit_input_menu.remove(widget)
 
     def on_remove_input_channel(self, widget, channel):
-        print 'Removing channel "%s"' % channel.channel_name
+        print('Removing channel "%s"' % channel.channel_name)
         self.channel_remove_input_menu.remove(widget)
         self.channel_edit_input_menu.foreach(
             self.remove_channel_edit_input_menuitem_by_label,
@@ -383,7 +347,7 @@ class JackMixer(SerializedObject):
             self.channel_remove_input_menu_item.set_sensitive(False)
 
     def on_edit_output_channel(self, widget, channel):
-        print 'Editing channel "%s"' % channel.channel_name
+        print('Editing channel "%s"' % channel.channel_name)
         channel.on_channel_properties()
 
     def remove_channel_edit_output_menuitem_by_label(self, widget, label):
@@ -391,7 +355,7 @@ class JackMixer(SerializedObject):
             self.channel_edit_output_menu.remove(widget)
 
     def on_remove_output_channel(self, widget, channel):
-        print 'Removing channel "%s"' % channel.channel_name
+        print('Removing channel "%s"' % channel.channel_name)
         self.channel_remove_output_menu.remove(widget)
         self.channel_edit_output_menu.foreach(
             self.remove_channel_edit_output_menuitem_by_label,
@@ -421,7 +385,7 @@ class JackMixer(SerializedObject):
             rename_parameters)
         self.channel_remove_output_menu.foreach(self.rename_channels,
             rename_parameters)
-        print "Renaming channel from %s to %s\n" % (oldname, newname)
+        print("Renaming channel from %s to %s\n" % (oldname, newname))
 
 
     def on_channels_clear(self, widget):
@@ -479,12 +443,12 @@ class JackMixer(SerializedObject):
         self.hbox_inputs.pack_start(frame, False, True, 0)
         channel.realize()
 
-        channel_edit_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_edit_input_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_input_channel, channel)
         self.channel_edit_input_menu_item.set_sensitive(True)
 
-        channel_remove_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_remove_input_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_input_channel, channel)
         self.channel_remove_input_menu_item.set_sensitive(True)
@@ -540,12 +504,12 @@ class JackMixer(SerializedObject):
         self.hbox_outputs.pack_start(frame, False, True, 0)
         channel.realize()
 
-        channel_edit_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_edit_output_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
         self.channel_edit_output_menu_item.set_sensitive(True)
 
-        channel_remove_menu_item = Gtk.MenuItem(channel.channel_name)
+        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_remove_output_menu.append(channel_remove_menu_item)
         channel_remove_menu_item.connect("activate", self.on_remove_output_channel, channel)
         self.channel_remove_output_menu_item.set_sensitive(True)
@@ -596,7 +560,7 @@ class JackMixer(SerializedObject):
     def on_about(self, *args):
         about = Gtk.AboutDialog()
         about.set_name('jack_mixer')
-        about.set_copyright('Copyright © 2006-2010\nNedko Arnaudov, Frederic Peters, Arnout Engelen')
+        about.set_copyright('Copyright © 2006-2020\nNedko Arnaudov, Frederic Peters, Arnout Engelen, Daniel Sheeler')
         about.set_license('''\
 jack_mixer is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -623,11 +587,11 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if self.save:
             self.save = False
             if self.current_filename:
-                print "saving on SIGUSR1 request"
+                print("saving on SIGUSR1 request")
                 self.on_save_cb()
-                print "save done"
+                print("save done")
             else:
-                print "not saving because filename is not known"
+                print("not saving because filename is not known")
             return True
 
         if not self.lash_client:
@@ -640,12 +604,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
 
             event_type = lash.lash_event_get_type(event)
             if event_type == lash.LASH_Quit:
-                print "jack_mixer: LASH ordered quit."
+                print("jack_mixer: LASH ordered quit.")
                 Gtk.main_quit()
                 return False
             elif event_type == lash.LASH_Save_File:
                 directory = lash.lash_event_get_string(event)
-                print "jack_mixer: LASH ordered to save data in directory %s" % directory
+                print("jack_mixer: LASH ordered to save data in directory %s" % directory)
                 filename = directory + os.sep + "jack_mixer.xml"
                 f = file(filename, "w")
                 self.save_to_xml(f)
@@ -653,14 +617,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 lash.lash_send_event(self.lash_client, event) # we crash with double free
             elif event_type == lash.LASH_Restore_File:
                 directory = lash.lash_event_get_string(event)
-                print "jack_mixer: LASH ordered to restore data from directory %s" % directory
+                print("jack_mixer: LASH ordered to restore data from directory %s" % directory)
                 filename = directory + os.sep + "jack_mixer.xml"
                 f = file(filename, "r")
                 self.load_from_xml(f, silence_errors=True)
                 f.close()
                 lash.lash_send_event(self.lash_client, event)
             else:
-                print "jack_mixer: Got unhandled LASH event, type " + str(event_type)
+                print("jack_mixer: Got unhandled LASH event, type " + str(event_type))
                 return True
 
             #lash.lash_event_destroy(event)
@@ -756,7 +720,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         #f.close
 
 def help():
-    print "Usage: %s [mixer_name]" % sys.argv[0]
+    print("Usage: %s [mixer_name]" % sys.argv[0])
 
 def main():
     # Connect to LASH if Python bindings are available, and the user did not
@@ -781,7 +745,7 @@ def main():
     if lash_client:
         server_name = lash.lash_get_server_name(lash_client)
         if server_name:
-            print "Successfully connected to LASH server at " + server_name
+            print("Successfully connected to LASH server at " + server_name)
         else:
             # getting the server name failed, probably not worth trying to do
             # further things with as a lash client.
@@ -797,7 +761,7 @@ def main():
 
     try:
         mixer = JackMixer(name, lash_client)
-    except Exception, e:
+    except Exception as e:
         err = Gtk.MessageDialog(None,
                             Gtk.DialogFlags.MODAL,
                             Gtk.MessageType.ERROR,
@@ -808,7 +772,7 @@ def main():
         sys.exit(1)
 
     if options.config:
-        f = file(options.config)
+        f = open(options.config)
         mixer.current_filename = options.config
         try:
             mixer.load_from_xml(f)

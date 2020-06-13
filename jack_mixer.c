@@ -797,7 +797,8 @@ mix_one(
 
     if (!mix_channel->out_mute) {
         mix_channel->left_buffer_ptr[i] = mix_channel->tmp_mixed_frames_left[i];
-        mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
+        if (mix_channel->stereo)
+          mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
 }

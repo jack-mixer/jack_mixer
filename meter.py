@@ -38,7 +38,7 @@ class MeterWidget(Gtk.DrawingArea):
         self.cache_surface = None
 
     def get_preferred_width(self):
-        print 'get_preferred_width called'
+        print('get_preferred_width called')
         return 2
 
     def get_preferred_height(self):

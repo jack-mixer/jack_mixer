@@ -4,6 +4,7 @@ Version 11 (unreleased)
 
  * Spread out volume transition over a period of time to reduce
    discontinuities.
+ * Port to pygobject and GTK3.
 
 With contributions from Daniel Sheeler.
 

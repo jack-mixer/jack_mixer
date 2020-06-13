@@ -21,10 +21,11 @@ from gi.repository import GObject
 import cairo
 
 class AdjustmentdBFS(Gtk.Adjustment):
-    def __init__(self, scale, default_db):
+    def __init__(self, scale, default_db, step_inc):
         self.default_value = scale.db_to_scale(default_db)
         self.db = default_db
         self.scale = scale
+        self.step_increment = step_inc
         Gtk.Adjustment.__init__(self, self.default_value, 0.0, 1.0, 0.02)
         self.connect("value-changed", self.on_value_changed)
         self.disable_value_notify = False
@@ -78,7 +79,7 @@ class GtkSlider(Gtk.VScale):
         self.connect('button-release-event', self.button_release_event)
 
     def button_press_event(self, widget, event):
-        print "button press", event.button
+        print("button press", event.button)
        # event.button = 2
         return False
 
@@ -103,7 +104,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
                 Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
 
     def on_scroll(self, widget, event):
-        delta = 0.05
+        delta = self.adjustment.step_increment 
         value = self.adjustment.get_value()
         if event.direction == Gdk.ScrollDirection.UP:
             y = value + delta

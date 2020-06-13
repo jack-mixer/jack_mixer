@@ -31,7 +31,7 @@ except:
 
 button_padding = 1
 
-css = """
+css = b"""
 :not(button) > label {min-width: 100px;}
 button {padding: 0px}
 """
@@ -56,7 +56,7 @@ class Channel(Gtk.VBox, SerializedObject):
         self.stereo = stereo
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
-        self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0)
+        self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
         self.balance_adjustment = Gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
         self.future_out_mute = None
         self.future_volume_midi_cc = None
@@ -198,7 +198,7 @@ class Channel(Gtk.VBox, SerializedObject):
             try:
                 db = float(db_text)
                 #print "Volume digits confirmation \"%f dBFS\"" % db
-            except (ValueError), e:
+            except (ValueError) as e:
                 #print "Volume digits confirmation ignore, reset to current"
                 self.update_volume(False)
                 return
@@ -329,7 +329,7 @@ class InputChannel(Channel):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
 
         if self.channel == None:
-            raise Exception,"Cannot create a channel"
+            raise Exception("Cannot create a channel")
         Channel.realize(self)
         if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
@@ -550,7 +550,7 @@ class OutputChannel(Channel):
     def realize(self):
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
         if self.channel == None:
-            raise Exception,"Cannot create a channel"
+            raise Exception("Cannot create a channel")
         Channel.realize(self)
         if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
@@ -710,8 +710,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.channel = parent
         self.app = app
         self.mixer = self.channel.mixer
-        GObject.GObject.__init__(self)
-        self.set_title('Channel "%s" Properties' % self.channel.channel_name)
+        Gtk.Dialog.__init__(self, 'Channel "%s" Properties' % self.channel.channel_name, app.window)
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY)
@@ -827,7 +826,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
-        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        window = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
         window.set_destroy_with_parent(True)
         window.set_transient_for(self)
         window.set_decorated(False)
@@ -838,7 +837,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         vbox = Gtk.VBox(10)
         window.add(vbox)
         window.timeout = 5
-        vbox.pack_start(Gtk.Label('Please move the MIDI control you want to use for this function.', True, True, 0))
+        vbox.pack_start(Gtk.Label(label='Please move the MIDI control you want to use for this function.'), True, True, 0)
         timeout_label = Gtk.Label(label='This window will close in 5 seconds')
         vbox.pack_start(timeout_label, True, True, 0)
         def close_sense_timeout(window, entry):

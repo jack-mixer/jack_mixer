@@ -15,9 +15,6 @@ Build requirements:
 Runtime requirements (checked by configure script):
  * You need Python (at least 3.5)
  * Pygobject
- * fpconst (floating point constants) Python module.
-   You can use this URL if you cannot find it in more sane place
-   http://nedko.arnaudov.name/soft/jack_mixer/fpconst-0.7.2.tar.gz
 
 Runtime optional things, that will enable you to get full functionality:
  * To get LASH (Linux audio session) support, you need LASH compiled

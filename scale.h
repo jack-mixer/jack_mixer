@@ -35,6 +35,10 @@ scale_add_threshold(
   float scale_value);
 
 void
+scale_remove_thresholds(
+  jack_mixer_scale_t scale);
+
+void
 scale_calculate_coefficients(
   jack_mixer_scale_t scale);
 

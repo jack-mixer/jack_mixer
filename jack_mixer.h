@@ -166,6 +166,10 @@ void
 remove_channel(
   jack_mixer_channel_t channel);
 
+void
+remove_channels(
+  jack_mixer_t mixer);
+
 /* returned value is in dBFS */
 double
 channel_abspeak_read(

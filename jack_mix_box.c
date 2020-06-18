@@ -37,6 +37,7 @@
 #include "jack_mixer.h"
 
 jack_mixer_t mixer;
+bool keepRunning = true;
 
 void
 usage()
@@ -52,6 +53,13 @@ reportVolume(int sig)
 {
 	(void)sig;
 	channels_volumes_read(mixer);
+}
+
+void
+triggerShutDown(int sig)
+{
+	(void)sig;
+	keepRunning = false;
 }
 
 int
@@ -127,6 +135,7 @@ main(int argc, char *argv[])
 		channel_index += 1;
 		channel_name = malloc(15);
 		if (snprintf(channel_name, 15, "Channel %d", channel_index) >= 15) {
+			free(channel_name);
 			abort();
 		}
 		channel = add_channel(mixer, channel_name, bStereo);
@@ -137,13 +146,22 @@ main(int argc, char *argv[])
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));
 		channel_set_midi_scale(channel, scale);
 		channel_volume_write(channel, initialVolume);
+		free(channel_name);
 	}
 
 	signal(SIGUSR1, reportVolume);
+	signal(SIGTERM, triggerShutDown);
+	signal(SIGHUP, triggerShutDown);
+	signal(SIGINT, triggerShutDown);
 
-	while (true) {
-		sleep(1);
+	while (keepRunning) {
+		usleep(500u * 1000u); //500msec
 	}
 
+	remove_channels(mixer);
+	remove_output_channel(main_mix_channel);
+	destroy(mixer);
+	scale_destroy(scale);
+	free(jack_cli_name);
 	return 0;
 }

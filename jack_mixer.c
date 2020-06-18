@@ -461,6 +461,12 @@ remove_channel(
     assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] == channel_ptr);
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] = NULL;
   }
+  
+  free(channel_ptr->frames_left);
+  free(channel_ptr->frames_right);
+  free(channel_ptr->prefader_frames_left);
+  free(channel_ptr->prefader_frames_right);
+  
   free(channel_ptr);
 }
 
@@ -1307,7 +1313,7 @@ add_channel(
   bool stereo)
 {
   struct channel * channel_ptr;
-  char * port_name;
+  char * port_name = NULL;
   size_t channel_name_size;
 
   channel_ptr = malloc(sizeof(struct channel));
@@ -1402,6 +1408,7 @@ add_channel(
   channel_ptr->mixer_ptr->input_channels_list = g_slist_prepend(
                   channel_ptr->mixer_ptr->input_channels_list, channel_ptr);
 
+  free(port_name);
   return channel_ptr;
 
 fail_unregister_left_channel:
@@ -1430,7 +1437,7 @@ create_output_channel(
 {
   struct channel * channel_ptr;
   struct output_channel * output_channel_ptr;
-  char * port_name;
+  char * port_name = NULL;
   size_t channel_name_size;
 
   output_channel_ptr = malloc(sizeof(struct output_channel));
@@ -1529,6 +1536,7 @@ create_output_channel(
   output_channel_ptr->system = system;
   output_channel_ptr->prefader = false;
 
+  free(port_name);
   return output_channel_ptr;
 
 fail_unregister_left_channel:
@@ -1568,6 +1576,18 @@ add_output_channel(
                   ((struct jack_mixer*)mixer)->output_channels_list, channel_ptr);
 
   return output_channel_ptr;
+}
+
+void
+remove_channels(
+  jack_mixer_t mixer)
+{
+  GSList *list_ptr;
+  for (list_ptr = mixer_ctx_ptr->input_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
+  {
+    struct channel *input_channel_ptr = list_ptr->data;
+    remove_channel((jack_mixer_channel_t)input_channel_ptr);
+  }
 }
 
 void
@@ -1613,6 +1633,13 @@ remove_output_channel(
 
   g_slist_free(output_channel_ptr->soloed_channels);
   g_slist_free(output_channel_ptr->muted_channels);
+
+  free(channel_ptr->tmp_mixed_frames_left);
+  free(channel_ptr->tmp_mixed_frames_right);
+  free(channel_ptr->frames_left);
+  free(channel_ptr->frames_right);
+  free(channel_ptr->prefader_frames_left);
+  free(channel_ptr->prefader_frames_right);
 
   free(channel_ptr);
 }

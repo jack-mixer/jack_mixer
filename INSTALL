@@ -9,12 +9,12 @@ If you're building directly from version control, you first need to:
 
 Build requirements:
  * You need gcc (3.4.3 should work)
- * You need Python headers (python-dev package or something like that)
+ * You need Python headers (python3-dev package or something like that)
  * You need JACK headers (jack-dev package or something like that)
 
 Runtime requirements (checked by configure script):
- * You need Python (2.4 should work, maybe 2.3 too - please report)
- * PyGTK with cairo support
+ * You need Python (at least 3.5)
+ * Pygobject
  * fpconst (floating point constants) Python module.
    You can use this URL if you cannot find it in more sane place
    http://nedko.arnaudov.name/soft/jack_mixer/fpconst-0.7.2.tar.gz
@@ -22,9 +22,9 @@ Runtime requirements (checked by configure script):
 Runtime optional things, that will enable you to get full functionality:
  * To get LASH (Linux audio session) support, you need LASH compiled
    with Python bindings. This means at least 0.5.3 release.
- * If you want your settings to be preserved in GConf you need Python
-   bindings for GConf, part of the Python bindings for GNOME. Chances
-   are that package you need to install is called gnome-python
+ * If you want your settings to be preserved in GConf you need gconf
+   introspection data for gobject. It may be provided by a package
+   named gir1.2-gconf-2.0.
 
 ===================================================
 These are the generic installation instructions.

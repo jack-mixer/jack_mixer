@@ -526,7 +526,7 @@ channels_volumes_read(jack_mixer_t mixer_ptr)
     {
         pChannel = (struct channel *)node_ptr->data;
         double vol = channel_volume_read( (jack_mixer_channel_t)pChannel);
-        printf("volume is %f dbFS for mixer channel: %s\n", vol, pChannel->name);
+        printf("%s : volume is %f dbFS for mixer channel: %s\n", jack_get_client_name(pMixer->jack_client), vol, pChannel->name);
     }
 }
 

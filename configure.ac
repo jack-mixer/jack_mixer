@@ -71,7 +71,7 @@ then
 fi
 
 # Python checking
-AM_PATH_PYTHON(2.4)
+AM_PATH_PYTHON(3.5)
 AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
 #AS_AC_EXPAND(PYTHONDIR, $pythondir)
 #AC_SUBST(PYTHONDIR)

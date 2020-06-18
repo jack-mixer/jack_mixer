@@ -36,51 +36,51 @@ void jack_mixer_log(int level, const char * format, ...);
 #endif
 
 #if LOG_LEVEL <= LOG_LEVEL_DEBUG
-# define LOG_DEBUG(format, arg...)              \
+# define LOG_DEBUG(format, ...)              \
   jack_mixer_log(LOG_LEVEL_DEBUG,               \
-                 format "\n", ## arg)
+                 format "\n", ## __VA_ARGS__)
 #else
-# define LOG_DEBUG(format, arg...)
+# define LOG_DEBUG(format, ...)
 #endif
 
 #if LOG_LEVEL <= LOG_LEVEL_INFO
-# define LOG_INFO(format, arg...)               \
+# define LOG_INFO(format, ...)               \
   jack_mixer_log(LOG_LEVEL_INFO,                \
-                 format "\n", ## arg)
+                 format "\n", ## __VA_ARGS__)
 #else
-# define LOG_INFO(format, arg...)
+# define LOG_INFO(format, ...)
 #endif
 
 #if LOG_LEVEL <= LOG_LEVEL_WARNING
-# define LOG_WARNING(format, arg...)            \
+# define LOG_WARNING(format, ...)            \
   jack_mixer_log(LOG_LEVEL_WARNING,             \
-                 format "\n", ## arg)
+                 format "\n", ## __VA_ARGS__)
 #else
-# define LOG_WARNING(format, arg...)
+# define LOG_WARNING(format, ...)
 #endif
 
 #if LOG_LEVEL <= LOG_LEVEL_NOTICE
-# define LOG_NOTICE(format, arg...)             \
+# define LOG_NOTICE(format, ...)             \
   jack_mixer_log(LOG_LEVEL_NOTICE,              \
-                 format "\n", ## arg)
+                 format "\n", ## __VA_ARGS__)
 #else
-# define LOG_NOTICE(format, arg...)
+# define LOG_NOTICE(format, ...)
 #endif
 
 #if LOG_LEVEL <= LOG_LEVEL_ERROR
-# define LOG_ERROR(format, arg...)              \
+# define LOG_ERROR(format, ...)              \
   jack_mixer_log(LOG_LEVEL_ERROR,               \
-                 format "\n", ## arg)
+                 format "\n", ## __VA_ARGS__)
 #else
-# define LOG_ERROR(format, arg...)
+# define LOG_ERROR(format, ...)
 #endif
 
 #if LOG_LEVEL <= LOG_LEVEL_FATAL
-# define LOG_FATAL(format, arg...)              \
+# define LOG_FATAL(format, ...)              \
   jack_mixer_log(LOG_LEVEL_FATAL,               \
-                 format "\n", ## arg)
+                 format "\n", ## __VA_ARGS__)
 #else
-# define LOG_FATAL(format, arg...)
+# define LOG_FATAL(format, ...)
 #endif
 
 #endif /* #ifndef LOG_H__7097F6FE_4FEE_4962_9542_60375961F567__INCLUDED */

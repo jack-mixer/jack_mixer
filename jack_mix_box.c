@@ -33,6 +33,7 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include <signal.h>
+#include <unistd.h>
 #include "jack_mixer.h"
 
 jack_mixer_t mixer;

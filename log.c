@@ -27,6 +27,7 @@
 
 void jack_mixer_log(int level, const char * format, ...)
 {
+  (void)level;
   va_list arglist;
 
   va_start(arglist, format);

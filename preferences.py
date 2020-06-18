@@ -84,12 +84,6 @@ class PreferencesDialog(Gtk.Dialog):
                         self.on_vumeter_color_change)
         hbox.pack_start(self.vumeter_color_picker, True, True, 0)
 
-        self.minimize_to_tray_checkbutton = Gtk.CheckButton('Minimize to system tray')
-        self.minimize_to_tray_checkbutton.set_active(
-                        self.app.gui_factory.get_minimize_to_tray() )
-        self.minimize_to_tray_checkbutton.connect('toggled', self.on_minimize_to_tray_toggled)
-        interface_vbox.pack_start(self.minimize_to_tray_checkbutton, True, True, 0)
-
         vbox.pack_start(self.create_frame('Interface', interface_vbox), True, True, 0)
 
         table = Gtk.Table(2, 2, False)
@@ -177,7 +171,3 @@ class PreferencesDialog(Gtk.Dialog):
     def on_custom_widget_toggled(self, *args):
         self.app.gui_factory.set_use_custom_widgets(
                         self.custom_widgets_checkbutton.get_active())
-
-    def on_minimize_to_tray_toggled(self, *args):
-        self.app.gui_factory.set_minimize_to_tray(
-                        self.minimize_to_tray_checkbutton.get_active())

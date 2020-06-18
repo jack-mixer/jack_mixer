@@ -213,15 +213,8 @@ class JackMixer(SerializedObject):
 
         GLib.timeout_add(50, self.midi_events_check)
 
-
     def on_delete_event(self, widget, event):
-       if self.gui_factory.get_minimize_to_tray():
-            self.window.hide()
-            return True
-       else:
-           self.on_quit_cb()
-           return False
-
+        return False
 
     def sighandler(self, signum, frame):
         #print "Signal %d received" % signum

@@ -21,12 +21,10 @@
  *****************************************************************************/
 
 /*
- * jack_mix_box is a most minimalistic jack mixer, a set of mono input
+ * jack_mix_box is a most minimalistic jack mixer, a set of mono/sterero input
  * channels, mixed to a single output channel, with the volume of the
  * input channels controlled by MIDI control change (CC) codes.
  *
- * Usage:
- *   jack_mix_box [ -n JACK_CLI_NAME ] MIDI_CC_1 MIDI_CC_2 ....
  */
 
 #include <stdlib.h>
@@ -34,33 +32,75 @@
 #include <string.h>
 #include <stdbool.h>
 #include <getopt.h>
+#include <signal.h>
+#include <unistd.h>
 #include "jack_mixer.h"
+
+jack_mixer_t mixer;
+bool keepRunning = true;
+
+void
+usage()
+{
+
+	printf("Usage:\n");
+	printf("\tjack_mix_box [ -n|--name <jack client name> ] [ -s|--stereo ] [ -v|--volume <initial vol> ] MIDI_CC_1 MIDI_CC_2 ...\n");
+	printf("\tsend SIGUSR1 to the process to have the current columes reported per input channel\n\n");
+}
+
+void
+reportVolume(int sig)
+{
+	(void)sig;
+	channels_volumes_read(mixer);
+}
+
+void
+triggerShutDown(int sig)
+{
+	(void)sig;
+	keepRunning = false;
+}
 
 int
 main(int argc, char *argv[])
 {
 	jack_mixer_scale_t scale;
-	jack_mixer_t mixer;
 	jack_mixer_channel_t main_mix_channel;
 	char *jack_cli_name = NULL;
 	int channel_index;
+	bool bStereo = false;
+	double initialVolume = 0.0f; //in dbFS
 
 	while (1) {
 		int c;
 		static struct option long_options[] =
 		{
 			{"name",  required_argument, 0, 'n'},
+			{"help",  required_argument, 0, 'h'},
+			{"stereo",  required_argument, 0, 's'},
+			{"volume",  required_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};
 		int option_index = 0;
 
-		c = getopt_long (argc, argv, "n:", long_options, &option_index);
+		c = getopt_long (argc, argv, "shn:v:", long_options, &option_index);
 		if (c == -1)
 			break;
 
 		switch (c) {
 			case 'n':
 				jack_cli_name = strdup(optarg);
+				break;
+			case 's':
+				bStereo = true;
+				break;
+			case 'v':
+				initialVolume = strtod(optarg, NULL);
+				break;
+			case 'h':
+				usage();
+				exit(0);
 				break;
 			default:
 				fprintf(stderr, "Unknown argument, aborting.\n");
@@ -95,21 +135,33 @@ main(int argc, char *argv[])
 		channel_index += 1;
 		channel_name = malloc(15);
 		if (snprintf(channel_name, 15, "Channel %d", channel_index) >= 15) {
+			free(channel_name);
 			abort();
 		}
-		channel = add_channel(mixer, channel_name, true);
+		channel = add_channel(mixer, channel_name, bStereo);
 		if (channel == NULL) {
 			fprintf(stderr, "Failed to add channel %d, aborting\n", channel_index);
 			exit(1);
 		}
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));
 		channel_set_midi_scale(channel, scale);
-		channel_volume_write(channel, -70);
+		channel_volume_write(channel, initialVolume);
+		free(channel_name);
 	}
 
-	while (true) {
-		sleep(1);
+	signal(SIGUSR1, reportVolume);
+	signal(SIGTERM, triggerShutDown);
+	signal(SIGHUP, triggerShutDown);
+	signal(SIGINT, triggerShutDown);
+
+	while (keepRunning) {
+		usleep(500u * 1000u); //500msec
 	}
 
+	remove_channels(mixer);
+	remove_output_channel(main_mix_channel);
+	destroy(mixer);
+	scale_destroy(scale);
+	free(jack_cli_name);
 	return 0;
 }

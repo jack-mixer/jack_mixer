@@ -1,7 +1,9 @@
 /* -*- Mode: C ; c-basic-offset: 2 -*- */
 /*****************************************************************************
  *
- *   Copyright (C) 2006,2007 Nedko Arnaudov <nedko@arnaudov.name>
+ *   This file is part of jack_mixer
+ *
+ *   Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,19 +20,40 @@
  *
  *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
+#ifndef JACK_SCALE_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
+#define JACK_SCALE_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
 
-#include "log.h"
+typedef void * jack_mixer_scale_t;
 
-void jack_mixer_log(int level, const char * format, ...)
-{
-  (void)level;
-  va_list arglist;
+jack_mixer_scale_t
+scale_create();
 
-  va_start(arglist, format);
-  vprintf(format, arglist);
-  va_end(arglist);
-}
+bool
+scale_add_threshold(
+  jack_mixer_scale_t scale,
+  float db,
+  float scale_value);
+
+void
+scale_remove_thresholds(
+  jack_mixer_scale_t scale);
+
+void
+scale_calculate_coefficients(
+  jack_mixer_scale_t scale);
+
+double
+scale_db_to_scale(
+  jack_mixer_scale_t scale,
+  double db);
+
+double
+scale_scale_to_db(
+  jack_mixer_scale_t scale,
+  double scale_value);
+
+void
+scale_destroy(
+  jack_mixer_scale_t scale);
+
+#endif /* #ifndef JACK_SCALE_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

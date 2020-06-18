@@ -202,7 +202,7 @@ channel_rename(
     port_name[channel_name_size+1] = 'L';
     port_name[channel_name_size+2] = 0;
 
-    ret = jack_port_set_name(channel_ptr->port_left, port_name);
+    ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left, port_name);
     if (ret != 0)
     {
       /* what could we do here? */
@@ -210,7 +210,7 @@ channel_rename(
 
     port_name[channel_name_size+1] = 'R';
 
-    ret = jack_port_set_name(channel_ptr->port_right, port_name);
+    ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_right, port_name);
     if (ret != 0)
     {
       /* what could we do here? */
@@ -220,7 +220,7 @@ channel_rename(
   }
   else
   {
-    ret = jack_port_set_name(channel_ptr->port_left, name);
+    ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left, name);
     if (ret != 0)
     {
       /* what could we do here? */
@@ -461,6 +461,12 @@ remove_channel(
     assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] == channel_ptr);
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] = NULL;
   }
+  
+  free(channel_ptr->frames_left);
+  free(channel_ptr->frames_right);
+  free(channel_ptr->prefader_frames_left);
+  free(channel_ptr->prefader_frames_right);
+  
   free(channel_ptr);
 }
 
@@ -507,6 +513,21 @@ channel_volume_read(
 {
   assert(channel_ptr);
   return value_to_db(channel_ptr->volume_new);
+}
+
+void
+channels_volumes_read(jack_mixer_t mixer_ptr)
+{
+    GSList *node_ptr;
+    struct channel *pChannel;
+    struct jack_mixer * pMixer = (struct jack_mixer *)mixer_ptr;
+
+    for (node_ptr = pMixer->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
+    {
+        pChannel = (struct channel *)node_ptr->data;
+        double vol = channel_volume_read( (jack_mixer_channel_t)pChannel);
+        printf("%s : volume is %f dbFS for mixer channel: %s\n", jack_get_client_name(pMixer->jack_client), vol, pChannel->name);
+    }
 }
 
 void
@@ -795,8 +816,8 @@ calc_channel_frames(
   jack_nframes_t end)
 {
   jack_nframes_t i;
-  jack_default_audio_sample_t frame_left;
-  jack_default_audio_sample_t frame_right;
+  jack_default_audio_sample_t frame_left = 0.0f;
+  jack_default_audio_sample_t frame_right = 0.0f;
   unsigned int steps = channel_ptr->num_volume_transition_steps;
   for (i = start ; i < end ; i++)
   {
@@ -852,10 +873,7 @@ calc_channel_frames(
 
       frame_right = channel_ptr->right_buffer_ptr[i] * vol_r;
     }
-    else
-    {
-      frame_right = channel_ptr->left_buffer_ptr[i] * vol_r;
-    }
+
     channel_ptr->frames_left[i-start] = frame_left;
     channel_ptr->frames_right[i-start] = frame_right;
 
@@ -1036,13 +1054,13 @@ process(
       (unsigned int)in_event.buffer[1],
       (unsigned int)in_event.buffer[2]);
 
-    mixer_ptr->last_midi_channel = (unsigned int)in_event.buffer[1];
+    mixer_ptr->last_midi_channel = (int)in_event.buffer[1];
     channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]];
 
     /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
     if (channel_ptr != NULL && channel_ptr->midi_scale != NULL)
     {
-      if (channel_ptr->midi_cc_balance_index == (unsigned int)in_event.buffer[1])
+      if (channel_ptr->midi_cc_balance_index == (char)in_event.buffer[1])
       {
         byte = in_event.buffer[2];
         if (byte == 0)
@@ -1114,7 +1132,7 @@ process(
       {
         continue;
       }
-      if (channel_ptr->midi_cc_balance_index == (unsigned int)cc_channel_index)
+      if (channel_ptr->midi_cc_balance_index == (int)cc_channel_index)
       {
         continue;
       }
@@ -1151,6 +1169,7 @@ create(
   const char * jack_client_name_ptr,
   bool stereo)
 {
+  (void) stereo;
   int ret;
   struct jack_mixer * mixer_ptr;
   int i;
@@ -1294,7 +1313,7 @@ add_channel(
   bool stereo)
 {
   struct channel * channel_ptr;
-  char * port_name;
+  char * port_name = NULL;
   size_t channel_name_size;
 
   channel_ptr = malloc(sizeof(struct channel));
@@ -1389,6 +1408,7 @@ add_channel(
   channel_ptr->mixer_ptr->input_channels_list = g_slist_prepend(
                   channel_ptr->mixer_ptr->input_channels_list, channel_ptr);
 
+  free(port_name);
   return channel_ptr;
 
 fail_unregister_left_channel:
@@ -1417,7 +1437,7 @@ create_output_channel(
 {
   struct channel * channel_ptr;
   struct output_channel * output_channel_ptr;
-  char * port_name;
+  char * port_name = NULL;
   size_t channel_name_size;
 
   output_channel_ptr = malloc(sizeof(struct output_channel));
@@ -1516,6 +1536,7 @@ create_output_channel(
   output_channel_ptr->system = system;
   output_channel_ptr->prefader = false;
 
+  free(port_name);
   return output_channel_ptr;
 
 fail_unregister_left_channel:
@@ -1555,6 +1576,18 @@ add_output_channel(
                   ((struct jack_mixer*)mixer)->output_channels_list, channel_ptr);
 
   return output_channel_ptr;
+}
+
+void
+remove_channels(
+  jack_mixer_t mixer)
+{
+  GSList *list_ptr;
+  for (list_ptr = mixer_ctx_ptr->input_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
+  {
+    struct channel *input_channel_ptr = list_ptr->data;
+    remove_channel((jack_mixer_channel_t)input_channel_ptr);
+  }
 }
 
 void
@@ -1600,6 +1633,13 @@ remove_output_channel(
 
   g_slist_free(output_channel_ptr->soloed_channels);
   g_slist_free(output_channel_ptr->muted_channels);
+
+  free(channel_ptr->tmp_mixed_frames_left);
+  free(channel_ptr->tmp_mixed_frames_right);
+  free(channel_ptr->frames_left);
+  free(channel_ptr->frames_right);
+  free(channel_ptr->prefader_frames_left);
+  free(channel_ptr->prefader_frames_right);
 
   free(channel_ptr);
 }

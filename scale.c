@@ -71,7 +71,24 @@ void
 scale_destroy(
   jack_mixer_scale_t scale)
 {
+  scale_remove_thresholds(scale);
   free(scale_ptr);
+}
+
+void 
+scale_remove_thresholds(
+  jack_mixer_scale_t scale)
+{
+  
+  struct threshold * threshold_ptr;
+  struct threshold * node_ptr;
+
+  list_for_each_entry_safe(threshold_ptr, node_ptr, &scale_ptr->thresholds, scale_siblings)
+  {
+    list_del(&(threshold_ptr->scale_siblings));
+    free(threshold_ptr);
+    threshold_ptr = NULL;
+  }
 }
 
 bool

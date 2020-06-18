@@ -7,7 +7,7 @@ multiple JACK audio streams.
 
 It is licensed under GPL version 2 (or later), check COPYING for more info.
 
-Please visit project homepage is at http://home.gna.org/jackmixer/ for more
+Please visit project homepage is at https://rdio.space/jackmixer/ for more
 info.
 
 
@@ -43,8 +43,7 @@ Feedback
 --------
 
 If you have trouble getting jack_mixer working, find a bug or you miss some
-feature, please submit a support request with the GNA issue tracker:
-https://gna.org/support/?func=additem&group=jackmixer
+feature, please contact the maintainer by email.
 
 jack_mixer was initially written and supported by Nedko Arnaudov, it is now
 maintained by Frederic Peters. You can reach Frederic at fpeters (a.t) 0d

@@ -572,7 +572,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                            'Frederic Peters <fpeters@0d.be>',
                            'Daniel Sheeler <dsheeler@pobox.com>'])
         about.set_logo_icon_name('jack_mixer')
-        about.set_website('http://home.gna.org/jackmixer/')
+        about.set_website('https://rdio.space/jackmixer/')
 
         about.run()
         about.destroy()

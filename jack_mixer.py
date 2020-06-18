@@ -569,7 +569,8 @@ You should have received a copy of the GNU General Public License along
 with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
 Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         about.set_authors(['Nedko Arnaudov <nedko@arnaudov.name>',
-                           'Frederic Peters <fpeters@0d.be>'])
+                           'Frederic Peters <fpeters@0d.be>',
+                           'Daniel Sheeler <dsheeler@pobox.com>'])
         about.set_logo_icon_name('jack_mixer')
         about.set_website('http://home.gna.org/jackmixer/')
 

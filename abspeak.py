@@ -21,6 +21,21 @@ from gi.repository import Pango
 from gi.repository import GObject
 import math
 
+css = b"""
+.over_zero {
+    background-color: #cc4c00;
+}
+
+.is_nan {
+    background-color: #b20000;
+}
+"""
+css_provider = Gtk.CssProvider()
+css_provider.load_from_data(css)
+context = Gtk.StyleContext()
+screen = Gdk.Screen.get_default()
+context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
 class AbspeakWidget(Gtk.EventBox):
     def __init__(self):
         GObject.GObject.__init__(self)
@@ -35,7 +50,11 @@ class AbspeakWidget(Gtk.EventBox):
 
     def on_mouse(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS:
-            if event.button == 1:
+            if event.button == 1 or event.button == 2 or event.button == 3:
+                context = self.get_style_context()
+                context.remove_class('over_zero')
+                context.remove_class('is_nan')
+            if event.button == 1 or event.button == 3:
                 self.emit("reset")
             elif event.button == 2:
                 adjust = -self.peak
@@ -45,16 +64,15 @@ class AbspeakWidget(Gtk.EventBox):
     def set_peak(self, peak):
         self.peak = peak
         if math.isnan(peak):
-            self.modify_bg(Gtk.StateType.NORMAL, Gdk.Color(int(65535 * 0.7), 0, 0))
+            self.get_style_context().add_class('is_nan')
             self.label.set_text("NaN")
         else:
             text = "%+.1f" % peak
 
             if peak > 0:
-                self.modify_bg(Gtk.StateType.NORMAL, Gdk.Color(int(65535 * 0.8), int(65535 * 0.3), 0))
+                self.get_style_context().add_class('over_zero')
             else:
                 pass
-                #self.modify_bg(Gtk.StateType.NORMAL, self.label.style.bg[Gtk.StateType.NORMAL])
 
             self.label.set_text(text)
 

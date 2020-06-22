@@ -23,7 +23,7 @@ AC_PREREQ(2.61)
 AC_INIT(jack_mixer, 12)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([1.11 foreign no-define tar-ustar no-dist-gzip dist-xz])
 AC_CONFIG_HEADER([config.h])
 
 # not real check but hack (because version is not parameter to configure script) to detect development version

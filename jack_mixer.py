@@ -246,7 +246,7 @@ class JackMixer(SerializedObject):
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             try:
-                f = file(filename, 'r')
+                f = open(filename, 'r')
                 self.load_from_xml(f)
             except:
                 err = Gtk.MessageDialog(self.window,
@@ -265,7 +265,7 @@ class JackMixer(SerializedObject):
     def on_save_cb(self, *args):
         if not self.current_filename:
             return self.on_save_as_cb()
-        f = file(self.current_filename, 'w')
+        f = open(self.current_filename, 'w')
         self.save_to_xml(f)
         f.close()
 
@@ -605,7 +605,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 directory = lash.lash_event_get_string(event)
                 print("jack_mixer: LASH ordered to save data in directory %s" % directory)
                 filename = directory + os.sep + "jack_mixer.xml"
-                f = file(filename, "w")
+                f = open(filename, "w")
                 self.save_to_xml(f)
                 f.close()
                 lash.lash_send_event(self.lash_client, event) # we crash with double free
@@ -613,7 +613,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 directory = lash.lash_event_get_string(event)
                 print("jack_mixer: LASH ordered to restore data from directory %s" % directory)
                 filename = directory + os.sep + "jack_mixer.xml"
-                f = file(filename, "r")
+                f = open(filename, "r")
                 self.load_from_xml(f, silence_errors=True)
                 f.close()
                 lash.lash_send_event(self.lash_client, event)

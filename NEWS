@@ -1,4 +1,16 @@
 ==========
+Version 12
+==========
+
+ * Added reporting of the current volume through SIGUSR1 signal to
+   jack_mix_box.
+ * Reset color of over 0db/NaN peak on click.
+ * Fixed memory leaks.
+ * Fixed some Python 3 compatibility leftovers.
+
+With contributions from Daniel Sheeler and Athanasios Silis.
+
+==========
 Version 11
 ==========
 

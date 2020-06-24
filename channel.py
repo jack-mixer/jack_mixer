@@ -838,7 +838,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             timeout_label.set_text('This window will close in %d seconds.' % window.timeout)
             if window.timeout == 0:
                 window.destroy()
-                entry.set_text('%s' % self.mixer.last_midi_channel)
+                entry.set_value(self.mixer.last_midi_channel)
                 return False
             return True
         window.show_all()

@@ -16,14 +16,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import gi
-gi.require_version('GConf', '2.0')
 from gi.repository import GObject
+import os
+import configparser
 
 try:
-    from gi.repository import GConf
+    import xdg
+    from xdg import BaseDirectory
 except:
-    print("Cannot load Python bindings for GConf, your preferences will not be preserved across jack_mixer invocations")
-    GConf = None
+    xdg = None
 
 def lookup_scale(scales, scale_id):
     for scale in scales:
@@ -38,106 +39,92 @@ class Factory(GObject.GObject):
         self.meter_scales = meter_scales
         self.slider_scales = slider_scales
 
-        if GConf:
-            self.gconf_client = GConf.Client.get_default()
-
-            scale_id = self.gconf_client.get_string("/apps/jack_mixer/default_meter_scale")
-            self.default_meter_scale = lookup_scale(meter_scales, scale_id)
-            if not self.default_meter_scale:
-                self.default_meter_scale = meter_scales[0]
-
-            scale_id = self.gconf_client.get_string("/apps/jack_mixer/default_slider_scale")
-            self.default_slider_scale = lookup_scale(slider_scales, scale_id)
-            if not self.default_slider_scale:
-                self.default_slider_scale = slider_scales[0]
-
-            self.vumeter_color_scheme = self.gconf_client.get_string(
-                            '/apps/jack_mixer/vumeter_color_scheme')
-            self.vumeter_color = self.gconf_client.get_string(
-                            '/apps/jack_mixer/vumeter_color')
-            if not self.vumeter_color:
-                self.vumeter_color = '#ccb300'
-
-            self.use_custom_widgets = self.gconf_client.get_bool(
-                            '/apps/jack_mixer/use_custom_widgets')
-
-            self.gconf_client.add_dir("/apps/jack_mixer", GConf.ClientPreloadType.PRELOAD_NONE)
-            self.gconf_client.notify_add("/apps/jack_mixer/default_meter_scale", self.on_gconf_default_meter_scale_changed)
-            self.gconf_client.notify_add("/apps/jack_mixer/default_slider_scale", self.on_gconf_default_slider_scale_changed)
-            self.gconf_client.notify_add('/apps/jack_mixer/vumeter_color', self.on_gconf_vumeter_color_change)
-            self.gconf_client.notify_add('/apps/jack_mixer/vumeter_color_scheme', self.on_gconf_vumeter_color_scheme_change)
-            self.gconf_client.notify_add('/apps/jack_mixer/use_custom_widgets', self.on_gconf_use_custom_widgets_change)
+        if xdg:
+            self.config = configparser.ConfigParser()
+            self.path = os.path.join(BaseDirectory.save_config_path('jack_mixer'), 'preferences.ini')
+            if os.path.isfile(self.path):
+                self.read_preferences()
+            else:
+                self.set_default_preferences()
+                self.write_preferences()
         else:
+            print("Cannot load PyXDG. Your preferences will not be preserved across jack_mixer invocations")
+            self.set_default_preferences()
+
+    def set_default_preferences(self):
+        self.default_meter_scale = self.meter_scales[0]
+        self.default_slider_scale = self.slider_scales[0]
+        self.vumeter_color = '#ccb300'
+        self.vumeter_color_scheme = 'default'
+        self.use_custom_widgets = False
+
+    def read_preferences(self):
+        self.config.read(self.path)
+        scale_id = self.config['Preferences']['default_meter_scale']
+        self.default_meter_scale = lookup_scale(self.meter_scales, scale_id)
+        if not self.default_meter_scale:
             self.default_meter_scale = meter_scales[0]
+
+        scale_id = self.config['Preferences']['default_slider_scale']
+        self.default_slider_scale = lookup_scale(self.slider_scales, scale_id)
+        if not self.default_slider_scale:
             self.default_slider_scale = slider_scales[0]
-            self.vumeter_color = '#ccb300'
+
+        self.vumeter_color_scheme = self.config['Preferences']['vumeter_color_scheme']
+        if not self.vumeter_color_scheme:
             self.vumeter_color_scheme = 'default'
-            self.use_custom_widgets = False
 
-    def on_gconf_default_meter_scale_changed(self, client, connection_id, entry):
-        #print "GConf default_meter_scale changed"
-        scale_id = entry.get_value().get_string()
-        scale = lookup_scale(self.meter_scales, scale_id)
-        self.set_default_meter_scale(scale, from_gconf=True)
+        self.vumeter_color = self.config['Preferences']['vumeter_color']
+        if not self.vumeter_color:
+            self.vumeter_color = '#ccb300'
 
-    def set_default_meter_scale(self, scale, from_gconf=False):
+        self.use_custom_widgets = self.config["Preferences"]["use_custom_widgets"] == 'True'
+
+    def write_preferences(self):
+        self.config['Preferences'] = {}
+        self.config['Preferences']['default_meter_scale'] = self.default_meter_scale.scale_id
+        self.config['Preferences']['default_slider_scale'] = self.default_slider_scale.scale_id
+        self.config['Preferences']['vumeter_color_scheme'] = self.vumeter_color_scheme
+        self.config['Preferences']['vumeter_color'] = self.vumeter_color
+        self.config['Preferences']['use_custom_widgets'] = str(self.use_custom_widgets)
+        with open(self.path, 'w') as configfile:
+            self.config.write(configfile)
+
+    def set_default_meter_scale(self, scale):
         if scale:
-            if GConf and not from_gconf:
-                self.gconf_client.set_string("/apps/jack_mixer/default_meter_scale", scale.scale_id)
-            else:
-                self.default_meter_scale = scale
-                self.emit("default-meter-scale-changed", self.default_meter_scale)
+            self.default_meter_scale = scale
+            if xdg:
+                self.write_preferences()
+            self.emit("default-meter-scale-changed", self.default_meter_scale)
         else:
-            print("Ignoring GConf default_meter_scale setting, because \"%s\" scale is not known" % scale_id)
+            print("Ignoring default_meter_scale setting, because \"%s\" scale is not known" % scale_id)
 
-    def on_gconf_default_slider_scale_changed(self, client, connection_id, entry):
-        #print "GConf default_slider_scale changed"
-        scale_id = entry.get_value().get_string()
-        scale = lookup_scale(self.slider_scales, scale_id)
-        self.set_default_slider_scale(scale, from_gconf=True)
-
-    def set_default_slider_scale(self, scale, from_gconf=False):
+    def set_default_slider_scale(self, scale):
         if scale:
-            if GConf and not from_gconf:
-                self.gconf_client.set_string("/apps/jack_mixer/default_slider_scale", scale.scale_id)
-            else:
-                self.default_slider_scale = scale
-                self.emit("default-slider-scale-changed", self.default_slider_scale)
+            self.default_slider_scale = scale
+            if xdg:
+                self.write_preferences()
+            self.emit("default-slider-scale-changed", self.default_slider_scale)
         else:
-            print("Ignoring GConf default_slider_scale setting, because \"%s\" scale is not known" % scale_id)
+            print("Ignoring default_slider_scale setting, because \"%s\" scale is not known" % scale_id)
 
-    def set_vumeter_color(self, color, from_gconf=False):
-        if GConf and not from_gconf:
-            self.gconf_client.set_string('/apps/jack_mixer/vumeter_color', color)
-        else:
-            self.vumeter_color = color
-            self.emit('vumeter-color-changed', self.vumeter_color)
+    def set_vumeter_color(self, color):
+        self.vumeter_color = color
+        if xdg:
+            self.write_preferences()
+        self.emit('vumeter-color-changed', self.vumeter_color)
 
-    def on_gconf_vumeter_color_change(self, client, connection_id, entry):
-        color = entry.get_value().get_string()
-        self.set_vumeter_color(color, from_gconf=True)
+    def set_vumeter_color_scheme(self, color_scheme):
+        self.vumeter_color_scheme = color_scheme
+        if xdg:
+            self.write_preferences()
+        self.emit('vumeter-color-scheme-changed', self.vumeter_color_scheme)
 
-    def set_vumeter_color_scheme(self, color_scheme, from_gconf=False):
-        if GConf and not from_gconf:
-            self.gconf_client.set_string('/apps/jack_mixer/vumeter_color_scheme', color_scheme)
-        else:
-            self.vumeter_color_scheme = color_scheme
-            self.emit('vumeter-color-scheme-changed', self.vumeter_color_scheme)
-
-    def on_gconf_vumeter_color_scheme_change(self, client, connection_id, entry):
-        color_scheme = entry.get_value().get_string()
-        self.set_vumeter_color_scheme(color_scheme, from_gconf=True)
-
-    def set_use_custom_widgets(self, use_custom, from_gconf=False):
-        if GConf and not from_gconf:
-            self.gconf_client.set_bool('/apps/jack_mixer/use_custom_widgets', use_custom)
-        else:
-            self.use_custom_widgets = use_custom
-            self.emit('use-custom-widgets-changed', self.use_custom_widgets)
-
-    def on_gconf_use_custom_widgets_change(self, client, connection_id, entry):
-        use_custom = entry.get_value().get_bool()
-        self.set_use_custom_widgets(use_custom, from_gconf=True)
+    def set_use_custom_widgets(self, use_custom):
+        self.use_custom_widgets = use_custom
+        if xdg:
+            self.write_preferences()
+        self.emit('use-custom-widgets-changed', self.use_custom_widgets)
 
     def get_default_meter_scale(self):
         return self.default_meter_scale
@@ -153,7 +140,6 @@ class Factory(GObject.GObject):
 
     def get_use_custom_widgets(self):
         return self.use_custom_widgets
-
 
 GObject.signal_new("default-meter-scale-changed", Factory,
                 GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,

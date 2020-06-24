@@ -19,9 +19,7 @@ Runtime requirements (checked by configure script):
 Runtime optional things, that will enable you to get full functionality:
  * To get LASH (Linux audio session) support, you need LASH compiled
    with Python bindings. This means at least 0.5.3 release.
- * If you want your settings to be preserved in GConf you need gconf
-   introspection data for gobject. It may be provided by a package
-   named gir1.2-gconf-2.0.
+ * PyXDG to save preferences between invocations.
 
 ===================================================
 These are the generic installation instructions.

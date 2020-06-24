@@ -20,17 +20,6 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
 
-try:
-    from gi.repository import GConf
-except ImportError:
-    gconf = None
-
-def lookup_scale(scales, scale_id):
-    for scale in scales:
-        if scale_id == scale.scale_id:
-            return scale
-    return None
-
 class PreferencesDialog(Gtk.Dialog):
     def __init__(self, parent):
         self.app = parent

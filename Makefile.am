@@ -41,7 +41,7 @@ jack_mixer_c_la_SOURCES = \
 dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py preferences.py
 
 CLEANFILES = *.pyc
-EXTRA_DIST = test.py COPYING jack_mixer.schemas jack_mixer.py NEWS
+EXTRA_DIST = test.py COPYING jack_mixer.py NEWS
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 
@@ -59,20 +59,8 @@ jack_mix_box_LDADD = $(JACKMIXER_LIBS) -lm
 test: _jack_mixer_c.so
 	@./test.py
 
-schemadir = @GCONF_SCHEMA_FILE_DIR@
-schema_DATA = jack_mixer.schemas
-
 install-exec-hook:
 	ln -vfs jack_mixer.py $(DESTDIR)$(bindir)/jack_mixer
-
-if GCONF_SCHEMAS_INSTALL
-install-data-hook:
-	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-install-rule $(srcdir)/$(schema_DATA)
-
-uninstall-hook:
-	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-uninstall-rule $(srcdir)/$(schema_DATA)
-	rm -vf $(DESTDIR)$(bindir)/jack_mixer
-endif
 
 pacoinstall:
 	test `whoami` == root # test for root

@@ -86,10 +86,6 @@ else
   AC_MSG_WARN([Checks for python modules required runtime have been force disabled])
 fi
 
-AC_PATH_PROG(GCONFTOOL, gconftool-2, no)
-AM_GCONF_SOURCE_2
-AM_CONDITIONAL([GCONF_SCHEMAS_INSTALL], [test "x$ac_cv_path_GCONFTOOL" != "xno"])
-
 AC_OUTPUT([
 Makefile
 data/Makefile
@@ -101,7 +97,6 @@ AC_MSG_RESULT([*****************************************************************
 AC_MSG_RESULT([])
 AC_MSG_RESULT([Prefix:            $prefix])
 AC_MSG_RESULT([Python dir:        $pythondir])
-#AC_MSG_RESULT([GConf schema dir:  $GCONF_SCHEMA_FILE_DIR])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([MIDI support:      $have_jackmidi])
 AC_MSG_RESULT([])

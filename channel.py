@@ -764,11 +764,10 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
+        cc_tooltip = "{} MIDI Control Change number (0-127, set to -1 to assign next free CC #)"
         table.attach(Gtk.Label(label='Volume'), 0, 1, 0, 1)
-        self.entry_volume_cc = Gtk.Entry()
-        self.entry_volume_cc.set_activates_default(True)
-        self.entry_volume_cc.set_editable(False)
-        self.entry_volume_cc.set_width_chars(3)
+        self.entry_volume_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
+        self.entry_volume_cc.set_tooltip_text(cc_tooltip.format("Volume"))
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
         self.button_sense_midi_volume = Gtk.Button('Autoset')
         self.button_sense_midi_volume.connect('clicked',
@@ -776,10 +775,8 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         table.attach(self.button_sense_midi_volume, 2, 3, 0, 1)
 
         table.attach(Gtk.Label(label='Balance'), 0, 1, 1, 2)
-        self.entry_balance_cc = Gtk.Entry()
-        self.entry_balance_cc.set_activates_default(True)
-        self.entry_balance_cc.set_width_chars(3)
-        self.entry_balance_cc.set_editable(False)
+        self.entry_balance_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
+        self.entry_balance_cc.set_tooltip_text(cc_tooltip.format("Balance"))
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
         self.button_sense_midi_balance = Gtk.Button('Autoset')
         self.button_sense_midi_balance.connect('clicked',
@@ -787,10 +784,8 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
 
         table.attach(Gtk.Label(label='Mute'), 0, 1, 2, 3)
-        self.entry_mute_cc = Gtk.Entry()
-        self.entry_mute_cc.set_activates_default(True)
-        self.entry_mute_cc.set_editable(False)
-        self.entry_mute_cc.set_width_chars(3)
+        self.entry_mute_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
+        self.entry_mute_cc.set_tooltip_text(cc_tooltip.format("Mute"))
         table.attach(self.entry_mute_cc, 1, 2, 2, 3)
         self.button_sense_midi_mute = Gtk.Button('Autoset')
         self.button_sense_midi_mute.connect('clicked',
@@ -800,10 +795,8 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         if (isinstance(self, NewChannelDialog) or (self.channel and
             isinstance(self.channel, InputChannel))):
             table.attach(Gtk.Label(label='Solo'), 0, 1, 3, 4)
-            self.entry_solo_cc = Gtk.Entry()
-            self.entry_solo_cc.set_activates_default(True)
-            self.entry_solo_cc.set_editable(False)
-            self.entry_solo_cc.set_width_chars(3)
+            self.entry_solo_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
+            self.entry_solo_cc.set_tooltip_text(cc_tooltip.format("Solo"))
             table.attach(self.entry_solo_cc, 1, 2, 3, 4)
             self.button_sense_midi_solo = Gtk.Button('Autoset')
             self.button_sense_midi_solo.connect('clicked',
@@ -819,11 +812,11 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         else:
             self.mono.set_active(True)
         self.mode_hbox.set_sensitive(False)
-        self.entry_volume_cc.set_text('%s' % self.channel.channel.volume_midi_cc)
-        self.entry_balance_cc.set_text('%s' % self.channel.channel.balance_midi_cc)
-        self.entry_mute_cc.set_text('%s' % self.channel.channel.mute_midi_cc)
+        self.entry_volume_cc.set_value(self.channel.channel.volume_midi_cc)
+        self.entry_balance_cc.set_value(self.channel.channel.balance_midi_cc)
+        self.entry_mute_cc.set_value(self.channel.channel.mute_midi_cc)
         if (self.channel and isinstance(self.channel, InputChannel)):
-            self.entry_solo_cc.set_text('%s' % self.channel.channel.solo_midi_cc)
+            self.entry_solo_cc.set_value(self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
         window = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
@@ -852,46 +845,33 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         GObject.timeout_add_seconds(1, close_sense_timeout, window, entry)
 
     def on_sense_midi_volume_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_volume_cc.get_text())
+        self.mixer.last_midi_channel = int(self.entry_volume_cc.get_value())
         self.sense_popup_dialog(self.entry_volume_cc)
 
     def on_sense_midi_balance_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_balance_cc.get_text())
+        self.mixer.last_midi_channel = int(self.entry_balance_cc.get_value())
         self.sense_popup_dialog(self.entry_balance_cc)
 
     def on_sense_midi_mute_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_mute_cc.get_text())
+        self.mixer.last_midi_channel = int(self.entry_mute_cc.get_value())
         self.sense_popup_dialog(self.entry_mute_cc)
 
     def on_sense_midi_solo_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_solo_cc.get_text())
+        self.mixer.last_midi_channel = int(self.entry_solo_cc.get_value())
         self.sense_popup_dialog(self.entry_solo_cc)
 
     def on_response_cb(self, dlg, response_id, *args):
         self.channel.channel_properties_dialog = None
         name = self.entry_name.get_text()
         if response_id == Gtk.ResponseType.APPLY:
-            self.channel.channel_name = name
-            try:
-                if self.entry_volume_cc.get_text() != '-1':
-                    self.channel.channel.volume_midi_cc = int(self.entry_volume_cc.get_text())
-            except ValueError:
-                pass
-            try:
-                if self.entry_balance_cc.get_text() != '-1':
-                    self.channel.channel.balance_midi_cc = int(self.entry_balance_cc.get_text())
-            except ValueError:
-                pass
-            try:
-                if self.entry_mute_cc.get_text() != '-1':
-                    self.channel.channel.mute_midi_cc = int(self.entry_mute_cc.get_text())
-            except ValueError:
-                pass
-            try:
-                if hasattr(self, 'entry_solo_cc') and self.entry_solo_cc.get_text() != '-1':
-                    self.channel.channel.solo_midi_cc = int(self.entry_solo_cc.get_text())
-            except ValueError:
-                pass
+            if name != self.channel.channel_name:
+                self.channel.channel_name = name
+            for control in ('volume', 'balance', 'mute', 'solo'):
+                widget = getattr(self, 'entry_{}_cc'.format(control), None)
+                if widget is not None:
+                    value = int(widget.get_value())
+                    if value != -1:
+                        setattr(self.channel.channel, '{}_midi_cc'.format(control), value)
         self.destroy()
 
     def on_entry_name_changed(self, entry):
@@ -921,18 +901,18 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.set_default_response(Gtk.ResponseType.OK);
 
     def fill_ui(self):
-        self.entry_volume_cc.set_text('-1')
-        self.entry_balance_cc.set_text('-1')
-        self.entry_mute_cc.set_text('-1')
-        self.entry_solo_cc.set_text('-1')
+        self.entry_volume_cc.set_value(-1)
+        self.entry_balance_cc.set_value(-1)
+        self.entry_mute_cc.set_value(-1)
+        self.entry_solo_cc.set_value(-1)
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
-                'volume_cc': self.entry_volume_cc.get_text(),
-                'balance_cc': self.entry_balance_cc.get_text(),
-                'mute_cc': self.entry_mute_cc.get_text(),
-                'solo_cc': self.entry_solo_cc.get_text()
+                'volume_cc': int(self.entry_volume_cc.get_value()),
+                'balance_cc': int(self.entry_balance_cc.get_value()),
+                'mute_cc': int(self.entry_mute_cc.get_value()),
+                'solo_cc': int(self.entry_solo_cc.get_value())
                }
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
@@ -976,16 +956,16 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
         self.set_default_response(Gtk.ResponseType.OK);
 
     def fill_ui(self):
-        self.entry_volume_cc.set_text('-1')
-        self.entry_balance_cc.set_text('-1')
-        self.entry_mute_cc.set_text('-1')
+        self.entry_volume_cc.set_value(-1)
+        self.entry_balance_cc.set_value(-1)
+        self.entry_mute_cc.set_value(-1)
 
     def get_result(self):
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
-                'volume_cc': self.entry_volume_cc.get_text(),
-                'balance_cc': self.entry_balance_cc.get_text(),
-                'mute_cc': self.entry_mute_cc.get_text(),
+                'volume_cc': int(self.entry_volume_cc.get_value()),
+                'balance_cc': int(self.entry_balance_cc.get_value()),
+                'mute_cc': int(self.entry_mute_cc.get_value()),
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
                }
 

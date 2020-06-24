@@ -417,17 +417,22 @@ class JackMixer(SerializedObject):
             err.run()
             err.destroy()
             return
-        if volume_cc != '-1':
-            channel.channel.volume_midi_cc = int(volume_cc)
-        if balance_cc != '-1':
-            channel.channel.balance_midi_cc = int(balance_cc)
-        if mute_cc != '-1':
-            channel.channel.mute_midi_cc = int(mute_cc)
-        if solo_cc != '-1':
-            channel.channel.solo_midi_cc = int(solo_cc)
-        if (volume_cc == '-1' and balance_cc == '-1' and mute_cc == '-1' and solo_cc == '-1'):
-            channel.channel.autoset_midi_cc()
-
+        if volume_cc != -1:
+            channel.channel.volume_midi_cc = volume_cc
+        else:
+            channel.channel.autoset_volume_midi_cc()
+        if balance_cc != -1:
+            channel.channel.balance_midi_cc = balance_cc
+        else:
+            channel.channel.autoset_balance_midi_cc()
+        if mute_cc != -1:
+            channel.channel.mute_midi_cc = mute_cc
+        else:
+            channel.channel.autoset_mute_midi_cc()
+        if solo_cc != -1:
+            channel.channel.solo_midi_cc = solo_cc
+        else:
+            channel.channel.autoset_solo_midi_cc()
         return channel
 
     def add_channel_precreated(self, channel):
@@ -483,12 +488,19 @@ class JackMixer(SerializedObject):
             err.run()
             err.destroy()
             return
-        if volume_cc != '-1':
-            channel.channel.volume_midi_cc = int(volume_cc)
-        if balance_cc != '-1':
-            channel.channel.balance_midi_cc = int(balance_cc)
-        if mute_cc != '-1':
-            channel.channel.mute_midi_cc = int(mute_cc)
+
+        if volume_cc != -1:
+            channel.channel.volume_midi_cc = volume_cc
+        else:
+            channel.channel.autoset_volume_midi_cc()
+        if balance_cc != -1:
+            channel.channel.balance_midi_cc = balance_cc
+        else:
+            channel.channel.autoset_balance_midi_cc()
+        if mute_cc != -1:
+            channel.channel.mute_midi_cc = mute_cc
+        else:
+            channel.channel.autoset_mute_midi_cc()
         return channel
 
     def add_output_channel_precreated(self, channel):

@@ -355,15 +355,12 @@ channel_set_solo_midi_cc(
 }
 
 void
-channel_autoset_midi_cc(
+channel_autoset_volume_midi_cc(
   jack_mixer_channel_t channel)
 {
-  struct jack_mixer *mixer_ptr;
-  int i;
+  struct jack_mixer *mixer_ptr = channel_ptr->mixer_ptr;
 
-  mixer_ptr = channel_ptr->mixer_ptr;
-
-  for (i = 11 ; i < 128 ; i++)
+  for (int i = 11 ; i < 128 ; i++)
   {
     if (mixer_ptr->midi_cc_map[i] == NULL)
     {
@@ -375,8 +372,15 @@ channel_autoset_midi_cc(
       break;
     }
   }
+}
 
-  for (; i < 128 ; i++)
+void
+channel_autoset_balance_midi_cc(
+  jack_mixer_channel_t channel)
+{
+  struct jack_mixer *mixer_ptr = channel_ptr->mixer_ptr;
+
+  for (int i = 11; i < 128 ; i++)
   {
     if (mixer_ptr->midi_cc_map[i] == NULL)
     {
@@ -388,8 +392,15 @@ channel_autoset_midi_cc(
       break;
     }
   }
+}
 
-  for (; i < 128 ; i++)
+void
+channel_autoset_mute_midi_cc(
+  jack_mixer_channel_t channel)
+{
+  struct jack_mixer *mixer_ptr = channel_ptr->mixer_ptr;
+
+  for (int i = 11; i < 128 ; i++)
   {
     if (mixer_ptr->midi_cc_map[i] == NULL)
     {
@@ -401,8 +412,15 @@ channel_autoset_midi_cc(
       break;
     }
   }
+}
 
-  for (; i < 128 ; i++)
+void
+channel_autoset_solo_midi_cc(
+  jack_mixer_channel_t channel)
+{
+  struct jack_mixer *mixer_ptr = channel_ptr->mixer_ptr;
+
+  for (int i = 11; i < 128 ; i++)
   {
     if (mixer_ptr->midi_cc_map[i] == NULL)
     {

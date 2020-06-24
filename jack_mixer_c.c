@@ -557,17 +557,51 @@ Channel_remove(ChannelObject *self, PyObject *args)
 }
 
 static PyObject*
-Channel_autoset_midi_cc(ChannelObject *self, PyObject *args)
+Channel_autoset_volume_midi_cc(ChannelObject *self, PyObject *args)
 {
 	if (! PyArg_ParseTuple(args, "")) return NULL;
-	channel_autoset_midi_cc(self->channel);
+	channel_autoset_volume_midi_cc(self->channel);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject*
+Channel_autoset_balance_midi_cc(ChannelObject *self, PyObject *args)
+{
+	if (! PyArg_ParseTuple(args, "")) return NULL;
+	channel_autoset_balance_midi_cc(self->channel);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject*
+Channel_autoset_mute_midi_cc(ChannelObject *self, PyObject *args)
+{
+	if (! PyArg_ParseTuple(args, "")) return NULL;
+	channel_autoset_mute_midi_cc(self->channel);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject*
+Channel_autoset_solo_midi_cc(ChannelObject *self, PyObject *args)
+{
+	if (! PyArg_ParseTuple(args, "")) return NULL;
+	channel_autoset_solo_midi_cc(self->channel);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
 static PyMethodDef channel_methods[] = {
 	{"remove", (PyCFunction)Channel_remove, METH_VARARGS, "Remove"},
-	{"autoset_midi_cc", (PyCFunction)Channel_autoset_midi_cc, METH_VARARGS, "Autoset MIDI CC"},
+	{"autoset_volume_midi_cc",
+		(PyCFunction)Channel_autoset_volume_midi_cc, METH_VARARGS, "Autoset Volume MIDI CC"},
+	{"autoset_balance_midi_cc",
+		(PyCFunction)Channel_autoset_balance_midi_cc, METH_VARARGS, "Autoset Balance MIDI CC"},
+	{"autoset_mute_midi_cc",
+		(PyCFunction)Channel_autoset_mute_midi_cc, METH_VARARGS, "Autoset Mute MIDI CC"},
+	{"autoset_solo_midi_cc",
+		(PyCFunction)Channel_autoset_solo_midi_cc, METH_VARARGS, "Autoset Solo MIDI CC"},
 	{NULL}
 };
 

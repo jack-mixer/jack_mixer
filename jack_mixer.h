@@ -159,7 +159,19 @@ channel_set_solo_midi_cc(
   int new_cc);
 
 void
-channel_autoset_midi_cc(
+channel_autoset_volume_midi_cc(
+  jack_mixer_channel_t channel);
+
+void
+channel_autoset_balance_midi_cc(
+  jack_mixer_channel_t channel);
+
+void
+channel_autoset_mute_midi_cc(
+  jack_mixer_channel_t channel);
+
+void
+channel_autoset_solo_midi_cc(
   jack_mixer_channel_t channel);
 
 void

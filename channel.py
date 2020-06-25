@@ -769,7 +769,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.entry_volume_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_volume_cc.set_tooltip_text(cc_tooltip.format("Volume"))
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
-        self.button_sense_midi_volume = Gtk.Button('Autoset')
+        self.button_sense_midi_volume = Gtk.Button('Learn')
         self.button_sense_midi_volume.connect('clicked',
                         self.on_sense_midi_volume_clicked)
         table.attach(self.button_sense_midi_volume, 2, 3, 0, 1)
@@ -778,7 +778,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.entry_balance_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_balance_cc.set_tooltip_text(cc_tooltip.format("Balance"))
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
-        self.button_sense_midi_balance = Gtk.Button('Autoset')
+        self.button_sense_midi_balance = Gtk.Button('Learn')
         self.button_sense_midi_balance.connect('clicked',
                         self.on_sense_midi_balance_clicked)
         table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
@@ -787,7 +787,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.entry_mute_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_mute_cc.set_tooltip_text(cc_tooltip.format("Mute"))
         table.attach(self.entry_mute_cc, 1, 2, 2, 3)
-        self.button_sense_midi_mute = Gtk.Button('Autoset')
+        self.button_sense_midi_mute = Gtk.Button('Learn')
         self.button_sense_midi_mute.connect('clicked',
                         self.on_sense_midi_mute_clicked)
         table.attach(self.button_sense_midi_mute, 2, 3, 2, 3)
@@ -798,7 +798,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             self.entry_solo_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
             self.entry_solo_cc.set_tooltip_text(cc_tooltip.format("Solo"))
             table.attach(self.entry_solo_cc, 1, 2, 3, 4)
-            self.button_sense_midi_solo = Gtk.Button('Autoset')
+            self.button_sense_midi_solo = Gtk.Button('Learn')
             self.button_sense_midi_solo.connect('clicked',
                             self.on_sense_midi_solo_clicked)
             table.attach(self.button_sense_midi_solo, 2, 3, 3, 4)

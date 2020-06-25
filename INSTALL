@@ -17,8 +17,6 @@ Runtime requirements (checked by configure script):
  * Pygobject
 
 Runtime optional things, that will enable you to get full functionality:
- * To get LASH (Linux audio session) support, you need LASH compiled
-   with Python bindings. This means at least 0.5.3 release.
  * PyXDG to save preferences between invocations.
 
 ===================================================

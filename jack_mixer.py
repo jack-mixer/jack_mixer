@@ -30,12 +30,6 @@ import sys
 import os
 import signal
 
-try:
-    import lash
-except:
-    lash = None
-    print("Cannot load LASH python bindings, you want them unless you enjoy manual jack plumbing each time you use this app", file=sys.stderr)
-
 # temporary change Python modules lookup path to look into installation
 # directory ($prefix/share/jack_mixer/)
 old_path = sys.path
@@ -43,7 +37,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'ja
 
 
 import jack_mixer_c
-
 
 import scale
 from channel import *
@@ -53,6 +46,8 @@ from preferences import PreferencesDialog
 
 from serialization_xml import XmlSerialization
 from serialization import SerializedObject, Serializator
+
+from nsmclient import NSMClient
 
 # restore Python modules lookup path
 sys.path = old_path
@@ -70,28 +65,39 @@ class JackMixer(SerializedObject):
 
     _init_solo_channels = None
 
-    def __init__(self, name, lash_client):
-        self.mixer = jack_mixer_c.Mixer(name)
-        if not self.mixer:
-            return
-        self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
+    def __init__(self):
 
+        if os.environ.get('NSM_URL'):
+            self.nsm_client = NSMClient(prettyName = "jack_mixer",
+                                        saveCallback = self.nsm_save_cb,
+                                        openOrNewCallback = self.nsm_open_cb,
+                                        supportsSaveStatus = False,
+                                        exitProgramCallback = self.nsm_exit_cb,
+                                        loggingLevel = "error",
+                                       )
+        else:
+            self.create_mixer('jack_mixer', with_nsm = False)
+
+
+    def create_mixer(self, client_name, with_nsm = True):
+        self.create_ui(with_nsm)
+        self.mixer = jack_mixer_c.Mixer(client_name)
+        if not self.mixer:
+            sys.exit(1)
+        self.window.set_title(client_name)
+
+        self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
         self.save = False
 
-        if lash_client:
-            # Send our client name to server
-            lash_event = lash.lash_event_new_with_type(lash.LASH_Client_Name)
-            lash.lash_event_set_string(lash_event, name)
-            lash.lash_send_event(lash_client, lash_event)
+        GLib.timeout_add(80, self.read_meters)
+        if with_nsm:
+            GLib.timeout_add(200, self.nsm_react)
+        GLib.timeout_add(50, self.midi_events_check)
 
-            lash.lash_jack_client_name(lash_client, name)
-
+    def create_ui(self, with_nsm):
+        self.channels = []
+        self.output_channels = []
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        if name != self.mixer.client_name():
-            self.window.set_title(name + " ("+ self.mixer.client_name()+")" )
-        else:
-            self.window.set_title(name)
-
         self.window.set_icon_name('jack_mixer')
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
 
@@ -110,32 +116,34 @@ class JackMixer(SerializedObject):
 
         self.window.set_default_size(120, 300)
 
-        mixer_menu = Gtk.Menu()
-        mixer_menu_item.set_submenu(mixer_menu)
+        self.mixer_menu = Gtk.Menu()
+        mixer_menu_item.set_submenu(self.mixer_menu)
 
         add_input_channel = Gtk.MenuItem.new_with_mnemonic('New _Input Channel')
-        mixer_menu.append(add_input_channel)
+        self.mixer_menu.append(add_input_channel)
         add_input_channel.connect("activate", self.on_add_input_channel)
 
         add_output_channel = Gtk.MenuItem.new_with_mnemonic('New _Output Channel')
-        mixer_menu.append(add_output_channel)
+        self.mixer_menu.append(add_output_channel)
         add_output_channel.connect("activate", self.on_add_output_channel)
 
-        mixer_menu.append(Gtk.SeparatorMenuItem())
-        open = Gtk.MenuItem.new_with_mnemonic('_Open')
-        mixer_menu.append(open)
-        open.connect('activate', self.on_open_cb)
+        self.mixer_menu.append(Gtk.SeparatorMenuItem())
+        if not with_nsm:
+            open = Gtk.MenuItem.new_with_mnemonic('_Open')
+            self.mixer_menu.append(open)
+            open.connect('activate', self.on_open_cb)
         save = Gtk.MenuItem.new_with_mnemonic('_Save')
-        mixer_menu.append(save)
+        self.mixer_menu.append(save)
         save.connect('activate', self.on_save_cb)
-        save_as = Gtk.MenuItem.new_with_mnemonic('Save_As')
-        mixer_menu.append(save_as)
-        save_as.connect('activate', self.on_save_as_cb)
+        if not with_nsm:
+            save_as = Gtk.MenuItem.new_with_mnemonic('Save_As')
+            self.mixer_menu.append(save_as)
+            save_as.connect('activate', self.on_save_as_cb)
 
-        mixer_menu.append(Gtk.SeparatorMenuItem())
+        self.mixer_menu.append(Gtk.SeparatorMenuItem())
 
         quit = Gtk.MenuItem.new_with_mnemonic('_Quit')
-        mixer_menu.append(quit)
+        self.mixer_menu.append(quit)
         quit.connect('activate', self.on_quit_cb)
 
         edit_menu = Gtk.Menu()
@@ -189,8 +197,6 @@ class JackMixer(SerializedObject):
         self.hbox_inputs.set_border_width(0)
         self.hbox_top.set_spacing(0)
         self.hbox_top.set_border_width(0)
-        self.channels = []
-        self.output_channels = []
 
         self.scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.scrolled_window.add(self.hbox_inputs)
@@ -206,12 +212,29 @@ class JackMixer(SerializedObject):
 
         self.window.connect('delete-event', self.on_delete_event)
 
-        GLib.timeout_add(80, self.read_meters)
-        self.lash_client = lash_client
+    def nsm_react(self):
+        self.nsm_client.reactToMessage()
+        return True
 
-        GLib.timeout_add(200, self.lash_check_events)
+    def nsm_open_cb(self, path, session_name, client_name):
+        self.create_mixer(client_name, with_nsm = True)
 
-        GLib.timeout_add(50, self.midi_events_check)
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            self.load_from_xml(f)
+            f.close()
+        else:
+            f = open(path, 'w')
+            f.close()
+        self.current_filename = path
+
+    def nsm_save_cb(self, path, session_name, client_name):
+        f = open(path, 'w')
+        self.save_to_xml(f)
+        f.close()
+
+    def nsm_exit_cb(self, path, session_name, client_name):
+        Gtk.main_quit()
 
     def on_delete_event(self, widget, event):
         return False
@@ -577,54 +600,6 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         about.run()
         about.destroy()
 
-    def lash_check_events(self):
-        if self.save:
-            self.save = False
-            if self.current_filename:
-                print("saving on SIGUSR1 request")
-                self.on_save_cb()
-                print("save done")
-            else:
-                print("not saving because filename is not known")
-            return True
-
-        if not self.lash_client:
-            return True
-
-        while lash.lash_get_pending_event_count(self.lash_client):
-            event = lash.lash_get_event(self.lash_client)
-
-            #print repr(event)
-
-            event_type = lash.lash_event_get_type(event)
-            if event_type == lash.LASH_Quit:
-                print("jack_mixer: LASH ordered quit.")
-                Gtk.main_quit()
-                return False
-            elif event_type == lash.LASH_Save_File:
-                directory = lash.lash_event_get_string(event)
-                print("jack_mixer: LASH ordered to save data in directory %s" % directory)
-                filename = directory + os.sep + "jack_mixer.xml"
-                f = open(filename, "w")
-                self.save_to_xml(f)
-                f.close()
-                lash.lash_send_event(self.lash_client, event) # we crash with double free
-            elif event_type == lash.LASH_Restore_File:
-                directory = lash.lash_event_get_string(event)
-                print("jack_mixer: LASH ordered to restore data from directory %s" % directory)
-                filename = directory + os.sep + "jack_mixer.xml"
-                f = open(filename, "r")
-                self.load_from_xml(f, silence_errors=True)
-                f.close()
-                lash.lash_send_event(self.lash_client, event)
-            else:
-                print("jack_mixer: Got unhandled LASH event, type " + str(event_type))
-                return True
-
-            #lash.lash_event_destroy(event)
-
-        return True
-
     def save_to_xml(self, file):
         #print "Saving to XML..."
         b = XmlSerialization()
@@ -717,55 +692,32 @@ def help():
     print("Usage: %s [mixer_name]" % sys.argv[0])
 
 def main():
-    # Connect to LASH if Python bindings are available, and the user did not
-    # pass --no-lash
-    if lash and not '--no-lash' in sys.argv:
-        # sys.argv is modified by this call
-        lash_client = lash.init(sys.argv, "jack_mixer", lash.LASH_Config_File)
-    else:
-        lash_client = None
-
     parser = OptionParser(usage='usage: %prog [options] [jack_client_name]')
     parser.add_option('-c', '--config', dest='config',
                       help='use a non default configuration file')
-    # --no-lash here is not acted upon, it is specified for completeness when
     # --help is passed.
-    parser.add_option('--no-lash', dest='nolash', action='store_true',
-                      help='do not connect to LASH')
     options, args = parser.parse_args()
 
-    # Yeah , this sounds stupid, we connected earlier, but we dont want to show this if we got --help option
-    # This issue should be fixed in pylash, there is a reason for having two functions for initialization after all
-    if lash_client:
-        server_name = lash.lash_get_server_name(lash_client)
-        if server_name:
-            print("Successfully connected to LASH server at " + server_name)
-        else:
-            # getting the server name failed, probably not worth trying to do
-            # further things with as a lash client.
-            lash_client = None
+    mixer = None
 
     if len(args) == 1:
         name = args[0]
     else:
         name = None
 
-    if not name:
-        name = "jack_mixer"
+        try:
+            mixer = JackMixer()
+        except Exception as e:
+            err = Gtk.MessageDialog(None,
+                                    Gtk.DialogFlags.MODAL,
+                                    Gtk.MessageType.ERROR,
+                                    Gtk.ButtonsType.OK,
+                                    "Mixer creation failed (%s)" % str(e))
+            err.run()
+            err.destroy()
+            sys.exit(1)
 
-    try:
-        mixer = JackMixer(name, lash_client)
-    except Exception as e:
-        err = Gtk.MessageDialog(None,
-                            Gtk.DialogFlags.MODAL,
-                            Gtk.MessageType.ERROR,
-                            Gtk.ButtonsType.OK,
-                            "Mixer creation failed (%s)" % str(e))
-        err.run()
-        err.destroy()
-        sys.exit(1)
-
-    if options.config:
+    if not hasattr(mixer, 'nsm_client') and options.config:
         f = open(options.config)
         mixer.current_filename = options.config
         try:

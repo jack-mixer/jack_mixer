@@ -161,12 +161,12 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self.font_size = 10
 
     def on_size_request(self, widget, requisition):
-        #print "size-request, %u x %u" % (requisition.width, requisition.height)
         requisition.width = 20
         return
 
     def invalidate_all(self):
-        self.queue_draw_area(0, 0, int(self.width), int(self.height))
+        if hasattr(self, 'width') and hasattr(self, 'height'):
+            self.queue_draw_area(0, 0, int(self.width), int(self.height))
 
     def draw(self, cairo_ctx):
         if self.has_focus():

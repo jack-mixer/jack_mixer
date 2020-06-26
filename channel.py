@@ -344,9 +344,6 @@ class Channel(Gtk.VBox, SerializedObject):
         self.color = color
         set_background_color(self.label_name_event_box, self.channel.name + 'label',
                self.color.to_string())
-        for inputchannel in self.app.channels:
-            inputchannel.update_control_group(self)
-
 
 class InputChannel(Channel):
     post_fader_output_channel = None
@@ -473,6 +470,7 @@ class InputChannel(Channel):
         self.channel = None
 
     channel_properties_dialog = None
+
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
             self.channel_properties_dialog = ChannelPropertiesDialog(self, self.app)
@@ -959,10 +957,13 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         self.color_chooser_button.set_rgba(self.channel.color)
 
     def on_response_cb(self, dlg, response_id, *args):
+        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
         if response_id == Gtk.ResponseType.APPLY:
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
             self.channel.set_color(self.color_chooser_button.get_rgba())
-        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
+            for inputchannel in self.app.channels:
+                inputchannel.update_control_group(self)
+
 
 
 class NewOutputChannelDialog(OutputChannelPropertiesDialog):
@@ -1008,12 +1009,15 @@ class ControlGroup(Gtk.Alignment):
 
         hbox = Gtk.HBox()
         self.vbox = Gtk.VBox()
-        self.hbox = hbox
-        self.vbox.pack_start(hbox, True, True, button_padding)
         self.add(self.vbox)
 
         set_background_color(self.vbox, output_channel.channel.name,
                 output_channel.color.to_string())
+
+        self.hbox = hbox
+        self.vbox.pack_start(hbox, True, True, button_padding)
+        self.label = Gtk.Label(output_channel.channel.name)
+        hbox.pack_start(self.label, False, False, button_padding)
         mute_name = "%s_mute" % output_channel.channel.name
         mute = Gtk.ToggleButton()
         mute.set_label("M")
@@ -1041,6 +1045,8 @@ class ControlGroup(Gtk.Alignment):
 
         set_background_color(self.vbox, self.output_channel.channel.name,
                 self.output_channel.color.to_string())
+
+        self.label.set_text(self.output_channel.channel.name)
 
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())

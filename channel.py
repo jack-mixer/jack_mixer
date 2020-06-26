@@ -42,6 +42,27 @@ context = Gtk.StyleContext()
 screen = Gdk.Screen.get_default()
 context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
+def set_background_color(widget, name, color_string):
+    css = """
+    .%s {
+        background-color: %s
+    }
+""" % (name, color_string)
+
+    css_provider = Gtk.CssProvider()
+    css_provider.load_from_data(css.encode('utf-8'))
+    context = Gtk.StyleContext()
+    screen = Gdk.Screen.get_default()
+    context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    widget_context = widget.get_style_context()
+    widget_context.add_class(name)
+
+def random_color():
+    from random import uniform, seed
+    seed()
+    return Gdk.RGBA(uniform(0, 1), uniform(0, 1), uniform(0, 1), 1)
+
 class Channel(Gtk.VBox, SerializedObject):
     '''Widget with slider and meter used as base class for more specific
        channel widgets'''
@@ -319,6 +340,14 @@ class Channel(Gtk.VBox, SerializedObject):
             self.app.set_monitored_channel(self)
         self.monitor_button.set_active(True)
 
+    def set_color(self, color):
+        self.color = color
+        set_background_color(self.label_name_event_box, self.channel.name + 'label',
+               self.color.to_string())
+        for inputchannel in self.app.channels:
+            inputchannel.update_control_group(self)
+
+
 class InputChannel(Channel):
     post_fader_output_channel = None
 
@@ -515,19 +544,7 @@ class InputChannel(Channel):
                 return True
         return Channel.unserialize_property(self, name, value)
 
-
-available_colours = [
-    ('#648fcb', '#204c98', '#426cb8'),
-    ('#984a9a', '#542656', '#744676'),
-    ('#7f9abb', '#3f5677', '#5f7697'),
-    ('#bf8f9f', '#7b4d5b', '#9b6f7b'),
-    ('#ba6d89', '#762945', '#964965'),
-    ('#4c9196', '#0c5156', '#2c7176'),
-    ('#56a2c0', '#166280', '#3682a0'),
-]
-
 class OutputChannel(Channel):
-    colours = available_colours[:]
     _display_solo_buttons = False
 
     _init_muted_channels = None
@@ -572,13 +589,10 @@ class OutputChannel(Channel):
         self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
-        if not self.colours:
-            OutputChannel.colours = available_colours[:]
-        for color in self.colours:
-            self.color_tuple = [Gdk.color_parse(color[x]) for x in range(3)]
-            self.colours.remove(color)
-            break
-        self.label_name_event_box.modify_bg(Gtk.StateType.NORMAL, self.color_tuple[1])
+        if not hasattr(self, 'color'):
+            self.color = random_color()
+        set_background_color(self.label_name_event_box, self.channel.name + 'label',
+               self.color.to_string())
         self.vbox.pack_start(self.label_name_event_box, True, True, 0)
         self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
@@ -678,6 +692,7 @@ class OutputChannel(Channel):
             object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
         if solo_channels:
             object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
+        object_backend.add_property("color", self.color.to_string())
         Channel.serialize(self, object_backend)
 
     def unserialize_property(self, name, value):
@@ -700,6 +715,11 @@ class OutputChannel(Channel):
             return True
         if name == 'solo_channels':
             self._init_solo_channels = value.split('|')
+            return True
+        if name == 'color':
+            c = Gdk.RGBA()
+            c.parse(value)
+            self.color = c
             return True
         return Channel.unserialize_property(self, name, value)
 
@@ -740,7 +760,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         vbox = Gtk.VBox()
         self.vbox.add(vbox)
 
-        table = Gtk.Table(2, 3, False)
+        self.properties_table = table = Gtk.Table(3, 3, False)
         vbox.pack_start(self.create_frame('Properties', table), True, True, 0)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
@@ -919,6 +939,12 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
         ChannelPropertiesDialog.create_ui(self)
 
+        table = self.properties_table
+        table.attach(Gtk.Label(label='Color'), 0, 1, 2, 3)
+        self.color_chooser_button = Gtk.ColorButton()
+        table.attach(self.color_chooser_button, 1, 2, 2, 3)
+
+
         vbox = Gtk.VBox()
         self.vbox.pack_start(self.create_frame('Input Channels', vbox), True, True, 0)
 
@@ -930,10 +956,12 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def fill_ui(self):
         ChannelPropertiesDialog.fill_ui(self)
         self.display_solo_buttons.set_active(self.channel.display_solo_buttons)
+        self.color_chooser_button.set_rgba(self.channel.color)
 
     def on_response_cb(self, dlg, response_id, *args):
         if response_id == Gtk.ResponseType.APPLY:
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
+            self.channel.set_color(self.color_chooser_button.get_rgba())
         ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
 
 
@@ -967,7 +995,8 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
                 'balance_cc': int(self.entry_balance_cc.get_value()),
                 'mute_cc': int(self.entry_mute_cc.get_value()),
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
-               }
+                'color': self.color_chooser_button.get_rgba()
+                }
 
 class ControlGroup(Gtk.Alignment):
     def __init__(self, output_channel, input_channel):
@@ -978,12 +1007,13 @@ class ControlGroup(Gtk.Alignment):
         self.app = input_channel.app
 
         hbox = Gtk.HBox()
-        vbox = Gtk.VBox()
+        self.vbox = Gtk.VBox()
         self.hbox = hbox
-        vbox.pack_start(hbox, True, True, button_padding)
-        self.add(vbox)
+        self.vbox.pack_start(hbox, True, True, button_padding)
+        self.add(self.vbox)
 
-        vbox.modify_bg(Gtk.StateType.NORMAL, output_channel.color_tuple[1])
+        set_background_color(self.vbox, output_channel.channel.name,
+                output_channel.color.to_string())
         mute_name = "%s_mute" % output_channel.channel.name
         mute = Gtk.ToggleButton()
         mute.set_label("M")
@@ -1008,6 +1038,9 @@ class ControlGroup(Gtk.Alignment):
         else:
             if self.solo in self.hbox.get_children():
                 self.hbox.remove(self.solo)
+
+        set_background_color(self.vbox, self.output_channel.channel.name,
+                self.output_channel.color.to_string())
 
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())

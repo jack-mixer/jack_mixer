@@ -497,10 +497,12 @@ class JackMixer(SerializedObject):
             channel.midi_events_check()
         return True
 
-    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons):
+    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc,
+            display_solo_buttons, color):
         try:
             channel = OutputChannel(self, name, stereo)
             channel.display_solo_buttons = display_solo_buttons
+            channel.color = color
             self.add_output_channel_precreated(channel)
         except Exception:
             err = Gtk.MessageDialog(self.window,
@@ -524,6 +526,7 @@ class JackMixer(SerializedObject):
             channel.channel.mute_midi_cc = mute_cc
         else:
             channel.channel.autoset_mute_midi_cc()
+
         return channel
 
     def add_output_channel_precreated(self, channel):

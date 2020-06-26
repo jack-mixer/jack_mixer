@@ -19,22 +19,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from optparse import OptionParser
+import os
+import signal
+import sys
+from argparse import ArgumentParser
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GLib
-import sys
-import os
-import signal
 
 # temporary change Python modules lookup path to look into installation
 # directory ($prefix/share/jack_mixer/)
 old_path = sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'jack_mixer'))
-
 
 import jack_mixer_c
 
@@ -65,7 +64,7 @@ class JackMixer(SerializedObject):
 
     _init_solo_channels = None
 
-    def __init__(self):
+    def __init__(self, client_name='jack_mixer'):
 
         if os.environ.get('NSM_URL'):
             self.nsm_client = NSMClient(prettyName = "jack_mixer",
@@ -76,7 +75,7 @@ class JackMixer(SerializedObject):
                                         loggingLevel = "error",
                                        )
         else:
-            self.create_mixer('jack_mixer', with_nsm = False)
+            self.create_mixer(client_name, with_nsm = False)
 
 
     def create_mixer(self, client_name, with_nsm = True):
@@ -703,38 +702,28 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         #self.save_to_xml(f)
         #f.close
 
-def help():
-    print("Usage: %s [mixer_name]" % sys.argv[0])
-
 def main():
-    parser = OptionParser(usage='usage: %prog [options] [jack_client_name]')
-    parser.add_option('-c', '--config', dest='config',
-                      help='use a non default configuration file')
-    # --help is passed.
-    options, args = parser.parse_args()
+    parser = ArgumentParser()
+    parser.add_argument('-c', '--config', help='use a non default configuration file')
+    parser.add_argument('client_name', metavar='NAME', nargs='?', default='jack_mixer',
+                        help='set JACK client name')
+    args = parser.parse_args()
 
-    mixer = None
+    try:
+        mixer = JackMixer(args.client_name)
+    except Exception as e:
+        err = Gtk.MessageDialog(None,
+                                Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
+                                "Mixer creation failed (%s)" % str(e))
+        err.run()
+        err.destroy()
+        sys.exit(1)
 
-    if len(args) == 1:
-        name = args[0]
-    else:
-        name = None
-
-        try:
-            mixer = JackMixer()
-        except Exception as e:
-            err = Gtk.MessageDialog(None,
-                                    Gtk.DialogFlags.MODAL,
-                                    Gtk.MessageType.ERROR,
-                                    Gtk.ButtonsType.OK,
-                                    "Mixer creation failed (%s)" % str(e))
-            err.run()
-            err.destroy()
-            sys.exit(1)
-
-    if not hasattr(mixer, 'nsm_client') and options.config:
-        f = open(options.config)
-        mixer.current_filename = options.config
+    if not hasattr(mixer, 'nsm_client') and args.config:
+        f = open(args.config)
+        mixer.current_filename = args.config
         try:
             mixer.load_from_xml(f)
         except:

@@ -66,16 +66,21 @@ class JackMixer(SerializedObject):
     _init_solo_channels = None
 
     def __init__(self):
-
+        self.visible = False
+        self.nsm_client = None
         if os.environ.get('NSM_URL'):
             self.nsm_client = NSMClient(prettyName = "jack_mixer",
                                         saveCallback = self.nsm_save_cb,
                                         openOrNewCallback = self.nsm_open_cb,
                                         supportsSaveStatus = False,
+                                        hideGUICallback = self.nsm_hide_cb,
+                                        showGUICallback = self.nsm_show_cb,
                                         exitProgramCallback = self.nsm_exit_cb,
                                         loggingLevel = "error",
                                        )
+            self.nsm_client.announceGuiVisibility(self.visible)
         else:
+            self.visible = True
             self.create_mixer('jack_mixer', with_nsm = False)
 
 
@@ -216,6 +221,16 @@ class JackMixer(SerializedObject):
         self.nsm_client.reactToMessage()
         return True
 
+    def nsm_hide_cb(self):
+        self.window.hide()
+        self.visible = False
+        self.nsm_client.announceGuiVisibility(False)
+
+    def nsm_show_cb(self):
+        self.window.show_all()
+        self.visible = True
+        self.nsm_client.announceGuiVisibility(True)
+
     def nsm_open_cb(self, path, session_name, client_name):
         self.create_mixer(client_name, with_nsm = True)
 
@@ -323,7 +338,8 @@ class JackMixer(SerializedObject):
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
             channel = self.add_channel(**result)
-            self.window.show_all()
+            if self.visible:
+                self.window.show_all()
 
     def on_add_output_channel(self, widget):
         dialog = NewOutputChannelDialog(app=self)
@@ -335,7 +351,8 @@ class JackMixer(SerializedObject):
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
             channel = self.add_output_channel(**result)
-            self.window.show_all()
+            if self.visible:
+                self.window.show_all()
 
     def on_edit_input_channel(self, widget, channel):
         print('Editing channel "%s"' % channel.channel_name)
@@ -645,7 +662,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             if isinstance(channel, OutputChannel):
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
-        self.window.show_all()
+        if self.visible:
+            self.window.show_all()
 
     def serialize(self, object_backend):
         width, height = self.window.get_size()
@@ -657,6 +675,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 solo_channels.append(input_channel)
         if solo_channels:
             object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
+        object_backend.add_property('visible', '%s' % str(self.visible))
 
     def unserialize_property(self, name, value):
         if name == 'geometry':
@@ -665,6 +684,9 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             return True
         if name == 'solo_channels':
             self._init_solo_channels = value.split('|')
+            return True
+        if name == 'visible':
+            self.visible = value == 'True'
             return True
 
     def unserialize_child(self, name):
@@ -690,7 +712,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if not self.mixer:
             return
 
-        self.window.show_all()
+        if self.visible:
+            self.window.show_all()
 
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)
@@ -732,7 +755,7 @@ def main():
             err.destroy()
             sys.exit(1)
 
-    if not hasattr(mixer, 'nsm_client') and options.config:
+    if not mixer.nsm_client and options.config:
         f = open(options.config)
         mixer.current_filename = options.config
         try:

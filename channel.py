@@ -342,11 +342,7 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def set_color(self, color):
         self.color = color
-        set_background_color(self.label_name_event_box, self.channel.name + 'label',
-               self.color.to_string())
-        for inputchannel in self.app.channels:
-            inputchannel.update_control_group(self)
-
+        set_background_color(self.label_name_event_box, self.channel.name.replace(" ", "") + 'label', self.color.to_string())
 
 class InputChannel(Channel):
     post_fader_output_channel = None
@@ -473,6 +469,7 @@ class InputChannel(Channel):
         self.channel = None
 
     channel_properties_dialog = None
+
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
             self.channel_properties_dialog = ChannelPropertiesDialog(self, self.app)
@@ -959,10 +956,13 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         self.color_chooser_button.set_rgba(self.channel.color)
 
     def on_response_cb(self, dlg, response_id, *args):
+        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
         if response_id == Gtk.ResponseType.APPLY:
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
             self.channel.set_color(self.color_chooser_button.get_rgba())
-        ChannelPropertiesDialog.on_response_cb(self, dlg, response_id, *args)
+            for inputchannel in self.app.channels:
+                inputchannel.update_control_group(self.channel)
+
 
 
 class NewOutputChannelDialog(OutputChannelPropertiesDialog):
@@ -1008,19 +1008,32 @@ class ControlGroup(Gtk.Alignment):
 
         hbox = Gtk.HBox()
         self.vbox = Gtk.VBox()
-        self.hbox = hbox
-        self.vbox.pack_start(hbox, True, True, button_padding)
         self.add(self.vbox)
 
         set_background_color(self.vbox, output_channel.channel.name,
                 output_channel.color.to_string())
-        mute_name = "%s_mute" % output_channel.channel.name
+
+        self.hbox = hbox
+        self.vbox.pack_start(hbox, True, True, button_padding)
+        css = b""" .control_group {
+        min-width: 0px; padding: 0px;} """
+
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(css)
+        context = Gtk.StyleContext()
+        screen = Gdk.Screen.get_default()
+        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        self.label = Gtk.Label(output_channel.channel.name)
+        label_context = self.label.get_style_context()
+        label_context.add_class('control_group')
+
+        self.hbox.pack_start(self.label, False, False, button_padding)
         mute = Gtk.ToggleButton()
         mute.set_label("M")
         mute.set_name("mute")
         mute.connect("toggled", self.on_mute_toggled)
         self.mute = mute
-        hbox.pack_start(mute, True, True, button_padding)
         solo = Gtk.ToggleButton()
         solo.set_name("solo")
         solo.set_label("S")
@@ -1028,19 +1041,22 @@ class ControlGroup(Gtk.Alignment):
         self.solo = solo
 
         if self.output_channel.display_solo_buttons:
-            hbox.pack_start(solo, True, True, button_padding)
+            hbox.pack_end(solo, False, False, button_padding)
+        hbox.pack_end(mute, False, False, button_padding)
 
     def update(self):
         if self.output_channel.display_solo_buttons:
             if not self.solo in self.hbox.get_children():
-                self.hbox.pack_start(self.solo, True, True, 0)
+                self.hbox.pack_end(self.solo, False, False, button_padding)
+                self.hbox.reorder_child(self.mute, -1)
                 self.solo.show()
         else:
             if self.solo in self.hbox.get_children():
                 self.hbox.remove(self.solo)
 
-        set_background_color(self.vbox, self.output_channel.channel.name,
-                self.output_channel.color.to_string())
+        self.label.set_text(self.output_channel.channel.name)
+        set_background_color(self.vbox, self.output_channel.channel.name.replace(" ", ""), self.output_channel.color.to_string())
+
 
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())

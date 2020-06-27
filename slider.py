@@ -181,8 +181,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
         #        self.get_style_context().get_color(state).to_color())
         #cairo_ctx.stroke()
 
-        slider_knob_width = self.width * 3 / 4
-        slider_knob_height = self.width * 3 / 2
+        slider_knob_width = 37.5 if self.width * 3 / 4 > 37.5 else self.width * 3 / 4
+        slider_knob_height = slider_knob_width * 2
         slider_knob_height -= slider_knob_height % 2
         slider_knob_height += 1
 

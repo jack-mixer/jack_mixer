@@ -67,9 +67,13 @@ GObject.signal_new("volume-changed", AdjustmentdBFS,
 class GtkSlider(Gtk.VScale):
     def __init__(self, adjustment):
         Gtk.VScale.__init__(self)#, adjustment)
+        self.adjustment = adjustment
         self.set_adjustment(adjustment)
         self.set_draw_value(False)
         self.set_inverted(True)
+        self.button_down = False
+        self.button_down_y = 0
+        self.button_down_value = 0
 
         # HACK: we want the behaviour you get with the middle button, so we
         # mangle the events. Clicking with other buttons moves the slider in
@@ -77,16 +81,60 @@ class GtkSlider(Gtk.VScale):
         # to the location of the click.
         self.connect('button-press-event', self.button_press_event)
         self.connect('button-release-event', self.button_release_event)
+        self.connect('button-release-event', self.button_release_event)
+        self.connect("motion-notify-event", self.motion_notify_event)
+        self.connect("scroll-event", self.scroll_event)
 
     def button_press_event(self, widget, event):
-        print("button press", event.button)
-       # event.button = 2
+        if event.type == Gdk.EventType.BUTTON_PRESS:
+            widget.get_style_context().set_state(Gtk.StateFlags.FOCUSED)
+            widget.get_style_context().set_state(Gtk.StateFlags.PRELIGHT|Gtk.StateFlags.FOCUSED)
+            widget.get_style_context().add_class('dragging')
+            widget.get_style_context().add_class(':focused')
+            self.button_down = True
+            self.button_down_y = event.y
+            self.button_down_value = self.adjustment.get_value()
+            return True
+        if not event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
+            self.adjustment.set_value(0)
+            return True
+        if event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
+            self.adjustment.set_value(self.adjustment.scale.db_to_scale(1))
+            return True
         return False
 
     def button_release_event(self, widget, event):
-        #event.button = 2
+        self.button_down = False
         return False
 
+    def motion_notify_event(self, widget, event):
+        slider_length = widget.get_allocation().height - widget.get_style_context().get_property('min-height', Gtk.StateFlags.NORMAL)
+        if self.button_down:
+            delta_y = (self.button_down_y - event.y) / slider_length
+            y = self.button_down_value + delta_y
+            if y >= 1:
+                y = 1
+            elif y <= 0:
+                y = 0
+            self.adjustment.set_value(y)
+            return True
+
+    def scroll_event(self, widget, event):
+        delta = self.adjustment.step_increment
+        value = self.adjustment.get_value()
+        if event.direction == Gdk.ScrollDirection.UP:
+            y = value + delta
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            y = value - delta
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            y = value - event.delta_y * delta
+
+        if y >= 1:
+            y = 1
+        elif y <= 0:
+            y = 0
+        self.adjustment.set_value(y)
+        return True
 
 class CustomSliderWidget(Gtk.DrawingArea):
     def __init__(self, adjustment):
@@ -104,7 +152,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
                 Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
 
     def on_scroll(self, widget, event):
-        delta = self.adjustment.step_increment 
+        delta = self.adjustment.step_increment
         value = self.adjustment.get_value()
         if event.direction == Gdk.ScrollDirection.UP:
             y = value + delta

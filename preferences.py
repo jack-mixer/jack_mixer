@@ -89,6 +89,15 @@ class PreferencesDialog(Gtk.Dialog):
 
         vbox.pack_start(self.create_frame('Scales', table), True, True, 0)
 
+        table = Gtk.Table(1, 2, False)
+        table.set_row_spacings(5)
+        table.set_col_spacings(5)
+
+        table.attach(Gtk.Label(label='Midi behavior'), 0, 1, 0, 1)
+        self.midi_behavior_combo = self.create_midi_behavior_combo()
+        table.attach(self.midi_behavior_combo, 1, 2, 0, 1)
+
+        vbox.pack_start(self.create_frame('Midi Behavior', table), True, True, 0)
         self.vbox.show_all()
 
         self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
@@ -131,6 +140,14 @@ class PreferencesDialog(Gtk.Dialog):
 
         return slider_scale_combo
 
+    def create_midi_behavior_combo(self):
+        combo = Gtk.ComboBoxText()
+        combo.append('Jump To Value', 'Jump To Value')
+        combo.append('Pick Up', 'Pick Up')
+        combo.set_active_id(self.app.gui_factory.get_midi_behavior_mode())
+        combo.connect('changed', self.on_midi_behavior_combo_changed)
+        return combo
+
     def on_response_cb(self, dlg, response_id, *args):
         self.app.preferences_dialog = None
         self.destroy()
@@ -144,6 +161,10 @@ class PreferencesDialog(Gtk.Dialog):
         active_iter = self.slider_scale_combo.get_active_iter()
         scale = self.slider_store.get(active_iter, 1)[0]
         self.app.gui_factory.set_default_slider_scale(scale)
+
+    def on_midi_behavior_combo_changed(self, *args):
+        active_id = self.midi_behavior_combo.get_active_id()
+        self.app.gui_factory.set_midi_behavior_mode(active_id)
 
     def on_vumeter_color_change(self, *args):
         color_scheme = 'default'

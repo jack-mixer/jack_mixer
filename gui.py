@@ -19,6 +19,7 @@ import gi
 from gi.repository import GObject
 import os
 import configparser
+from serialization import SerializedObject
 
 try:
     import xdg
@@ -32,24 +33,24 @@ def lookup_scale(scales, scale_id):
             return scale
     return None
 
-class Factory(GObject.GObject):
+class Factory(GObject.GObject, SerializedObject):
+
     def __init__(self, topwindow, meter_scales, slider_scales):
+        self.midi_behavior_modes = { 'Jump To Value' : 0, 'Pick Up' : 1 }
         GObject.GObject.__init__(self)
         self.topwindow = topwindow
         self.meter_scales = meter_scales
         self.slider_scales = slider_scales
-
+        self.set_default_preferences()
         if xdg:
             self.config = configparser.ConfigParser()
             self.path = os.path.join(BaseDirectory.save_config_path('jack_mixer'), 'preferences.ini')
             if os.path.isfile(self.path):
                 self.read_preferences()
             else:
-                self.set_default_preferences()
                 self.write_preferences()
         else:
             print("Cannot load PyXDG. Your preferences will not be preserved across jack_mixer invocations")
-            self.set_default_preferences()
 
     def set_default_preferences(self):
         self.default_meter_scale = self.meter_scales[0]
@@ -57,6 +58,7 @@ class Factory(GObject.GObject):
         self.vumeter_color = '#ccb300'
         self.vumeter_color_scheme = 'default'
         self.use_custom_widgets = False
+        self.midi_behavior_mode = 'Jump To Value'
 
     def read_preferences(self):
         self.config.read(self.path)
@@ -126,6 +128,10 @@ class Factory(GObject.GObject):
             self.write_preferences()
         self.emit('use-custom-widgets-changed', self.use_custom_widgets)
 
+    def set_midi_behavior_mode(self, mode):
+        self.midi_behavior_mode = mode
+        self.emit("midi-behavior-mode-changed", self.midi_behavior_modes[self.midi_behavior_mode])
+
     def get_default_meter_scale(self):
         return self.default_meter_scale
 
@@ -140,6 +146,22 @@ class Factory(GObject.GObject):
 
     def get_use_custom_widgets(self):
         return self.use_custom_widgets
+
+    def get_midi_behavior_mode(self):
+        return self.midi_behavior_mode
+
+    @classmethod
+    def serialization_name(cls):
+        return 'gui_factory'
+
+    def serialize(self, object_backend):
+        object_backend.add_property("midi_behavior_mode", self.get_midi_behavior_mode())
+
+    def unserialize_property(self, name, value):
+        if name == "midi_behavior_mode":
+            self.set_midi_behavior_mode(value)
+            return True
+        return False
 
 GObject.signal_new("default-meter-scale-changed", Factory,
                 GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
@@ -156,3 +178,6 @@ GObject.signal_new('vumeter-color-scheme-changed', Factory,
 GObject.signal_new('use-custom-widgets-changed', Factory,
                 GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
                 None, [bool])
+GObject.signal_new('midi-behavior-mode-changed', Factory,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [int])

@@ -40,6 +40,8 @@ typedef void * jack_mixer_channel_t;
 typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_threshold_t;
 
+enum midi_behavior_mode { Jump_To_Value, Pick_Up };
+
 jack_mixer_t
 create(
   const char * jack_client_name_ptr,
@@ -65,6 +67,16 @@ unsigned int
 set_last_midi_channel(
   jack_mixer_t mixer,
   int new_channel);
+
+
+int
+get_midi_behavior_mode(
+  jack_mixer_t mixer);
+
+unsigned int
+set_midi_behavior_mode(
+  jack_mixer_t mixer,
+  enum midi_behavior_mode mode);
 
 jack_mixer_channel_t
 add_channel(

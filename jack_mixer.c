@@ -44,7 +44,11 @@
 #include "jack_compat.h"
 
 #define VOLUME_TRANSITION_SECONDS 0.01
+
+#define MIDI_PICK_UP_DIFF 20
+
 #define PEAK_FRAMES_CHUNK 4800
+
 // we don't know how much to allocate, but we don't want to wait with 
 // allocating until we're in the process() callback, so we just take a 
 // fairly big chunk: 4 periods per buffer, 4096 samples per period.
@@ -125,6 +129,7 @@ struct jack_mixer
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
   int last_midi_channel;
+  enum midi_behavior_mode midi_behavior;
 
   struct channel* midi_cc_map[128];
 };
@@ -1098,15 +1103,18 @@ process(
       }
       else if (channel_ptr->midi_cc_volume_index == in_event.buffer[1])
       {
-        if (channel_ptr->volume_new != channel_ptr->volume) {
-          channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-           (channel_ptr->volume_new - channel_ptr->volume) /
-           channel_ptr->num_volume_transition_steps;
+        int current_midi =  (int)(127 * scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume)));
+        if ((mixer_ptr->midi_behavior == Pick_Up && abs(in_event.buffer[2] -current_midi) <= MIDI_PICK_UP_DIFF) || mixer_ptr->midi_behavior == Jump_To_Value) {
+            if (channel_ptr->volume_new != channel_ptr->volume) {
+              channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
+               (channel_ptr->volume_new - channel_ptr->volume) /
+               channel_ptr->num_volume_transition_steps;
+            }
+            channel_ptr->volume_idx = 0;
+            channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
+             (double)in_event.buffer[2] / 127));
+            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
         }
-        channel_ptr->volume_idx = 0;
-        channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
-         (double)in_event.buffer[2] / 127));
-        LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
       }
       else if (channel_ptr->midi_cc_mute_index == in_event.buffer[1])
       {
@@ -1211,6 +1219,8 @@ create(
   mixer_ptr->soloed_channels = NULL;
 
   mixer_ptr->last_midi_channel = -1;
+
+  mixer_ptr->midi_behavior = Jump_To_Value;
 
   for (i = 0 ; i < 128 ; i++)
   {
@@ -1321,6 +1331,22 @@ set_last_midi_channel(
   jack_mixer_t mixer,
   int new_channel) {
   mixer_ctx_ptr->last_midi_channel = new_channel;
+  return 0;
+}
+
+int
+get_midi_behavior_mode(
+  jack_mixer_t mixer)
+{
+  return mixer_ctx_ptr->midi_behavior;
+}
+
+unsigned int
+set_midi_behavior_mode(
+  jack_mixer_t mixer,
+  enum midi_behavior_mode mode)
+{
+  mixer_ctx_ptr->midi_behavior = mode;
   return 0;
 }
 

@@ -89,6 +89,9 @@ class JackMixer(SerializedObject):
         self.mixer = jack_mixer_c.Mixer(client_name)
         if not self.mixer:
             sys.exit(1)
+
+        #self.mixer.midi_behavior_mode = self.gui_factory.midi_behavior_modes[self.gui_factory.get_midi_behavior_mode()]
+
         self.window.set_title(client_name)
 
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
@@ -105,7 +108,7 @@ class JackMixer(SerializedObject):
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_icon_name('jack_mixer')
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
-
+        self.gui_factory.connect('midi-behavior-mode-changed', self.on_midi_behavior_mode_changed)
         self.vbox_top = Gtk.VBox()
         self.window.add(self.vbox_top)
 
@@ -250,6 +253,10 @@ class JackMixer(SerializedObject):
 
     def nsm_exit_cb(self, path, session_name, client_name):
         Gtk.main_quit()
+
+    def on_midi_behavior_mode_changed(self, gui_factory, value):
+        print('on_midi_behavior_mode_changed', value)
+        self.mixer.midi_behavior_mode = value
 
     def on_delete_event(self, widget, event):
         return False
@@ -700,9 +707,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             self.unserialized_channels.append(channel)
             return channel
 
+        if name == gui.Factory.serialization_name():
+            self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
+            self.gui_factory.connect('midi-behavior-mode-changed', self.on_midi_behavior_mode_changed)
+            return self.gui_factory
+
     def serialization_get_childs(self):
-        '''Get child objects tha required and support serialization'''
-        childs = self.channels[:] + self.output_channels[:]
+        '''Get child objects that required and support serialization'''
+        childs = self.channels[:] + self.output_channels[:] + [self.gui_factory]
         return childs
 
     def serialization_name(self):

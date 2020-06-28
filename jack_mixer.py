@@ -233,18 +233,18 @@ class JackMixer(SerializedObject):
 
     def nsm_open_cb(self, path, session_name, client_name):
         self.create_mixer(client_name, with_nsm = True)
-
-        if os.path.isfile(path):
-            f = open(path, 'r')
+        self.current_filename = path + '.xml'
+        if os.path.isfile(self.current_filename):
+            f = open(self.current_filename, 'r')
             self.load_from_xml(f)
             f.close()
         else:
-            f = open(path, 'w')
+            f = open(self.current_filename, 'w')
             f.close()
-        self.current_filename = path
 
     def nsm_save_cb(self, path, session_name, client_name):
-        f = open(path, 'w')
+        self.current_filename = path + '.xml'
+        f = open(self.current_filename, 'w')
         self.save_to_xml(f)
         f.close()
 

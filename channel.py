@@ -160,11 +160,64 @@ class Channel(Gtk.VBox, SerializedObject):
             self.balance.get_preferred_height = self._preferred_height
             self.balance.set_orientation(Gtk.Orientation.HORIZONTAL)
             self.balance.set_adjustment(self.balance_adjustment)
+            self.balance.set_has_origin(False)
             self.balance.set_draw_value(False)
+            self.balance.button_down = False
+            self.balance.connect('button-press-event', self.on_balance_button_press_event)
+            self.balance.connect('button-release-event', self.on_balance_button_release_event)
+            self.balance.connect("motion-notify-event", self.on_balance_motion_notify_event)
+            self.balance.connect("scroll-event", self.on_balance_scroll_event)
+
+
         self.pack_start(self.balance, False, True, 0)
         if self.monitor_button:
             self.reorder_child(self.monitor_button, -1)
         self.balance.show()
+
+    def on_balance_button_press_event(self, widget, event):
+        if event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
+            self.balance.button_down = True
+            self.balance.button_down_x = event.x
+            self.balance.button_down_value = self.balance.get_value()
+            return True
+        if event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
+            self.balance.set_value(0)
+            return True
+        return False
+
+    def on_balance_button_release_event(self, widget, event):
+        self.balance.button_down = False
+        return False
+
+    def on_balance_motion_notify_event(self, widget, event):
+        slider_length = widget.get_allocation().width - widget.get_style_context().get_property('min-width', Gtk.StateFlags.NORMAL)
+        if self.balance.button_down:
+            delta_x = (event.x - self.balance.button_down_x) / slider_length
+            x = self.balance.button_down_value + 2 * delta_x
+            if x >= 1:
+                x = 1
+            elif x <= -1:
+                x = -1
+            self.balance.set_value(x)
+            return True
+
+    def on_balance_scroll_event(self, widget, event):
+        bal = self.balance
+        delta = bal.get_adjustment().get_step_increment()
+        value = bal.get_value()
+        if event.direction == Gdk.ScrollDirection.UP:
+            x = value - delta
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            x = value + delta
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            x = value - event.delta_y * delta
+
+        if x >= 1:
+            x = 1
+        elif x <= -1:
+            x = -1
+        bal.set_value(x)
+        return True
 
     def create_slider_widget(self):
         parent = None

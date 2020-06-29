@@ -87,7 +87,6 @@ class GtkSlider(Gtk.VScale):
         # to the location of the click.
         self.connect('button-press-event', self.button_press_event)
         self.connect('button-release-event', self.button_release_event)
-        self.connect('button-release-event', self.button_release_event)
         self.connect("motion-notify-event", self.motion_notify_event)
         self.connect("scroll-event", self.scroll_event)
 

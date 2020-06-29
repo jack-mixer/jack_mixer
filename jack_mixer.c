@@ -96,7 +96,8 @@ struct channel
   int midi_cc_balance_index;
   int midi_cc_mute_index;
   int midi_cc_solo_index;
-  bool midi_cc_picked_up; /* used only if in 'pick up' mode */
+  bool midi_cc_volume_picked_up;
+  bool midi_cc_balance_picked_up;
   
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
@@ -339,10 +340,16 @@ channel_get_solo_midi_cc(
   return channel_ptr->midi_cc_solo_index;
 }
 
-void channel_set_midi_cc_picked_up(jack_mixer_channel_t channel, bool status)
+void channel_set_midi_cc_volume_picked_up(jack_mixer_channel_t channel, bool status)
 {
-  LOG_DEBUG("Setting channel %s picked up to %d", channel_ptr->name, status);
-  channel_ptr->midi_cc_picked_up = status;
+  LOG_DEBUG("Setting channel %s volume picked up to %d", channel_ptr->name, status);
+  channel_ptr->midi_cc_volume_picked_up = status;
+}
+
+void channel_set_midi_cc_balance_picked_up(jack_mixer_channel_t channel, bool status)
+{
+  LOG_DEBUG("Setting channel %s balance picked up to %d", channel_ptr->name, status);
+  channel_ptr->midi_cc_balance_picked_up = status;
 }
 
 unsigned int
@@ -1096,29 +1103,40 @@ process(
           byte = 1;
         }
         byte -= 64;
-
-        if (channel_ptr->balance != channel_ptr->balance_new) {
-          channel_ptr->balance = channel_ptr->balance + channel_ptr->balance_idx *
-           (channel_ptr->balance_new - channel_ptr->balance) /
-           channel_ptr->num_volume_transition_steps;
-        }
-        channel_ptr->balance_idx = 0;
-        channel_ptr->balance_new = (float)byte / 63;
-        LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance_new);
-      }
-      else if (channel_ptr->midi_cc_volume_index == in_event.buffer[1])
-      {
-        int current_midi =  (int)(127 *
-         scale_db_to_scale(channel_ptr->midi_scale,
-         value_to_db(channel_ptr->volume)));
-        if (mixer_ptr->midi_behavior == Pick_Up && 
-         !channel_ptr->midi_cc_picked_up ) {
+        int current_midi = (int)63 * channel_ptr->balance + 64;
+        current_midi = current_midi == 1 ? 0 : current_midi;
+        if (mixer_ptr->midi_behavior == Pick_Up &&
+         !channel_ptr->midi_cc_balance_picked_up) {
           if (in_event.buffer[2] == current_midi) {
-            channel_ptr->midi_cc_picked_up = true;
+            channel_set_midi_cc_balance_picked_up(channel_ptr, true);
           }
         }
         if ((mixer_ptr->midi_behavior == Pick_Up &&
-         channel_ptr->midi_cc_picked_up) ||
+         channel_ptr->midi_cc_balance_picked_up) ||
+         mixer_ptr->midi_behavior == Jump_To_Value) {
+          if (channel_ptr->balance != channel_ptr->balance_new) {
+            channel_ptr->balance = channel_ptr->balance + channel_ptr->balance_idx *
+             (channel_ptr->balance_new - channel_ptr->balance) /
+            channel_ptr->num_volume_transition_steps;
+          }
+          channel_ptr->balance_idx = 0;
+          channel_ptr->balance_new = (float)byte / 63;
+          LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance_new);
+        }
+      }
+      else if (channel_ptr->midi_cc_volume_index == in_event.buffer[1])
+      {
+          int current_midi =  (int)(127 *
+           scale_db_to_scale(channel_ptr->midi_scale,
+           value_to_db(channel_ptr->volume)));
+          if (mixer_ptr->midi_behavior == Pick_Up &&
+           !channel_ptr->midi_cc_volume_picked_up ) {
+          if (in_event.buffer[2] == current_midi) {
+            channel_set_midi_cc_volume_picked_up(channel_ptr, true);
+          }
+        }
+        if ((mixer_ptr->midi_behavior == Pick_Up &&
+         channel_ptr->midi_cc_volume_picked_up) ||
          mixer_ptr->midi_behavior == Jump_To_Value) {
             if (channel_ptr->volume_new != channel_ptr->volume) {
               channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
@@ -1457,7 +1475,8 @@ add_channel(
   channel_ptr->midi_cc_balance_index = -1;
   channel_ptr->midi_cc_mute_index = -1;
   channel_ptr->midi_cc_solo_index = -1;
-  channel_ptr->midi_cc_picked_up = false;
+  channel_ptr->midi_cc_volume_picked_up = false;
+  channel_ptr->midi_cc_balance_picked_up = false;
 
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
@@ -1585,7 +1604,8 @@ create_output_channel(
   channel_ptr->midi_cc_balance_index = -1;
   channel_ptr->midi_cc_mute_index = -1;
   channel_ptr->midi_cc_solo_index = -1;
-  channel_ptr->midi_cc_picked_up = false;
+  channel_ptr->midi_cc_volume_picked_up = false;
+  channel_ptr->midi_cc_balance_picked_up = false;
 
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;

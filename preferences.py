@@ -93,11 +93,11 @@ class PreferencesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label='Midi behavior'), 0, 1, 0, 1)
+        table.attach(Gtk.Label(label='Control Behavior'), 0, 1, 0, 1)
         self.midi_behavior_combo = self.create_midi_behavior_combo()
         table.attach(self.midi_behavior_combo, 1, 2, 0, 1)
 
-        vbox.pack_start(self.create_frame('Midi Behavior', table), True, True, 0)
+        vbox.pack_start(self.create_frame('MIDI', table), True, True, 0)
         self.vbox.show_all()
 
         self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)

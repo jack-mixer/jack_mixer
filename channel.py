@@ -78,7 +78,7 @@ class Channel(Gtk.VBox, SerializedObject):
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
-        self.balance_adjustment = Gtk.Adjustment(0.0, -1.0, 1.0, 0.02)
+        self.balance_adjustment = slider.BalanceAdjustment()
         self.future_out_mute = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
@@ -108,7 +108,7 @@ class Channel(Gtk.VBox, SerializedObject):
             self.channel.out_mute = self.future_out_mute
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
-        self.balance_adjustment.connect("value-changed", self.on_balance_changed)
+        self.balance_adjustment.connect("balance-changed", self.on_balance_changed)
 
         self.slider = None
         self.create_slider_widget()
@@ -181,7 +181,7 @@ class Channel(Gtk.VBox, SerializedObject):
             self.balance.button_down_value = self.balance.get_value()
             return True
         if event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
-            self.balance.set_value(0)
+            self.balance_adjustment.set_balance(0)
             return True
         return False
 
@@ -198,7 +198,7 @@ class Channel(Gtk.VBox, SerializedObject):
                 x = 1
             elif x <= -1:
                 x = -1
-            self.balance.set_value(x)
+            self.balance_adjustment.set_balance(x)
             return True
 
     def on_balance_scroll_event(self, widget, event):
@@ -323,8 +323,14 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def on_balance_changed(self, adjustment):
         balance = self.balance_adjustment.get_value()
-        #print "%s balance: %f" % (self.channel_name, balance)
+        #print("%s balance: %f" % (self.channel_name, balance))
         self.channel.balance = balance
+        self.app.update_monitor(self)
+
+    def on_volume_changed_from_midi(self, adjustment):
+        balance = self.balance_adjustment.get_value()
+        #print("%s balance from midi: %f" % (self.channel_name, balance))
+        self.channel.set_balance_from_midi(balance)
         self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):
@@ -381,7 +387,7 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def on_midi_event_received(self, *args):
         self.slider_adjustment.set_value_db(self.channel.volume, from_midi = True)
-        self.balance_adjustment.set_value(self.channel.balance)
+        self.balance_adjustment.set_balance(self.channel.balance, from_midi = True)
 
     def on_monitor_button_toggled(self, button):
         if button.get_active():

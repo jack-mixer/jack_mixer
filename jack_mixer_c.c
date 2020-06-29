@@ -215,7 +215,7 @@ Channel_set_volume(ChannelObject *self, PyObject *value, void *closure)
 		return -1;
 	}
 	channel_volume_write(self->channel, PyFloat_AsDouble(value));
-	channel_set_midi_cc_picked_up(self->channel, false);
+	channel_set_midi_cc_volume_picked_up(self->channel, false);
 	return 0;
 }
 
@@ -229,6 +229,7 @@ static int
 Channel_set_balance(ChannelObject *self, PyObject *value, void *closure)
 {
 	channel_balance_write(self->channel, PyFloat_AsDouble(value));
+	channel_set_midi_cc_balance_picked_up(self->channel, false);
 	return 0;
 }
 
@@ -237,7 +238,7 @@ Channel_get_out_mute(ChannelObject *self, void *closure)
 {
 	PyObject *result;
 
-    if (channel_is_out_muted(self->channel)) {
+	if (channel_is_out_muted(self->channel)) {
 		result = Py_True;
 	} else {
 		result = Py_False;
@@ -607,6 +608,20 @@ Channel_set_volume_from_midi(ChannelObject *self, PyObject *args)
 	return 0;
 }
 
+static int
+Channel_set_balance_from_midi(ChannelObject *self, PyObject *args)
+{
+	double value;
+
+	if (! PyArg_ParseTuple(args, "f", &value)) return NULL;
+	if (self->channel == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "unitialized channel");
+		return -1;
+	}
+	channel_balance_write(self->channel, value);
+	return 0;
+}
+
 static PyMethodDef channel_methods[] = {
 	{"remove", (PyCFunction)Channel_remove, METH_VARARGS, "Remove"},
 	{"autoset_volume_midi_cc",
@@ -619,6 +634,8 @@ static PyMethodDef channel_methods[] = {
 		(PyCFunction)Channel_autoset_solo_midi_cc, METH_VARARGS, "Autoset Solo MIDI CC"},
 	{"set_volume_from_midi",
 		(PyCFunction)Channel_set_volume_from_midi, METH_VARARGS, "Set Volume From MIDI"},
+	{"set_balance_from_midi",
+		(PyCFunction)Channel_set_volume_from_midi, METH_VARARGS, "Set Balance From MIDI"},
 	{NULL}
 };
 

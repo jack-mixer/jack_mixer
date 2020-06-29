@@ -69,6 +69,31 @@ GObject.signal_new("volume-changed", AdjustmentdBFS,
 GObject.signal_new("volume-changed-from-midi", AdjustmentdBFS,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 
+class BalanceAdjustment(Gtk.Adjustment):
+    def __init__(self):
+        Gtk.Adjustment.__init__(self, 0.0, -1.0, 1.0, 0.02)
+        self.connect("value-changed", self.on_value_changed)
+        self.disable_value_notify = False
+
+    def set_balance(self, value, from_midi = False):
+        self.disable_value_notify = True
+        self.set_value(value)
+        self.disable_value_notify = False
+        if not from_midi:
+            self.emit("balance-changed")
+        else:
+            self.emit("balance-changed-from-midi")
+
+    def on_value_changed(self, adjustment):
+        if not self.disable_value_notify:
+            self.emit("balance-changed")
+
+GObject.signal_new("balance-changed", BalanceAdjustment,
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+
+GObject.signal_new("balance-changed-from-midi", BalanceAdjustment,
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+
 
 class GtkSlider(Gtk.VScale):
     def __init__(self, adjustment):

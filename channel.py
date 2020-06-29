@@ -249,18 +249,24 @@ class Channel(Gtk.VBox, SerializedObject):
             self.slider_adjustment.step_up()
         return True
 
-    def update_volume(self, update_engine):
+    def update_volume(self, update_engine, from_midi = False):
         db = self.slider_adjustment.get_value_db()
 
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
 
         if update_engine:
-            self.channel.volume = db
+            if not from_midi:
+                self.channel.volume = db
+            else:
+                self.channel.set_volume_from_midi(db)
             self.app.update_monitor(self)
 
     def on_volume_changed(self, adjustment):
         self.update_volume(True)
+
+    def on_volume_changed_from_midi(self, adjustment):
+        self.update_volume(True, from_midi = True)
 
     def on_balance_changed(self, adjustment):
         balance = self.balance_adjustment.get_value()
@@ -321,7 +327,7 @@ class Channel(Gtk.VBox, SerializedObject):
         return False
 
     def on_midi_event_received(self, *args):
-        self.slider_adjustment.set_value_db(self.channel.volume)
+        self.slider_adjustment.set_value_db(self.channel.volume, from_midi = True)
         self.balance_adjustment.set_value(self.channel.balance)
 
     def on_monitor_button_toggled(self, button):

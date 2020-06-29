@@ -45,8 +45,6 @@
 
 #define VOLUME_TRANSITION_SECONDS 0.01
 
-#define MIDI_PICK_UP_DIFF 20
-
 #define PEAK_FRAMES_CHUNK 4800
 
 // we don't know how much to allocate, but we don't want to wait with 
@@ -98,7 +96,8 @@ struct channel
   int midi_cc_balance_index;
   int midi_cc_mute_index;
   int midi_cc_solo_index;
-
+  bool midi_cc_picked_up; /* used only if in 'pick up' mode */
+  
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
 
@@ -338,6 +337,12 @@ channel_get_solo_midi_cc(
   jack_mixer_channel_t channel)
 {
   return channel_ptr->midi_cc_solo_index;
+}
+
+void channel_set_midi_cc_picked_up(jack_mixer_channel_t channel, bool status)
+{
+  LOG_DEBUG("Setting channel %s picked up to %d", channel_ptr->name, status);
+  channel_ptr->midi_cc_picked_up = status;
 }
 
 unsigned int
@@ -1103,8 +1108,18 @@ process(
       }
       else if (channel_ptr->midi_cc_volume_index == in_event.buffer[1])
       {
-        int current_midi =  (int)(127 * scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume)));
-        if ((mixer_ptr->midi_behavior == Pick_Up && abs(in_event.buffer[2] -current_midi) <= MIDI_PICK_UP_DIFF) || mixer_ptr->midi_behavior == Jump_To_Value) {
+        int current_midi =  (int)(127 *
+         scale_db_to_scale(channel_ptr->midi_scale,
+         value_to_db(channel_ptr->volume)));
+        if (mixer_ptr->midi_behavior == Pick_Up && 
+         !channel_ptr->midi_cc_picked_up ) {
+          if (in_event.buffer[2] == current_midi) {
+            channel_ptr->midi_cc_picked_up = true;
+          }
+        }
+        if ((mixer_ptr->midi_behavior == Pick_Up &&
+         channel_ptr->midi_cc_picked_up) ||
+         mixer_ptr->midi_behavior == Jump_To_Value) {
             if (channel_ptr->volume_new != channel_ptr->volume) {
               channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
                (channel_ptr->volume_new - channel_ptr->volume) /
@@ -1442,6 +1457,7 @@ add_channel(
   channel_ptr->midi_cc_balance_index = -1;
   channel_ptr->midi_cc_mute_index = -1;
   channel_ptr->midi_cc_solo_index = -1;
+  channel_ptr->midi_cc_picked_up = false;
 
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
@@ -1569,6 +1585,7 @@ create_output_channel(
   channel_ptr->midi_cc_balance_index = -1;
   channel_ptr->midi_cc_mute_index = -1;
   channel_ptr->midi_cc_solo_index = -1;
+  channel_ptr->midi_cc_picked_up = false;
 
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;

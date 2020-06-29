@@ -42,12 +42,15 @@ class AdjustmentdBFS(Gtk.Adjustment):
     def get_value_db(self):
         return self.db
 
-    def set_value_db(self, db):
+    def set_value_db(self, db, from_midi = False):
         self.db = db
         self.disable_value_notify = True
         self.set_value(self.scale.db_to_scale(db))
         self.disable_value_notify = False
-        self.emit("volume-changed")
+        if not from_midi:
+            self.emit("volume-changed")
+        else:
+            self.emit("volume-changed-from-midi")
 
     def on_value_changed(self, adjustment):
         if not self.disable_value_notify:
@@ -61,6 +64,9 @@ class AdjustmentdBFS(Gtk.Adjustment):
         self.disable_value_notify = False
 
 GObject.signal_new("volume-changed", AdjustmentdBFS,
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+
+GObject.signal_new("volume-changed-from-midi", AdjustmentdBFS,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 
 

@@ -170,6 +170,9 @@ channel_set_solo_midi_cc(
   jack_mixer_channel_t channel,
   int new_cc);
 
+void channel_set_midi_cc_picked_up(jack_mixer_channel_t channel,
+  bool status);
+
 void
 channel_autoset_volume_midi_cc(
   jack_mixer_channel_t channel);

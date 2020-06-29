@@ -255,7 +255,6 @@ class JackMixer(SerializedObject):
         Gtk.main_quit()
 
     def on_midi_behavior_mode_changed(self, gui_factory, value):
-        print('on_midi_behavior_mode_changed', value)
         self.mixer.midi_behavior_mode = value
 
     def on_delete_event(self, widget, event):

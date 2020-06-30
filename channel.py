@@ -67,7 +67,7 @@ class Channel(Gtk.VBox, SerializedObject):
     '''Widget with slider and meter used as base class for more specific
        channel widgets'''
     monitor_button = None
-
+    num_instances = 0
     def __init__(self, app, name, stereo):
         Gtk.VBox.__init__(self)
         self.app = app
@@ -84,6 +84,8 @@ class Channel(Gtk.VBox, SerializedObject):
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
         self.future_solo_midi_cc = None
+        self.css_name = "css_name_%d" % Channel.num_instances
+        Channel.num_instances += 1
 
     def get_channel_name(self):
         return self._channel_name
@@ -407,7 +409,7 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def set_color(self, color):
         self.color = color
-        set_background_color(self.label_name_event_box, self.channel.name.replace(" ", "") + 'label', self.color.to_string())
+        set_background_color(self.label_name_event_box, self.css_name, self.color.to_string())
 
 class InputChannel(Channel):
     post_fader_output_channel = None
@@ -653,7 +655,7 @@ class OutputChannel(Channel):
         self.label_name_event_box.add(self.label_name)
         if not hasattr(self, 'color'):
             self.color = random_color()
-        set_background_color(self.label_name_event_box, self.channel.name + 'label',
+        set_background_color(self.label_name_event_box, self.css_name,
                self.color.to_string())
         self.vbox.pack_start(self.label_name_event_box, True, True, 0)
         self.mute = Gtk.ToggleButton()
@@ -1075,7 +1077,7 @@ class ControlGroup(Gtk.Alignment):
         self.vbox = Gtk.VBox()
         self.add(self.vbox)
 
-        set_background_color(self.vbox, output_channel.channel.name,
+        set_background_color(self.vbox, output_channel.css_name,
                 output_channel.color.to_string())
 
         self.hbox = hbox
@@ -1120,7 +1122,7 @@ class ControlGroup(Gtk.Alignment):
                 self.hbox.remove(self.solo)
 
         self.label.set_text(self.output_channel.channel.name)
-        set_background_color(self.vbox, self.output_channel.channel.name.replace(" ", ""), self.output_channel.color.to_string())
+        set_background_color(self.vbox, self.output_channel.css_name, self.output_channel.color.to_string())
 
 
     def on_mute_toggled(self, button):

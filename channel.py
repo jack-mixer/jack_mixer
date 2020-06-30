@@ -15,13 +15,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
+
 import gi
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
-import slider
-import meter
+
 import abspeak
+import meter
+import slider
 from serialization import SerializedObject
 
 try:
@@ -29,18 +32,19 @@ try:
 except:
     phat = None
 
-button_padding = 1
 
+log = logging.getLogger(__name__)
+button_padding = 1
 css = b"""
 .top_label {min-width: 100px;}
 button {padding: 0px}
 """
-
 css_provider = Gtk.CssProvider()
 css_provider.load_from_data(css)
 context = Gtk.StyleContext()
 screen = Gdk.Screen.get_default()
 context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
 
 def set_background_color(widget, name, color_string):
     css = """
@@ -58,10 +62,12 @@ def set_background_color(widget, name, color_string):
     widget_context = widget.get_style_context()
     widget_context.add_class(name)
 
+
 def random_color():
     from random import uniform, seed
     seed()
     return Gdk.RGBA(uniform(0, 1), uniform(0, 1), uniform(0, 1), 1)
+
 
 class Channel(Gtk.VBox, SerializedObject):
     '''Widget with slider and meter used as base class for more specific
@@ -106,7 +112,7 @@ class Channel(Gtk.VBox, SerializedObject):
     channel_name = property(get_channel_name, set_channel_name)
 
     def realize(self):
-        #print "Realizing channel \"%s\"" % self.channel_name
+        log.debug('Realizing channel "%s".', self.channel_name)
         if self.future_out_mute != None:
             self.channel.out_mute = self.future_out_mute
 
@@ -149,7 +155,7 @@ class Channel(Gtk.VBox, SerializedObject):
         self.connect("scroll-event", self.on_scroll)
 
     def unrealize(self):
-        #print "Unrealizing channel \"%s\"" % self.channel_name
+        log.debug('Unrealizing channel "%s".', self.channel_name)
         pass
 
     def balance_preferred_width(self):
@@ -243,11 +249,11 @@ class Channel(Gtk.VBox, SerializedObject):
         self.slider.show()
 
     def on_default_meter_scale_changed(self, gui_factory, scale):
-        #print "Default meter scale change detected."
+        log.debug("Default meter scale change detected.")
         self.meter.set_scale(scale)
 
     def on_default_slider_scale_changed(self, gui_factory, scale):
-        #print "Default slider scale change detected."
+        log.debug("Default slider scale change detected.")
         self.slider_scale = scale
         self.slider_adjustment.set_scale(scale)
         if self.channel:
@@ -267,13 +273,13 @@ class Channel(Gtk.VBox, SerializedObject):
         self.create_slider_widget()
 
     def on_abspeak_adjust(self, abspeak, adjust):
-        #print "abspeak adjust %f" % adjust
+        log.debug("abspeak adjust %f", adjust)
         self.slider_adjustment.set_value_db(self.slider_adjustment.get_value_db() + adjust)
         self.channel.abspeak = None
         #self.update_volume(False)   # We want to update gui even if actual decibels have not changed (scale wrap for example)
 
     def on_abspeak_reset(self, abspeak):
-        #print "abspeak reset"
+        log.debug("abspeak reset")
         self.channel.abspeak = None
 
     def on_volume_digits_key_pressed(self, widget, event):
@@ -281,9 +287,9 @@ class Channel(Gtk.VBox, SerializedObject):
             db_text = self.volume_digits.get_text()
             try:
                 db = float(db_text)
-                #print "Volume digits confirmation \"%f dBFS\"" % db
+                log.debug('Volume digits confirmation "%f dBFS".', db)
             except (ValueError) as e:
-                #print "Volume digits confirmation ignore, reset to current"
+                log.debug("Volume digits confirmation ignore, reset to current.")
                 self.update_volume(False)
                 return
             self.slider_adjustment.set_value_db(db)
@@ -291,7 +297,7 @@ class Channel(Gtk.VBox, SerializedObject):
             #self.update_volume(False)   # We want to update gui even if actual decibels have not changed (scale wrap for example)
 
     def on_volume_digits_focus_out(self, widget, event):
-        #print "volume digits focus out detected"
+        log.debug("Volume digits focus out detected.")
         self.update_volume(False)
 
     def read_meter(self):
@@ -333,23 +339,23 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def on_balance_changed(self, adjustment):
         balance = self.balance_adjustment.get_value()
-        #print("%s balance: %f" % (self.channel_name, balance))
+        log.debug("%s balance: %f", self.channel_name, balance)
         self.channel.balance = balance
         self.app.update_monitor(self)
 
     def on_volume_changed_from_midi(self, adjustment):
         balance = self.balance_adjustment.get_value()
-        #print("%s balance from midi: %f" % (self.channel_name, balance))
+        log.debug("%s balance from midi: %f", self.channel_name, balance)
         self.channel.set_balance_from_midi(balance)
         self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):
         if (event.keyval == Gdk.KEY_Up):
-            #print self.channel_name + " Up"
+            log.debug(self.channel_name + " Up")
             self.slider_adjustment.step_up()
             return True
         elif (event.keyval == Gdk.KEY_Down):
-            #print self.channel_name + " Down"
+            log.debug(self.channel_name + " Down")
             self.slider_adjustment.step_down()
             return True
 
@@ -1015,7 +1021,7 @@ class NewInputChannelDialog(NewChannelDialog):
         self.entry_solo_cc.set_value(-1)
 
     def get_result(self):
-        print('minus_inf active?', self.zero_dB.get_active())
+        log.debug('minus_inf active?: %s', self.zero_dB.get_active())
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': int(self.entry_volume_cc.get_value()),
@@ -1024,6 +1030,7 @@ class NewInputChannelDialog(NewChannelDialog):
                 'solo_cc': int(self.entry_solo_cc.get_value()),
                 'value': self.minus_inf.get_active()
                }
+
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
@@ -1056,7 +1063,6 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
             self.channel.set_color(self.color_chooser_button.get_rgba())
             for inputchannel in self.app.channels:
                 inputchannel.update_control_group(self.channel)
-
 
 
 class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
@@ -1093,6 +1099,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
                 'color': self.color_chooser_button.get_rgba(),
                 'value': self.minus_inf.get_active()
                 }
+
 
 class ControlGroup(Gtk.Alignment):
     def __init__(self, output_channel, input_channel):
@@ -1168,7 +1175,6 @@ class ControlGroup(Gtk.Alignment):
         self.label.set_text(self.output_channel.channel.name)
         set_background_color(self.vbox, self.output_channel.css_name, self.output_channel.color.to_string())
 
-
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())
         self.app.update_monitor(self)
@@ -1176,4 +1182,3 @@ class ControlGroup(Gtk.Alignment):
     def on_solo_toggled(self, button):
         self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())
         self.app.update_monitor(self)
-

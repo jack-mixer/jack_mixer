@@ -15,10 +15,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import configparser
+import logging
+import os
+
 import gi
 from gi.repository import GObject
-import os
-import configparser
 from serialization import SerializedObject
 
 try:
@@ -27,11 +29,16 @@ try:
 except:
     xdg = None
 
+
+log = logging.getLogger(__name__)
+
+
 def lookup_scale(scales, scale_id):
     for scale in scales:
         if scale_id == scale.scale_id:
             return scale
     return None
+
 
 class Factory(GObject.GObject, SerializedObject):
 
@@ -50,7 +57,8 @@ class Factory(GObject.GObject, SerializedObject):
             else:
                 self.write_preferences()
         else:
-            print("Cannot load PyXDG. Your preferences will not be preserved across jack_mixer invocations")
+            log.warning("Cannot load PyXDG. Your preferences will not be preserved across "
+                        "jack_mixer invocations")
 
     def set_default_preferences(self):
         self.default_meter_scale = self.meter_scales[0]
@@ -65,7 +73,7 @@ class Factory(GObject.GObject, SerializedObject):
         scale_id = self.config['Preferences']['default_meter_scale']
         self.default_meter_scale = lookup_scale(self.meter_scales, scale_id)
         if not self.default_meter_scale:
-            self.default_meter_scale = meter_scales[0]
+            self.default_meter_scale = self.meter_scales[0]
 
         scale_id = self.config['Preferences']['default_slider_scale']
         self.default_slider_scale = lookup_scale(self.slider_scales, scale_id)
@@ -106,7 +114,8 @@ class Factory(GObject.GObject, SerializedObject):
                 self.write_preferences()
             self.emit("default-meter-scale-changed", self.default_meter_scale)
         else:
-            print("Ignoring default_meter_scale setting, because \"%s\" scale is not known" % scale_id)
+            log.warning('Ignoring default_meter_scale setting, because "%s" scale is not known.',
+                        scale)
 
     def set_default_slider_scale(self, scale):
         if scale:
@@ -115,7 +124,8 @@ class Factory(GObject.GObject, SerializedObject):
                 self.write_preferences()
             self.emit("default-slider-scale-changed", self.default_slider_scale)
         else:
-            print("Ignoring default_slider_scale setting, because \"%s\" scale is not known" % scale_id)
+            log.warning('Ignoring default_slider_scale setting, because "%s" scale is not known.',
+                        scale)
 
     def set_vumeter_color(self, color):
         self.vumeter_color = color
@@ -195,6 +205,7 @@ class Factory(GObject.GObject, SerializedObject):
             self.set_midi_behavior_mode(int(value))
             return True
         return False
+
 
 GObject.signal_new("default-meter-scale-changed", Factory,
                 GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,

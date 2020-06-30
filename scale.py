@@ -15,8 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
 import math
+
 import jack_mixer_c
+
+
+log = logging.getLogger(__name__)
+
 
 class Mark:
     '''Encapsulates scale linear function edge and coefficients for scale = a * dB + b formula'''
@@ -24,6 +30,7 @@ class Mark:
         self.db = db
         self.scale = scale
         self.text = "%.0f" % math.fabs(db)
+
 
 class Base:
     '''Scale abstraction, various scale implementation derive from this class'''
@@ -43,7 +50,7 @@ class Base:
 
     def db_to_scale(self, db):
         '''Convert dBFS value to number in range 0.0-1.0 used in GUI'''
-        #print "db_to_scale(%f)" % db
+        log.debug("db_to_scale(%f)", db)
         return self.scale.db_to_scale(db)
 
     def scale_to_db(self, scale):
@@ -60,6 +67,7 @@ class Base:
         for i in self.marks:
             if i.scale == -1.0:
                 i.scale = self.db_to_scale(i.db)
+
 
 # IEC 60268-18 Peak programme level meters - Digital audio peak level meter
 # Adapted from meterpridge, may be wrong, I'm not buying standards, event if they cost $45
@@ -84,6 +92,7 @@ class IEC268(Base):
         self.calculate_coefficients()
         self.scale_marks()
 
+
 class IEC268Minimalistic(Base):
     '''IEC 60268-18 Peak programme level meters - Digital audio peak level meter,
        fewer marks'''
@@ -100,6 +109,7 @@ class IEC268Minimalistic(Base):
         self.add_threshold(0.0, 1.0, True)
         self.calculate_coefficients()
         self.scale_marks()
+
 
 class Linear70dB(Base):
     '''Linear scale with range from -70 to 0 dBFS'''
@@ -120,6 +130,7 @@ class Linear70dB(Base):
         self.calculate_coefficients()
         self.scale_marks()
 
+
 class Linear30dB(Base):
     '''Linear scale with range from -30 to +30 dBFS'''
     def __init__(self):
@@ -129,24 +140,29 @@ class Linear30dB(Base):
         self.calculate_coefficients()
         self.scale_marks()
 
+
 def scale_test1(scale):
     for i in range(-97 * 2, 1, 1):
         db = float(i)/2.0
         print("%5.1f dB maps to %f" % (db, scale.db_to_scale(db)))
+
 
 def scale_test2(scale):
     for i in range(101):
         s = float(i)/100.0
         print("%.2f maps to %.1f dB" % (s, scale.scale_to_db(s)))
 
+
 def print_db_to_scale(db):
     print("%-.1f dB maps to %f" % (db, scale.db_to_scale(db)))
+
 
 def scale_test3(scale):
     print_db_to_scale(+77.0)
     print_db_to_scale(+7.0)
     print_db_to_scale(0.0)
     print_db_to_scale(-107.0)
+
 
 #scale = linear_30dB()
 #scale_test2(scale)

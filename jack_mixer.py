@@ -162,13 +162,13 @@ class JackMixer(SerializedObject):
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
-        self.channel_edit_input_menu_item = self.new_menu_item('Edit _Input Channel',
+        self.channel_edit_input_menu_item = self.new_menu_item('_Edit Input Channel',
                                                                enabled=False)
         edit_menu.append(self.channel_edit_input_menu_item)
         self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
 
-        self.channel_edit_output_menu_item = self.new_menu_item('Edit _Output Channel',
+        self.channel_edit_output_menu_item = self.new_menu_item('E_dit Output Channel',
                                                                 enabled=False)
         edit_menu.append(self.channel_edit_output_menu_item)
         self.channel_edit_output_menu = Gtk.Menu()

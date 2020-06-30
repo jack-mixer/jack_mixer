@@ -29,3 +29,12 @@
 /m4/lt~obsolete.m4
 *.o
 jack_mix_box
+build/
+jack_mixer.cflags
+jack_mixer.config
+jack_mixer.creator
+jack_mixer.creator.user
+jack_mixer.cxxflags
+jack_mixer.files
+jack_mixer.includes
+*.xml

@@ -283,21 +283,21 @@ class JackMixer(SerializedObject):
 
     def on_open_cb(self, *args):
         dlg = Gtk.FileChooserDialog(title='Open', parent=self.window,
-                        action=Gtk.FileChooserAction.OPEN,
-                        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                        action=Gtk.FileChooserAction.OPEN)
+        dlg.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         dlg.set_default_response(Gtk.ResponseType.OK)
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             try:
                 f = open(filename, 'r')
                 self.load_from_xml(f)
-            except:
-                err = Gtk.MessageDialog(self.window,
-                            Gtk.DialogFlags.MODAL,
-                            Gtk.MessageType.ERROR,
-                            Gtk.ButtonsType.OK,
-                            "Failed loading settings.")
+            except Exception as e:
+                err = Gtk.MessageDialog(parent = self.window,
+                            modal = True,
+                            message_type = Gtk.MessageType.ERROR,
+                            buttons = Gtk.ButtonsType.OK,
+                            text = "Failed loading settings (%s)." % str(e))
                 err.run()
                 err.destroy()
             else:
@@ -747,11 +747,11 @@ def main():
     try:
         mixer = JackMixer(args.client_name)
     except Exception as e:
-        err = Gtk.MessageDialog(None,
-                                Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR,
-                                Gtk.ButtonsType.OK,
-                                "Mixer creation failed (%s)" % str(e))
+        err = Gtk.MessageDialog(parent = None,
+                                modal = True,
+                                message_type = Gtk.MessageType.ERROR,
+                                buttons = Gtk.ButtonsType.OK,
+                                text = "Mixer creation failed (%s)" % str(e))
         err.run()
         err.destroy()
         sys.exit(1)
@@ -762,12 +762,12 @@ def main():
 
         try:
             mixer.load_from_xml(f)
-        except:
-            err = Gtk.MessageDialog(mixer.window,
-                            Gtk.DialogFlags.MODAL,
-                            Gtk.MessageType.ERROR,
-                            Gtk.ButtonsType.OK,
-                            "Failed loading settings.")
+        except Exception as e:
+            err = Gtk.MessageDialog(parent = mixer.window,
+                            modal =  True,
+                            message_type = Gtk.MessageType.ERROR,
+                            buttons = Gtk.ButtonsType.OK,
+                            text = "Failed loading settings (%s)." % str(e))
             err.run()
             err.destroy()
         mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)), 300)

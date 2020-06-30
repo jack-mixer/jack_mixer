@@ -36,7 +36,7 @@ def lookup_scale(scales, scale_id):
 class Factory(GObject.GObject, SerializedObject):
 
     def __init__(self, topwindow, meter_scales, slider_scales):
-        self.midi_behavior_modes = { 'Jump To Value' : 0, 'Pick Up' : 1 }
+        self.midi_behavior_modes = [ 'Jump To Value', 'Pick Up' ]
         GObject.GObject.__init__(self)
         self.topwindow = topwindow
         self.meter_scales = meter_scales
@@ -58,7 +58,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.vumeter_color = '#ccb300'
         self.vumeter_color_scheme = 'default'
         self.use_custom_widgets = False
-        self.midi_behavior_mode = 'Jump To Value'
+        self.midi_behavior_mode = 0
 
     def read_preferences(self):
         self.config.read(self.path)
@@ -130,7 +130,7 @@ class Factory(GObject.GObject, SerializedObject):
 
     def set_midi_behavior_mode(self, mode):
         self.midi_behavior_mode = mode
-        self.emit("midi-behavior-mode-changed", self.midi_behavior_modes[self.midi_behavior_mode])
+        self.emit("midi-behavior-mode-changed", self.midi_behavior_mode)
 
     def get_default_meter_scale(self):
         return self.default_meter_scale
@@ -155,11 +155,12 @@ class Factory(GObject.GObject, SerializedObject):
         return 'gui_factory'
 
     def serialize(self, object_backend):
-        object_backend.add_property("midi_behavior_mode", self.get_midi_behavior_mode())
+        object_backend.add_property("midi_behavior_mode",
+                self.midi_behavior_modes[self.get_midi_behavior_mode()])
 
     def unserialize_property(self, name, value):
         if name == "midi_behavior_mode":
-            self.set_midi_behavior_mode(value)
+            self.set_midi_behavior_mode(self.midi_behavior_modes.index(value))
             return True
         return False
 

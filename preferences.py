@@ -142,9 +142,9 @@ class PreferencesDialog(Gtk.Dialog):
 
     def create_midi_behavior_combo(self):
         combo = Gtk.ComboBoxText()
-        combo.append('Jump To Value', 'Jump To Value')
-        combo.append('Pick Up', 'Pick Up')
-        combo.set_active_id(self.app.gui_factory.get_midi_behavior_mode())
+        for i, mode in enumerate(self.app.gui_factory.midi_behavior_modes):
+            combo.append(str(i), mode)
+        combo.set_active(self.app.gui_factory.get_midi_behavior_mode())
         combo.connect('changed', self.on_midi_behavior_combo_changed)
         return combo
 
@@ -163,8 +163,8 @@ class PreferencesDialog(Gtk.Dialog):
         self.app.gui_factory.set_default_slider_scale(scale)
 
     def on_midi_behavior_combo_changed(self, *args):
-        active_id = self.midi_behavior_combo.get_active_id()
-        self.app.gui_factory.set_midi_behavior_mode(active_id)
+        active = self.midi_behavior_combo.get_active()
+        self.app.gui_factory.set_midi_behavior_mode(active)
 
     def on_vumeter_color_change(self, *args):
         color_scheme = 'default'

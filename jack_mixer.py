@@ -315,9 +315,9 @@ class JackMixer(SerializedObject):
 
     def on_save_as_cb(self, *args):
         dlg = Gtk.FileChooserDialog(title='Save', parent=self.window,
-                        action=Gtk.FileChooserAction.SAVE,
-                        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                 Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+                        action=Gtk.FileChooserAction.SAVE)
+        dlg.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                        Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
         dlg.set_default_response(Gtk.ResponseType.OK)
         if dlg.run() == Gtk.ResponseType.OK:
             self.current_filename = dlg.get_filename()

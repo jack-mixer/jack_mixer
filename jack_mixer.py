@@ -718,8 +718,6 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             return channel
 
         if name == gui.Factory.serialization_name():
-            self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
-            self.gui_factory.connect('midi-behavior-mode-changed', self.on_midi_behavior_mode_changed)
             return self.gui_factory
 
     def serialization_get_childs(self):

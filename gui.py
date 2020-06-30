@@ -82,6 +82,11 @@ class Factory(GObject.GObject, SerializedObject):
 
         self.use_custom_widgets = self.config["Preferences"]["use_custom_widgets"] == 'True'
 
+        try:
+            self.midi_behavior_mode = self.config["Preferences"]["midi_behavior_mode"]
+        except:
+            self.midi_behavior_mode = 0
+
     def write_preferences(self):
         self.config['Preferences'] = {}
         self.config['Preferences']['default_meter_scale'] = self.default_meter_scale.scale_id
@@ -89,8 +94,10 @@ class Factory(GObject.GObject, SerializedObject):
         self.config['Preferences']['vumeter_color_scheme'] = self.vumeter_color_scheme
         self.config['Preferences']['vumeter_color'] = self.vumeter_color
         self.config['Preferences']['use_custom_widgets'] = str(self.use_custom_widgets)
+        self.config['Preferences']['midi_behavior_mode'] = str(self.midi_behavior_mode)
         with open(self.path, 'w') as configfile:
             self.config.write(configfile)
+            configfile.close()
 
     def set_default_meter_scale(self, scale):
         if scale:
@@ -129,7 +136,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.emit('use-custom-widgets-changed', self.use_custom_widgets)
 
     def set_midi_behavior_mode(self, mode):
-        self.midi_behavior_mode = mode
+        self.midi_behavior_mode = int(mode)
         self.emit("midi-behavior-mode-changed", self.midi_behavior_mode)
 
     def get_default_meter_scale(self):
@@ -155,12 +162,37 @@ class Factory(GObject.GObject, SerializedObject):
         return 'gui_factory'
 
     def serialize(self, object_backend):
+        object_backend.add_property("default_meter_scale",
+                self.get_default_meter_scale().scale_id)
+        object_backend.add_property("default_slider_scale",
+                self.get_default_slider_scale().scale_id)
+        object_backend.add_property("vumeter_color_scheme",
+                self.get_vumeter_color_scheme())
+        object_backend.add_property("vumeter_color",
+                self.get_vumeter_color())
+        object_backend.add_property("use_custom_widgets",
+                str(self.get_use_custom_widgets()))
         object_backend.add_property("midi_behavior_mode",
-                self.midi_behavior_modes[self.get_midi_behavior_mode()])
+                str(self.get_midi_behavior_mode()))
 
     def unserialize_property(self, name, value):
+        if name == "default_meter_scale":
+            self.set_default_meter_scale(lookup_scale(self.meter_scales, value))
+            return True
+        if name == "default_slider_scale":
+            self.set_default_slider_scale(lookup_scale(self.slider_scales, value))
+            return True
+        if name == "vumeter_color_scheme":
+            self.set_vumeter_color_scheme(value)
+            return True
+        if name == "vumeter_color":
+            self.set_vumeter_color(value)
+            return True
+        if name == "use_custom_widgets":
+            self.set_use_custom_widgets(value == 'True')
+            return True
         if name == "midi_behavior_mode":
-            self.set_midi_behavior_mode(self.midi_behavior_modes.index(value))
+            self.set_midi_behavior_mode(int(value))
             return True
         return False
 

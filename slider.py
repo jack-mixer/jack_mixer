@@ -106,21 +106,13 @@ class GtkSlider(Gtk.VScale):
         self.button_down_y = 0
         self.button_down_value = 0
 
-        # HACK: we want the behaviour you get with the middle button, so we
-        # mangle the events. Clicking with other buttons moves the slider in
-        # step increments, clicking with the middle button moves the slider
-        # to the location of the click.
         self.connect('button-press-event', self.button_press_event)
         self.connect('button-release-event', self.button_release_event)
         self.connect("motion-notify-event", self.motion_notify_event)
         self.connect("scroll-event", self.scroll_event)
 
     def button_press_event(self, widget, event):
-        if event.type == Gdk.EventType.BUTTON_PRESS:
-            widget.get_style_context().set_state(Gtk.StateFlags.FOCUSED)
-            widget.get_style_context().set_state(Gtk.StateFlags.PRELIGHT|Gtk.StateFlags.FOCUSED)
-            widget.get_style_context().add_class('dragging')
-            widget.get_style_context().add_class(':focused')
+        if not event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
             self.button_down = True
             self.button_down_y = event.y
             self.button_down_value = self.adjustment.get_value()
@@ -128,7 +120,7 @@ class GtkSlider(Gtk.VScale):
         if not event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
             self.adjustment.set_value(0)
             return True
-        if event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
+        if event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
             self.adjustment.set_value(self.adjustment.scale.db_to_scale(1))
             return True
         return False

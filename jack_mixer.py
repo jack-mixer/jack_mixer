@@ -102,6 +102,17 @@ class JackMixer(SerializedObject):
             GLib.timeout_add(200, self.nsm_react)
         GLib.timeout_add(50, self.midi_events_check)
 
+    def new_menu_item(self, title, callback=None, accel=None, enabled=True):
+        menuitem = Gtk.MenuItem.new_with_mnemonic(title)
+        menuitem.set_sensitive(enabled)
+        if callback:
+            menuitem.connect("activate", callback)
+        if accel:
+            key, mod = Gtk.accelerator_parse(accel)
+            menuitem.add_accelerator("activate", self.menu_accelgroup, key, mod,
+                                     Gtk.AccelFlags.VISIBLE)
+        return menuitem
+
     def create_ui(self, with_nsm):
         self.channels = []
         self.output_channels = []
@@ -111,6 +122,9 @@ class JackMixer(SerializedObject):
         self.gui_factory.connect('midi-behavior-mode-changed', self.on_midi_behavior_mode_changed)
         self.vbox_top = Gtk.VBox()
         self.window.add(self.vbox_top)
+
+        self.menu_accelgroup = Gtk.AccelGroup()
+        self.window.add_accel_group(self.menu_accelgroup)
 
         self.menubar = Gtk.MenuBar()
         self.vbox_top.pack_start(self.menubar, False, True, 0)
@@ -127,72 +141,59 @@ class JackMixer(SerializedObject):
         self.mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(self.mixer_menu)
 
-        add_input_channel = Gtk.MenuItem.new_with_mnemonic('New _Input Channel')
-        self.mixer_menu.append(add_input_channel)
-        add_input_channel.connect("activate", self.on_add_input_channel)
-
-        add_output_channel = Gtk.MenuItem.new_with_mnemonic('New _Output Channel')
-        self.mixer_menu.append(add_output_channel)
-        add_output_channel.connect("activate", self.on_add_output_channel)
+        self.mixer_menu.append(self.new_menu_item('New _Input Channel',
+                                                  self.on_add_input_channel, "<Control>N"))
+        self.mixer_menu.append(self.new_menu_item('New Output _Channel',
+                                                  self.on_add_output_channel, "<Shift><Control>N"))
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
         if not with_nsm:
-            open = Gtk.MenuItem.new_with_mnemonic('_Open')
-            self.mixer_menu.append(open)
-            open.connect('activate', self.on_open_cb)
-        save = Gtk.MenuItem.new_with_mnemonic('_Save')
-        self.mixer_menu.append(save)
-        save.connect('activate', self.on_save_cb)
+            self.mixer_menu.append(self.new_menu_item('_Open...', self.on_open_cb, "<Control>O"))
+
+        self.mixer_menu.append(self.new_menu_item('_Save', self.on_save_cb, "<Control>S"))
+
         if not with_nsm:
-            save_as = Gtk.MenuItem.new_with_mnemonic('Save_As')
-            self.mixer_menu.append(save_as)
-            save_as.connect('activate', self.on_save_as_cb)
+            self.mixer_menu.append(self.new_menu_item('Save _As...', self.on_save_as_cb,
+                                                      "<Shift><Control>S"))
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
-
-        quit = Gtk.MenuItem.new_with_mnemonic('_Quit')
-        self.mixer_menu.append(quit)
-        quit.connect('activate', self.on_quit_cb)
+        self.mixer_menu.append(self.new_menu_item('_Quit', self.on_quit_cb, "<Control>Q"))
 
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
-        self.channel_edit_input_menu_item = Gtk.MenuItem.new_with_mnemonic('_Edit Input Channel')
+        self.channel_edit_input_menu_item = self.new_menu_item('Edit _Input Channel',
+                                                               enabled=False)
         edit_menu.append(self.channel_edit_input_menu_item)
         self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
 
-        self.channel_edit_output_menu_item = Gtk.MenuItem.new_with_mnemonic('Edit _Output Channel')
+        self.channel_edit_output_menu_item = self.new_menu_item('Edit _Output Channel',
+                                                                enabled=False)
         edit_menu.append(self.channel_edit_output_menu_item)
         self.channel_edit_output_menu = Gtk.Menu()
         self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
 
-        self.channel_remove_input_menu_item = Gtk.MenuItem.new_with_mnemonic('Remove _Input Channel')
+        self.channel_remove_input_menu_item = self.new_menu_item('_Remove Input Channel',
+                                                                 enabled=False)
         edit_menu.append(self.channel_remove_input_menu_item)
         self.channel_remove_input_menu = Gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
-        self.channel_remove_output_menu_item = Gtk.MenuItem.new_with_mnemonic('_Remove Output Channel')
+        self.channel_remove_output_menu_item = self.new_menu_item('Re_move Output Channel',
+                                                                  enabled=False)
         edit_menu.append(self.channel_remove_output_menu_item)
         self.channel_remove_output_menu = Gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
-        channel_remove_all_menu_item = Gtk.MenuItem.new_with_mnemonic('Clear')
-        edit_menu.append(channel_remove_all_menu_item)
-        channel_remove_all_menu_item.connect("activate", self.on_channels_clear)
-
+        edit_menu.append(self.new_menu_item('_Clear', self.on_channels_clear, "<Control>X"))
         edit_menu.append(Gtk.SeparatorMenuItem())
-
-        preferences = Gtk.MenuItem.new_with_mnemonic('_Preferences')
-        preferences.connect('activate', self.on_preferences_cb)
-        edit_menu.append(preferences)
+        edit_menu.append(self.new_menu_item('_Preferences', self.on_preferences_cb, "<Control>P"))
 
         help_menu = Gtk.Menu()
         help_menu_item.set_submenu(help_menu)
 
-        about = Gtk.MenuItem.new_with_mnemonic('_About')
-        help_menu.append(about)
-        about.connect("activate", self.on_about)
+        help_menu.append(self.new_menu_item('_About', self.on_about, "F1"))
 
         self.hbox_top = Gtk.HBox()
         self.vbox_top.pack_start(self.hbox_top, True, True, 0)
@@ -382,7 +383,8 @@ class JackMixer(SerializedObject):
                 del self.channels[i]
                 self.hbox_inputs.remove(channel.get_parent())
                 break
-        if len(self.channels) == 0:
+        if not self.channels:
+            self.channel_edit_input_menu_item.set_sensitive(False)
             self.channel_remove_input_menu_item.set_sensitive(False)
 
     def on_edit_output_channel(self, widget, channel):
@@ -407,7 +409,8 @@ class JackMixer(SerializedObject):
                 del self.output_channels[i]
                 self.hbox_outputs.remove(channel.get_parent())
                 break
-        if len(self.output_channels) == 0:
+        if not self.output_channels:
+            self.channel_edit_output_menu_item.set_sensitive(False)
             self.channel_remove_output_menu_item.set_sensitive(False)
 
     def rename_channels(self, container, parameters):

@@ -617,7 +617,7 @@ class JackMixer(SerializedObject):
     def on_about(self, *args):
         about = Gtk.AboutDialog()
         about.set_name('jack_mixer')
-        about.set_copyright('Copyright © 2006-2020\nNedko Arnaudov, Frederic Peters, Arnout Engelen, Daniel Sheeler')
+        about.set_copyright('Copyright © 2006-2020\nNedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler')
         about.set_license('''\
 jack_mixer is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -632,9 +632,17 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
 Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
-        about.set_authors(['Nedko Arnaudov <nedko@arnaudov.name>',
-                           'Frederic Peters <fpeters@0d.be>',
-                           'Daniel Sheeler <dsheeler@pobox.com>'])
+        about.set_authors([
+            'Nedko Arnaudov <nedko@arnaudov.name>',
+            'Christopher Arndt <chris@chrisarndt.de>',
+            'Arnout Engelen <arnouten@bzzt.net>',
+            'John Hedges <john@drystone.co.uk>',
+            'Olivier Humbert',
+            'Sarah Mischke <sarah@spooky-online.de>',
+            'Frédéric Péters <fpeters@0d.be>',
+            'Daniel Sheeler <dsheeler@pobox.com>',
+            'Athanasios Silis <athanasios.silis@gmail.com>',
+        ])
         about.set_logo_icon_name('jack_mixer')
         about.set_website('https://rdio.space/jackmixer/')
 

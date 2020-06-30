@@ -15,6 +15,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
+
+
+log = logging.getLogger(__name__)
+
+
 class SerializationBackend:
     '''Base class for serialization backends'''
     def get_root_serialization_object(self, name):
@@ -26,6 +32,7 @@ class SerializationBackend:
     def get_child_serialization_object(self, name, backend_object):
         # this method should never be called for the base class
         raise NotImplementedError
+
 
 class SerializationObjectBackend:
     '''Base class for serialization backend objects where real object
@@ -42,6 +49,7 @@ class SerializationObjectBackend:
 
     def serialization_name(self):
         return None
+
 
 class SerializedObject:
     '''Base class for object supporting serialization'''
@@ -62,6 +70,7 @@ class SerializedObject:
     def unserialize_child(self, name):
         return None
 
+
 class Serializator:
     def __init__(self):
         pass
@@ -77,10 +86,10 @@ class Serializator:
         return self.unserialize_one(backend, root, backend_object)
 
     def unserialize_one(self, backend, object, backend_object):
-        #print "Unserializing " + repr(object)
+        log.debug("Unserializing %r.", object)
         properties = backend_object.get_properties()
         for name, value in properties.items():
-            #print "%s = %s" % (name, value)
+            log.debug("%s = %s", name, value)
             if not object.unserialize_property(name, value):
                 return False
 
@@ -99,7 +108,7 @@ class Serializator:
         object.serialize(backend_object)
         childs = object.serialization_get_childs()
         for child in childs:
-            #print "serializing child " + repr(child)
+            log.debug("Serializing child %r.", child)
             self.serialize_one(backend, child,
                                backend.get_child_serialization_object(
                                        child.serialization_name(), backend_object))

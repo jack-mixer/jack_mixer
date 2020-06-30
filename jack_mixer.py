@@ -19,6 +19,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
 import os
 import signal
 import sys
@@ -37,19 +38,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'ja
 
 import jack_mixer_c
 
+import gui
 import scale
 from channel import *
-
-import gui
-from preferences import PreferencesDialog
-
+from nsmclient import NSMClient
 from serialization_xml import XmlSerialization
 from serialization import SerializedObject, Serializator
-
-from nsmclient import NSMClient
+from preferences import PreferencesDialog
 
 # restore Python modules lookup path
 sys.path = old_path
+log = logging.getLogger("jack_mixer")
+
 
 class JackMixer(SerializedObject):
 
@@ -264,7 +264,7 @@ class JackMixer(SerializedObject):
         return False
 
     def sighandler(self, signum, frame):
-        #print "Signal %d received" % signum
+        log.debug("Signal %d received.", signum)
         if signum == signal.SIGUSR1:
             self.save = True
         elif signum == signal.SIGTERM:
@@ -272,10 +272,10 @@ class JackMixer(SerializedObject):
         elif signum == signal.SIGINT:
             Gtk.main_quit()
         else:
-            print("Unknown signal %d received" % signum)
+            log.warning("Unknown signal %d received.", signum)
 
     def cleanup(self):
-        print("Cleaning jack_mixer")
+        log.debug("Cleaning jack_mixer.")
         if not self.mixer:
             return
 
@@ -364,7 +364,7 @@ class JackMixer(SerializedObject):
                 self.window.show_all()
 
     def on_edit_input_channel(self, widget, channel):
-        print('Editing channel "%s"' % channel.channel_name)
+        log.debug('Editing input channel "%s".', channel.channel_name)
         channel.on_channel_properties()
 
     def remove_channel_edit_input_menuitem_by_label(self, widget, label):
@@ -372,7 +372,7 @@ class JackMixer(SerializedObject):
             self.channel_edit_input_menu.remove(widget)
 
     def on_remove_input_channel(self, widget, channel):
-        print('Removing channel "%s"' % channel.channel_name)
+        log.debug('Removing input channel "%s".', channel.channel_name)
         self.channel_remove_input_menu.remove(widget)
         self.channel_edit_input_menu.foreach(
             self.remove_channel_edit_input_menuitem_by_label,
@@ -390,7 +390,7 @@ class JackMixer(SerializedObject):
             self.channel_remove_input_menu_item.set_sensitive(False)
 
     def on_edit_output_channel(self, widget, channel):
-        print('Editing channel "%s"' % channel.channel_name)
+        log.debug('Editing output channel "%s".', channel.channel_name)
         channel.on_channel_properties()
 
     def remove_channel_edit_output_menuitem_by_label(self, widget, label):
@@ -398,7 +398,7 @@ class JackMixer(SerializedObject):
             self.channel_edit_output_menu.remove(widget)
 
     def on_remove_output_channel(self, widget, channel):
-        print('Removing channel "%s"' % channel.channel_name)
+        log.debug('Removing output channel "%s".', channel.channel_name)
         self.channel_remove_output_menu.remove(widget)
         self.channel_edit_output_menu.foreach(
             self.remove_channel_edit_output_menuitem_by_label,
@@ -429,8 +429,7 @@ class JackMixer(SerializedObject):
             rename_parameters)
         self.channel_remove_output_menu.foreach(self.rename_channels,
             rename_parameters)
-        #print("Renaming channel from %s to %s\n" % (oldname, newname))
-
+        log.debug('Renaming channel from "%s" to "%s".', oldname, newname)
 
     def on_channels_clear(self, widget):
         dlg = Gtk.MessageDialog(parent = self.window,
@@ -660,14 +659,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         about.destroy()
 
     def save_to_xml(self, file):
-        #print "Saving to XML..."
+        log.debug("Saving to XML...")
         b = XmlSerialization()
         s = Serializator()
         s.serialize(self, b)
         b.save(file)
 
     def load_from_xml(self, file, silence_errors=False):
-        #print "Loading from XML..."
+        log.debug("Loading from XML...")
         self.unserialized_channels = []
         b = XmlSerialization()
         try:
@@ -766,13 +765,18 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
 def main():
     parser = ArgumentParser()
     parser.add_argument('-c', '--config', help='use a non default configuration file')
+    parser.add_argument('-d', '--debug', action="store_true", help='Enable debug logging messages')
     parser.add_argument('client_name', metavar='NAME', nargs='?', default='jack_mixer',
                         help='set JACK client name')
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+                        format="%(levelname)s: %(message)s")
+
     try:
         mixer = JackMixer(args.client_name)
     except Exception as e:
+        log.exception("Mixer creation failed.")
         err = Gtk.MessageDialog(parent = None,
                                 modal = True,
                                 message_type = Gtk.MessageType.ERROR,

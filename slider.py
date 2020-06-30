@@ -15,10 +15,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
+
+import cairo
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
-import cairo
+
+
+log = logging.getLogger(__name__)
+
 
 class AdjustmentdBFS(Gtk.Adjustment):
     def __init__(self, scale, default_db, step_inc):
@@ -189,12 +195,12 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
     def on_mouse(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS:
-            #print "mouse button %u pressed %u:%u" % (event.button, event.x, event.y)
+            log.debug("Mouse button %u pressed %ux%u", event.button, event.x, event.y)
             if event.button == 1:
                 if event.y >= self.slider_rail_up and event.y < self.slider_rail_up + self.slider_rail_height:
                     self.adjustment.set_value(1 - float(event.y - self.slider_rail_up)/float(self.slider_rail_height))
         elif event.type == Gdk.EventType.MOTION_NOTIFY:
-            #print "mouse motion %u:%u" % (event.x, event.y)
+            log.debug("Mouse motion %ux%u", event.x, event.y)
             if event.y < self.slider_rail_up:
                 y = self.slider_rail_up
             elif event.y > self.slider_rail_up + self.slider_rail_height:

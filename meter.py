@@ -15,10 +15,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
+
+import cairo
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
-import cairo
+
+
+log = logging.getLogger(__name__)
+
 
 class MeterWidget(Gtk.DrawingArea):
     def __init__(self, scale):
@@ -38,7 +44,7 @@ class MeterWidget(Gtk.DrawingArea):
         self.cache_surface = None
 
     def get_preferred_width(self):
-        print('get_preferred_width called')
+        log.debug('get_preferred_width called')
         return 2
 
     def get_preferred_height(self):
@@ -67,7 +73,7 @@ class MeterWidget(Gtk.DrawingArea):
         self.cache_surface = None
 
     def on_size_request(self, widget, requisition):
-        #print "size-request, %u x %u" % (requisition.width, requisition.height)
+        log.debug("size-request, %u x %u", requisition.width, requisition.height)
         requisition.width = 20
         return
 
@@ -121,6 +127,7 @@ class MeterWidget(Gtk.DrawingArea):
         self.cache_surface = None
         self.invalidate_all()
 
+
 class MonoMeterWidget(MeterWidget):
     def __init__(self, scale):
         MeterWidget.__init__(self, scale)
@@ -143,6 +150,7 @@ class MonoMeterWidget(MeterWidget):
         self.value = self.scale.db_to_scale(value)
         if (abs(old_value-self.value) * self.height) > 1:
             self.invalidate_all()
+
 
 class StereoMeterWidget(MeterWidget):
     def __init__(self, scale):

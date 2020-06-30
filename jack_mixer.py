@@ -637,7 +637,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             'Christopher Arndt <chris@chrisarndt.de>',
             'Arnout Engelen <arnouten@bzzt.net>',
             'John Hedges <john@drystone.co.uk>',
-            'Olivier Humbert',
+            'Olivier Humbert <trebmuh@tuxfamily.org>',
             'Sarah Mischke <sarah@spooky-online.de>',
             'Frédéric Péters <fpeters@0d.be>',
             'Daniel Sheeler <dsheeler@pobox.com>',

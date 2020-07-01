@@ -431,26 +431,33 @@ class JackMixer(SerializedObject):
 
 
     def on_channels_clear(self, widget):
-        for channel in self.output_channels:
-            channel.unrealize()
-            self.hbox_outputs.remove(channel.get_parent())
-        for channel in self.channels:
-            channel.unrealize()
-            self.hbox_inputs.remove(channel.get_parent())
-        self.channels = []
-        self.output_channels = []
-        self.channel_edit_input_menu = Gtk.Menu()
-        self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
-        self.channel_edit_input_menu_item.set_sensitive(False)
-        self.channel_remove_input_menu = Gtk.Menu()
-        self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
-        self.channel_remove_input_menu_item.set_sensitive(False)
-        self.channel_edit_output_menu = Gtk.Menu()
-        self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
-        self.channel_edit_output_menu_item.set_sensitive(False)
-        self.channel_remove_output_menu = Gtk.Menu()
-        self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
-        self.channel_remove_output_menu_item.set_sensitive(False)
+        dlg = Gtk.MessageDialog(parent = self.window,
+                modal = True,
+                message_type = Gtk.MessageType.WARNING,
+                text = "Are you sure you want to clear all channels?",
+                buttons = Gtk.ButtonsType.OK_CANCEL)
+        if not widget or dlg.run() == Gtk.ResponseType.OK:
+            for channel in self.output_channels:
+                channel.unrealize()
+                self.hbox_outputs.remove(channel.get_parent())
+            for channel in self.channels:
+                channel.unrealize()
+                self.hbox_inputs.remove(channel.get_parent())
+            self.channels = []
+            self.output_channels = []
+            self.channel_edit_input_menu = Gtk.Menu()
+            self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
+            self.channel_edit_input_menu_item.set_sensitive(False)
+            self.channel_remove_input_menu = Gtk.Menu()
+            self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
+            self.channel_remove_input_menu_item.set_sensitive(False)
+            self.channel_edit_output_menu = Gtk.Menu()
+            self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
+            self.channel_edit_output_menu_item.set_sensitive(False)
+            self.channel_remove_output_menu = Gtk.Menu()
+            self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
+            self.channel_remove_output_menu_item.set_sensitive(False)
+        dlg.destroy()
 
     def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc):
         try:

@@ -427,7 +427,7 @@ class JackMixer(SerializedObject):
             rename_parameters)
         self.channel_remove_output_menu.foreach(self.rename_channels,
             rename_parameters)
-        print("Renaming channel from %s to %s\n" % (oldname, newname))
+        #print("Renaming channel from %s to %s\n" % (oldname, newname))
 
 
     def on_channels_clear(self, widget):

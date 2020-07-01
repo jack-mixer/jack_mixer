@@ -665,7 +665,6 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
 
     def load_from_xml(self, file, silence_errors=False):
         #print "Loading from XML..."
-        self.on_channels_clear(None)
         self.unserialized_channels = []
         b = XmlSerialization()
         try:
@@ -674,6 +673,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             if silence_errors:
                 return
             raise
+        self.on_channels_clear(None)
         s = Serializator()
         s.unserialize(self, b)
         for channel in self.unserialized_channels:

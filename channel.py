@@ -243,7 +243,8 @@ class Channel(Gtk.VBox, SerializedObject):
         #print "Default slider scale change detected."
         self.slider_scale = scale
         self.slider_adjustment.set_scale(scale)
-        self.channel.midi_scale = self.slider_scale.scale
+        if self.channel:
+            self.channel.midi_scale = self.slider_scale.scale
 
     def on_vumeter_color_changed(self, gui_factory, *args):
         color = gui_factory.get_vumeter_color()

@@ -32,7 +32,7 @@ except:
 button_padding = 1
 
 css = b"""
-:not(button) > label {min-width: 100px;}
+.top_label {min-width: 100px;}
 button {padding: 0px}
 """
 
@@ -444,6 +444,7 @@ class InputChannel(Channel):
         self.vbox = Gtk.VBox()
         self.pack_start(self.vbox, False, True, 0)
         self.label_name = Gtk.Label()
+        self.label_name.get_style_context().add_class('top_label')
         self.label_name.set_text(self.channel_name)
         self.label_name.set_width_chars(0)
         self.label_name_event_box = Gtk.EventBox()
@@ -458,10 +459,13 @@ class InputChannel(Channel):
 #         self.label_stereo.set_size_request(0, -1)
 #         self.vbox.pack_start(self.label_stereo, True)
 
-        self.hbox_mutesolo = Gtk.HBox()
-        vbox_mutesolo = Gtk.VBox()
-        vbox_mutesolo.pack_start(self.hbox_mutesolo, True, True, button_padding)
-        self.vbox.pack_start(vbox_mutesolo, True, True, 0)
+        self.hbox_mutesolo = Gtk.Box(False, button_padding)
+        hbox = Gtk.Box()
+        self.vbox.pack_start(hbox, True, True, button_padding)
+
+        label = Gtk.Label('All')
+        hbox.pack_start(label, False, False, button_padding)
+        hbox.pack_end(self.hbox_mutesolo, False, False, button_padding)
 
         self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
@@ -649,6 +653,7 @@ class OutputChannel(Channel):
         self.vbox = Gtk.VBox()
         self.pack_start(self.vbox, False, True, 0)
         self.label_name = Gtk.Label()
+        self.label_name.get_style_context().add_class('top_label')
         self.label_name.set_text(self.channel_name)
         self.label_name.set_width_chars(0)
         self.label_name_event_box = Gtk.EventBox()
@@ -972,7 +977,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
 class NewChannelDialog(ChannelPropertiesDialog):
     def __init__(self, app):
-        Gtk.Dialog.__init__(self, 'New Channel', app.window)
+        Gtk.Dialog.__init__(self, 'New Input Channel', app.window)
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
@@ -1074,15 +1079,15 @@ class ControlGroup(Gtk.Alignment):
         self.input_channel = input_channel
         self.app = input_channel.app
 
-        hbox = Gtk.HBox()
+        self.hbox = Gtk.HBox()
         self.vbox = Gtk.VBox()
         self.add(self.vbox)
+        self.buttons_box = Gtk.Box(False, button_padding)
 
         set_background_color(self.vbox, output_channel.css_name,
                 output_channel.color.to_string())
 
-        self.hbox = hbox
-        self.vbox.pack_start(hbox, True, True, button_padding)
+        self.vbox.pack_start(self.hbox, True, True, button_padding)
         css = b""" .control_group {
         min-width: 0px; padding: 0px;} """
 
@@ -1095,8 +1100,8 @@ class ControlGroup(Gtk.Alignment):
         self.label = Gtk.Label(output_channel.channel.name)
         label_context = self.label.get_style_context()
         label_context.add_class('control_group')
-
         self.hbox.pack_start(self.label, False, False, button_padding)
+        self.hbox.pack_end(self.buttons_box, False, False, button_padding)
         mute = Gtk.ToggleButton()
         mute.set_label("M")
         mute.set_name("mute")
@@ -1109,14 +1114,14 @@ class ControlGroup(Gtk.Alignment):
         self.solo = solo
 
         if self.output_channel.display_solo_buttons:
-            hbox.pack_end(solo, False, False, button_padding)
-        hbox.pack_end(mute, False, False, button_padding)
+            self.buttons_box.pack_end(solo, True, True, button_padding)
+        self.buttons_box.pack_end(mute, True, True, button_padding)
 
     def update(self):
         if self.output_channel.display_solo_buttons:
-            if not self.solo in self.hbox.get_children():
-                self.hbox.pack_end(self.solo, False, False, button_padding)
-                self.hbox.reorder_child(self.mute, -1)
+            if not self.solo in self.buttons_box.get_children():
+                self.buttons_box.pack_end(self.solo, True, True, button_padding)
+                self.buttons_box.reorder_child(self.mute, -1)
                 self.solo.show()
         else:
             if self.solo in self.hbox.get_children():

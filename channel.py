@@ -857,7 +857,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.mode_hbox.pack_start(self.stereo, True, True, 0)
 
         table = Gtk.Table(2, 3, False)
-        vbox.pack_start(self.create_frame('MIDI Control Channels', table), True, True, 0)
+        vbox.pack_start(self.create_frame('MIDI Control Changes', table), True, True, 0)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 

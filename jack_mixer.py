@@ -199,23 +199,24 @@ class JackMixer(SerializedObject):
         self.vbox_top.pack_start(self.hbox_top, True, True, 0)
 
         self.scrolled_window = Gtk.ScrolledWindow()
-        self.hbox_top.pack_start(self.scrolled_window, True, True, 0)
+        self.scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
-        self.hbox_inputs = Gtk.HBox()
+        self.hbox_inputs = Gtk.Box()
         self.hbox_inputs.set_spacing(0)
         self.hbox_inputs.set_border_width(0)
         self.hbox_top.set_spacing(0)
         self.hbox_top.set_border_width(0)
-
-        self.scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.scrolled_window.add(self.hbox_inputs)
-
-        self.hbox_outputs = Gtk.HBox()
+        self.hbox_outputs = Gtk.Box()
         self.hbox_outputs.set_spacing(0)
         self.hbox_outputs.set_border_width(0)
-        frame = Gtk.Frame()
-        self.hbox_outputs.pack_start(frame, False, True, 0)
-        self.hbox_top.pack_start(self.hbox_outputs, False, True, 0)
+        self.scrolled_output = Gtk.ScrolledWindow()
+        self.scrolled_output.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.scrolled_output.add(self.hbox_outputs)
+        paned = Gtk.HPaned()
+        self.hbox_top.pack_start(paned, True, True, 0)
+        paned.pack1(self.scrolled_window, True, False)
+        paned.pack2(self.scrolled_output, True, False)
 
         self.window.connect("destroy", Gtk.main_quit)
 
@@ -565,7 +566,8 @@ class JackMixer(SerializedObject):
     def add_output_channel_precreated(self, channel):
         frame = Gtk.Frame()
         frame.add(channel)
-        self.hbox_outputs.pack_start(frame, False, True, 0)
+        self.hbox_outputs.pack_end(frame, False, True, 0)
+        self.hbox_outputs.reorder_child(frame, 0)
         channel.realize()
 
         channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)

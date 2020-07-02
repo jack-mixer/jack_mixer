@@ -90,8 +90,6 @@ class JackMixer(SerializedObject):
         if not self.mixer:
             sys.exit(1)
 
-        #self.mixer.midi_behavior_mode = self.gui_factory.midi_behavior_modes[self.gui_factory.get_midi_behavior_mode()]
-
         self.window.set_title(client_name)
 
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)

@@ -1030,12 +1030,13 @@ class NewInputChannelDialog(NewChannelDialog):
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
-        print("here")
         NewChannelDialog.create_ui(self)
 
         table = self.properties_table
         table.attach(Gtk.Label(label='Color'), 0, 1, 4, 5)
         self.color_chooser_button = Gtk.ColorButton()
+        self.color_chooser_button.set_use_alpha(True)
+        self.color_chooser_button.set_rgba(Gdk.RGBA(0, 0, 0, 0))
         table.attach(self.color_chooser_button, 1, 2, 4, 5)
 
         vbox = Gtk.VBox()

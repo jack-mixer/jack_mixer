@@ -803,6 +803,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.app = app
         self.mixer = self.channel.mixer
         Gtk.Dialog.__init__(self, 'Channel "%s" Properties' % self.channel.channel_name, app.window)
+        self.set_default_size(365, -1)
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY)
@@ -994,6 +995,7 @@ class NewChannelDialog(ChannelPropertiesDialog):
 class NewInputChannelDialog(NewChannelDialog):
     def __init__(self, app):
         Gtk.Dialog.__init__(self, 'New Input Channel', app.window)
+        self.set_default_size(365, -1)
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
@@ -1064,6 +1066,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         self.app = app
         OutputChannelPropertiesDialog.create_ui(self)
         self.fill_ui()
+        self.set_default_size(365, -1)
 
         # TODO: disable mode for output channels as mono output channels may
         # not be correctly handled yet.

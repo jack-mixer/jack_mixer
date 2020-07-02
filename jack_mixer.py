@@ -136,7 +136,7 @@ class JackMixer(SerializedObject):
         help_menu_item = Gtk.MenuItem.new_with_mnemonic('_Help')
         self.menubar.append(help_menu_item)
 
-        self.window.set_default_size(120, 300)
+        self.window.set_default_size(420, 420)
 
         self.mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(self.mixer_menu)

@@ -1108,18 +1108,33 @@ class ControlGroup(Gtk.Alignment):
                 output_channel.color.to_string())
 
         self.vbox.pack_start(self.hbox, True, True, button_padding)
-        css = b""" .control_group {
-        min-width: 0px; padding: 0px;} """
+        css = b"""
+        .control_group {
+            min-width: 0px;
+            padding: 0px;
+        }
+
+        .control_group #label {
+            font-size: smaller;
+        }
+
+        .control_group #label,
+        .control_group #mute,
+        .control_group #solo {
+            padding: 0px .2em;
+        }
+        """
 
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(css)
         context = Gtk.StyleContext()
         screen = Gdk.Screen.get_default()
         context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        hbox_context = self.hbox.get_style_context()
+        hbox_context.add_class('control_group')
 
         self.label = Gtk.Label(output_channel.channel.name)
-        label_context = self.label.get_style_context()
-        label_context.add_class('control_group')
+        self.label.set_name("label")
         self.hbox.pack_start(self.label, False, False, button_padding)
         self.hbox.pack_end(self.buttons_box, False, False, button_padding)
         mute = Gtk.ToggleButton()

@@ -68,13 +68,14 @@ class Channel(Gtk.VBox, SerializedObject):
        channel widgets'''
     monitor_button = None
     num_instances = 0
-    def __init__(self, app, name, stereo):
+    def __init__(self, app, name, stereo, value = None):
         Gtk.VBox.__init__(self)
         self.app = app
         self.mixer = app.mixer
         self.gui_factory = app.gui_factory
         self._channel_name = name
         self.stereo = stereo
+        self.initial_value = value
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
@@ -137,6 +138,12 @@ class Channel(Gtk.VBox, SerializedObject):
         self.volume_digits.set_property('xalign', 0.5)
         self.volume_digits.connect("key-press-event", self.on_volume_digits_key_pressed)
         self.volume_digits.connect("focus-out-event", self.on_volume_digits_focus_out)
+
+        if self.initial_value != None:
+            if self.initial_value == True:
+                self.slider_adjustment.set_value(0)
+            else:
+                self.slider_adjustment.set_value_db(0)
 
         self.connect("key-press-event", self.on_key_pressed)
         self.connect("scroll-event", self.on_scroll)
@@ -415,8 +422,8 @@ class Channel(Gtk.VBox, SerializedObject):
 class InputChannel(Channel):
     post_fader_output_channel = None
 
-    def __init__(self, app, name, stereo):
-        Channel.__init__(self, app, name, stereo)
+    def __init__(self, app, name, stereo, value = None):
+        Channel.__init__(self, app, name, stereo, value)
 
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
@@ -619,8 +626,8 @@ class OutputChannel(Channel):
     _init_muted_channels = None
     _init_solo_channels = None
 
-    def __init__(self, app, name, stereo):
-        Channel.__init__(self, app, name, stereo)
+    def __init__(self, app, name, stereo, value = None):
+        Channel.__init__(self, app, name, stereo, value)
 
     def get_display_solo_buttons(self):
         return self._display_solo_buttons
@@ -830,7 +837,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         vbox = Gtk.VBox()
         self.vbox.add(vbox)
 
-        self.properties_table = table = Gtk.Table(3, 3, False)
+        self.properties_table = table = Gtk.Table(4, 3, False)
         vbox.pack_start(self.create_frame('Properties', table), True, True, 0)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
@@ -976,6 +983,20 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
 
 class NewChannelDialog(ChannelPropertiesDialog):
+    def create_ui(self):
+        ChannelPropertiesDialog.create_ui(self)
+        self.properties_table.attach(Gtk.Label(label='Value'), 0, 1, 2, 3)
+
+        self.value_hbox = Gtk.HBox()
+        self.properties_table.attach(self.value_hbox, 1, 2, 2, 3)
+        self.minus_inf = Gtk.RadioButton(label='-Inf')
+        self.zero_dB = Gtk.RadioButton(label='0dB', group=self.minus_inf)
+        self.value_hbox.pack_start(self.minus_inf, True, True, 0)
+        self.value_hbox.pack_start(self.zero_dB, True, True, 0)
+
+        self.vbox.show_all()
+
+class NewInputChannelDialog(NewChannelDialog):
     def __init__(self, app):
         Gtk.Dialog.__init__(self, 'New Input Channel', app.window)
         self.mixer = app.mixer
@@ -997,23 +1018,25 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.entry_solo_cc.set_value(-1)
 
     def get_result(self):
+        print('minus_inf active?', self.zero_dB.get_active())
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': int(self.entry_volume_cc.get_value()),
                 'balance_cc': int(self.entry_balance_cc.get_value()),
                 'mute_cc': int(self.entry_mute_cc.get_value()),
-                'solo_cc': int(self.entry_solo_cc.get_value())
+                'solo_cc': int(self.entry_solo_cc.get_value()),
+                'value': self.minus_inf.get_active()
                }
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
-        ChannelPropertiesDialog.create_ui(self)
+        print("here")
+        NewChannelDialog.create_ui(self)
 
         table = self.properties_table
-        table.attach(Gtk.Label(label='Color'), 0, 1, 2, 3)
+        table.attach(Gtk.Label(label='Color'), 0, 1, 4, 5)
         self.color_chooser_button = Gtk.ColorButton()
-        table.attach(self.color_chooser_button, 1, 2, 2, 3)
-
+        table.attach(self.color_chooser_button, 1, 2, 4, 5)
 
         vbox = Gtk.VBox()
         self.vbox.pack_start(self.create_frame('Input Channels', vbox), True, True, 0)
@@ -1038,12 +1061,12 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
 
 
 
-class NewOutputChannelDialog(OutputChannelPropertiesDialog):
+class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
     def __init__(self, app):
         Gtk.Dialog.__init__(self, 'New Output Channel', app.window)
         self.mixer = app.mixer
         self.app = app
-        self.create_ui()
+        OutputChannelPropertiesDialog.create_ui(self)
         self.fill_ui()
 
         # TODO: disable mode for output channels as mono output channels may
@@ -1068,7 +1091,8 @@ class NewOutputChannelDialog(OutputChannelPropertiesDialog):
                 'balance_cc': int(self.entry_balance_cc.get_value()),
                 'mute_cc': int(self.entry_mute_cc.get_value()),
                 'display_solo_buttons': self.display_solo_buttons.get_active(),
-                'color': self.color_chooser_button.get_rgba()
+                'color': self.color_chooser_button.get_rgba(),
+                'value': self.minus_inf.get_active()
                 }
 
 class ControlGroup(Gtk.Alignment):

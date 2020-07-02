@@ -338,7 +338,7 @@ class JackMixer(SerializedObject):
         self.preferences_dialog.present()
 
     def on_add_input_channel(self, widget):
-        dialog = NewChannelDialog(app=self)
+        dialog = NewInputChannelDialog(app=self)
         dialog.set_transient_for(self.window)
         dialog.show()
         ret = dialog.run()
@@ -461,9 +461,9 @@ class JackMixer(SerializedObject):
             self.channel_remove_output_menu_item.set_sensitive(False)
         dlg.destroy()
 
-    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc):
+    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, value):
         try:
-            channel = InputChannel(self, name, stereo)
+            channel = InputChannel(self, name, stereo, value)
             self.add_channel_precreated(channel)
         except Exception:
             e = sys.exc_info()[0]
@@ -533,9 +533,9 @@ class JackMixer(SerializedObject):
         return True
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc,
-            display_solo_buttons, color):
+            display_solo_buttons, color, value):
         try:
-            channel = OutputChannel(self, name, stereo)
+            channel = OutputChannel(self, name, stereo, value)
             channel.display_solo_buttons = display_solo_buttons
             channel.color = color
             self.add_output_channel_precreated(channel)

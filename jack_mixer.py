@@ -213,10 +213,11 @@ class JackMixer(SerializedObject):
         self.scrolled_output = Gtk.ScrolledWindow()
         self.scrolled_output.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.scrolled_output.add(self.hbox_outputs)
-        paned = Gtk.HPaned()
-        self.hbox_top.pack_start(paned, True, True, 0)
-        paned.pack1(self.scrolled_window, True, False)
-        paned.pack2(self.scrolled_output, True, False)
+        self.paned = Gtk.HPaned()
+        self.paned.set_wide_handle(True)
+        self.hbox_top.pack_start(self.paned, True, True, 0)
+        self.paned.pack1(self.scrolled_window, True, False)
+        self.paned.pack2(self.scrolled_output, True, False)
 
         self.window.connect("destroy", Gtk.main_quit)
 
@@ -695,6 +696,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         width, height = self.window.get_size()
         object_backend.add_property('geometry',
                         '%sx%s' % (width, height))
+        pos = self.paned.get_position()
+        object_backend.add_property('paned_position', '%s' % pos)
         solo_channels = []
         for input_channel in self.channels:
             if input_channel.channel.solo:
@@ -714,6 +717,11 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if name == 'visible':
             self.visible = value == 'True'
             return True
+        if name == 'paned_position':
+            pos = int(value)
+            self.paned.set_position(pos)
+            return True
+        return False
 
     def unserialize_child(self, name):
         if name == InputChannel.serialization_name():

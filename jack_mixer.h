@@ -28,10 +28,11 @@
 %include "typemaps.i"
 %apply double *OUTPUT { double * left_ptr, double * right_ptr, double * mono_ptr };
 %{
-#include <stdbool.h>
 #include "jack_mixer.h"
 %}
 #endif
+
+#include <stdbool.h>
 
 #include "scale.h"
 

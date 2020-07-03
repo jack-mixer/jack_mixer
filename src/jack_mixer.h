@@ -30,8 +30,8 @@
 #include "scale.h"
 
 typedef void * jack_mixer_t;
-typedef void * jack_mixer_kmeter_t;
 typedef void * jack_mixer_channel_t;
+typedef void * jack_mixer_kmeter_t;
 typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_threshold_t;
 
@@ -134,7 +134,6 @@ channel_mono_meter_read(
   jack_mixer_channel_t channel,
   double * mono_ptr);
 
-
 /* returned values are in dBFS */
 void
 channel_stereo_kmeter_read(
@@ -150,8 +149,6 @@ channel_mono_kmeter_read(
   jack_mixer_channel_t channel,
   double * mono_ptr,
   double * mono_rms_ptr);
-
-
 
 bool
 channel_is_stereo(
@@ -175,7 +172,7 @@ channel_volume_read(
 
 void
 channels_volumes_read(
-  jack_mixer_t mixer_ptr);
+    jack_mixer_t mixer_ptr);
 
 /* balance is from -1.0 (full left) to +1.0 (full right) */
 void
@@ -346,8 +343,7 @@ bool
 output_channel_is_prefader(
   jack_mixer_output_channel_t output_channel);
 
-void
-output_channel_set_in_prefader(
+void output_channel_set_in_prefader(
   jack_mixer_output_channel_t output_channel,
   jack_mixer_channel_t input_channel,
   bool prefader_value);

@@ -21,8 +21,6 @@
  *
  *****************************************************************************/
 
-#include "config.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,10 +37,7 @@
 #include <glib.h>
 
 #include "jack_mixer.h"
-//#define LOG_LEVEL LOG_LEVEL_DEBUG
 #include "log.h"
-
-#include "jack_compat.h"
 
 struct kmeter {
   float   _z1;          // filter state
@@ -326,7 +321,7 @@ channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
-  if (new_cc < 0 || new_cc > 127) {
+  if (new_cc < 0) {
     return 2; /* error: outside CC value range */
   }
 
@@ -353,7 +348,7 @@ channel_set_volume_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
-  if (new_cc< 0 || new_cc > 127) {
+  if (new_cc < 0) {
     return 2; /* error: outside limit CC */
   }
 
@@ -380,7 +375,7 @@ channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
-  if (new_cc < 0 || new_cc > 127) {
+  if (new_cc < 0) {
     return 2; /* error: outside CC value range */
   }
 
@@ -425,7 +420,7 @@ channel_set_solo_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
-  if (new_cc < 0 || new_cc > 127) {
+  if (new_cc < 0) {
     return 2; /* error: outside limit CC */
   }
 

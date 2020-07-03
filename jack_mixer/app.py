@@ -35,25 +35,23 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from gi.repository import GLib
 
-# temporary change Python modules lookup path to look into installation
-# directory ($prefix/share/jack_mixer/)
-old_path = sys.path
-sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), "..", "share", "jack_mixer"))
+from . import gui
+from . import scale
+from ._jack_mixer import Mixer
+from .channel import (
+    InputChannel,
+    NewInputChannelDialog,
+    NewOutputChannelDialog,
+    OutputChannel
+)
+from .nsmclient import NSMClient
+from .preferences import PreferencesDialog
+from .serialization_xml import XmlSerialization
+from .serialization import SerializedObject, Serializator
+from .styling import load_css_styles
+from .version import __version__
 
-import jack_mixer_c
 
-import gui
-import scale
-from channel import InputChannel, NewInputChannelDialog, NewOutputChannelDialog, OutputChannel
-from nsmclient import NSMClient
-from serialization_xml import XmlSerialization
-from serialization import SerializedObject, Serializator
-from styling import load_css_styles
-from preferences import PreferencesDialog
-from version import __version__
-
-# restore Python modules lookup path
-sys.path = old_path
 log = logging.getLogger("jack_mixer")
 
 
@@ -108,7 +106,7 @@ class JackMixer(SerializedObject):
             self.create_mixer(client_name, with_nsm=False)
 
     def create_mixer(self, client_name, with_nsm=True):
-        self.mixer = jack_mixer_c.Mixer(client_name)
+        self.mixer = Mixer(client_name)
         if not self.mixer:
             raise RuntimeError("Failed to create Mixer instance.")
 

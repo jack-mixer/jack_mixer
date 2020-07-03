@@ -114,6 +114,8 @@ struct output_channel {
   struct channel channel;
   GSList *soloed_channels;
   GSList *muted_channels;
+  GSList *prefader_channels;
+
   bool system; /* system channel, without any associated UI */
   bool prefader;
 };
@@ -727,7 +729,8 @@ mix_one(
 
       for (i = start ; i < end ; i++)
       {
-        if (! output_mix_channel->prefader) {
+        if (! output_mix_channel->prefader &&
+         g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL) {
           frame_left = channel_ptr->frames_left[i-start];
         } else {
           frame_left = channel_ptr->prefader_frames_left[i-start];
@@ -737,7 +740,8 @@ mix_one(
         mix_channel->tmp_mixed_frames_left[i] += frame_left;
         if (mix_channel->stereo)
         {
-          if (! output_mix_channel->prefader) {
+          if (! output_mix_channel->prefader &&
+              g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL) {
             frame_right = channel_ptr->frames_right[i-start];
           } else {
             frame_right = channel_ptr->prefader_frames_right[i-start];
@@ -1614,6 +1618,7 @@ create_output_channel(
 
   output_channel_ptr->soloed_channels = NULL;
   output_channel_ptr->muted_channels = NULL;
+  output_channel_ptr->prefader_channels = NULL;
   output_channel_ptr->system = system;
   output_channel_ptr->prefader = false;
 
@@ -1714,6 +1719,7 @@ remove_output_channel(
 
   g_slist_free(output_channel_ptr->soloed_channels);
   g_slist_free(output_channel_ptr->muted_channels);
+  g_slist_free(output_channel_ptr->prefader_channels);
 
   free(channel_ptr->tmp_mixed_frames_left);
   free(channel_ptr->tmp_mixed_frames_right);
@@ -1802,4 +1808,23 @@ output_channel_is_prefader(
 {
   struct output_channel *output_channel_ptr = output_channel;
   return output_channel_ptr->prefader;
+}
+
+void
+output_channel_set_in_prefader(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel,
+  bool prefader_value)
+{
+  struct output_channel *output_channel_ptr = output_channel;
+
+  if (prefader_value) {
+    if (g_slist_find(output_channel_ptr->prefader_channels, channel) != NULL)
+      return;
+    output_channel_ptr->prefader_channels = g_slist_prepend(output_channel_ptr->prefader_channels, channel);
+  } else {
+    if (g_slist_find(output_channel_ptr->prefader_channels, channel) == NULL)
+      return;
+    output_channel_ptr->prefader_channels = g_slist_remove(output_channel_ptr->prefader_channels, channel);
+  }
 }

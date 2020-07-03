@@ -779,12 +779,28 @@ OutputChannel_is_muted(OutputChannelObject *self, PyObject *args)
 	return result;
 }
 
+static PyObject*
+OutputChannel_set_in_prefader(OutputChannelObject *self, PyObject *args)
+{
+	PyObject *channel;
+	unsigned char prefader;
+
+	if (! PyArg_ParseTuple(args, "Ob", &channel, &prefader)) return NULL;
+
+	output_channel_set_in_prefader(self->output_channel,
+			((ChannelObject*)channel)->channel,
+			prefader);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 static PyMethodDef output_channel_methods[] = {
 	{"remove", (PyCFunction)OutputChannel_remove, METH_VARARGS, "Remove"},
 	{"set_solo", (PyCFunction)OutputChannel_set_solo, METH_VARARGS, "Set a channel as solo"},
 	{"set_muted", (PyCFunction)OutputChannel_set_muted, METH_VARARGS, "Set a channel as muted"},
 	{"is_solo", (PyCFunction)OutputChannel_is_solo, METH_VARARGS, "Is a channel set as solo"},
 	{"is_muted", (PyCFunction)OutputChannel_is_muted, METH_VARARGS, "Is a channel set as muted"},
+	{"set_prefader", (PyCFunction)OutputChannel_set_in_prefader, METH_VARARGS, "Set a channel as prefader"},
 	{NULL}
 };
 

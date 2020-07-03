@@ -1150,20 +1150,22 @@ class ControlGroup(Gtk.Alignment):
         solo.set_label("S")
         solo.connect("toggled", self.on_solo_toggled)
         self.solo = solo
+        pre = Gtk.ToggleButton("Pre")
+        pre.connect("toggled", self.on_prefader_toggled)
 
+        self.buttons_box.pack_start(pre, True, True, button_padding)
+        self.buttons_box.pack_start(mute, True, True, button_padding)
         if self.output_channel.display_solo_buttons:
-            self.buttons_box.pack_end(solo, True, True, button_padding)
-        self.buttons_box.pack_end(mute, True, True, button_padding)
+            self.buttons_box.pack_start(solo, True, True, button_padding)
 
     def update(self):
         if self.output_channel.display_solo_buttons:
             if not self.solo in self.buttons_box.get_children():
-                self.buttons_box.pack_end(self.solo, True, True, button_padding)
-                self.buttons_box.reorder_child(self.mute, -1)
+                self.buttons_box.pack_start(self.solo, True, True, button_padding)
                 self.solo.show()
         else:
-            if self.solo in self.hbox.get_children():
-                self.hbox.remove(self.solo)
+            if self.solo in self.buttons_box.get_children():
+                self.buttons_box.remove(self.solo)
 
         self.label.set_text(self.output_channel.channel.name)
         set_background_color(self.vbox, self.output_channel.css_name, self.output_channel.color.to_string())
@@ -1175,3 +1177,6 @@ class ControlGroup(Gtk.Alignment):
     def on_solo_toggled(self, button):
         self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())
         self.app.update_monitor(self)
+
+    def on_prefader_toggled(self, button):
+        self.output_channel.channel.set_prefader(self.input_channel.channel, button.get_active() == 1)

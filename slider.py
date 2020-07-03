@@ -87,8 +87,6 @@ class BalanceAdjustment(Gtk.Adjustment):
         self.disable_value_notify = False
         if not from_midi:
             self.emit("balance-changed")
-        else:
-            self.emit("balance-changed-from-midi")
 
     def on_value_changed(self, adjustment):
         if not self.disable_value_notify:
@@ -96,10 +94,6 @@ class BalanceAdjustment(Gtk.Adjustment):
 
 GObject.signal_new("balance-changed", BalanceAdjustment,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
-
-GObject.signal_new("balance-changed-from-midi", BalanceAdjustment,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
-
 
 class GtkSlider(Gtk.VScale):
     def __init__(self, adjustment):

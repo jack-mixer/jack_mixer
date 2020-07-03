@@ -117,6 +117,7 @@ class Channel(Gtk.VBox, SerializedObject):
             self.channel.out_mute = self.future_out_mute
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
+        self.slider_adjustment.connect("volume-changed-from-midi", self.on_volume_changed_from_midi)
         self.balance_adjustment.connect("balance-changed", self.on_balance_changed)
 
         self.slider = None
@@ -327,8 +328,6 @@ class Channel(Gtk.VBox, SerializedObject):
         if update_engine:
             if not from_midi:
                 self.channel.volume = db
-            else:
-                self.channel.set_volume_from_midi(db)
             self.app.update_monitor(self)
 
     def on_volume_changed(self, adjustment):
@@ -341,12 +340,6 @@ class Channel(Gtk.VBox, SerializedObject):
         balance = self.balance_adjustment.get_value()
         log.debug("%s balance: %f", self.channel_name, balance)
         self.channel.balance = balance
-        self.app.update_monitor(self)
-
-    def on_volume_changed_from_midi(self, adjustment):
-        balance = self.balance_adjustment.get_value()
-        log.debug("%s balance from midi: %f", self.channel_name, balance)
-        self.channel.set_balance_from_midi(balance)
         self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):

@@ -294,13 +294,7 @@ class JackMixer(SerializedObject):
                 f = open(filename, 'r')
                 self.load_from_xml(f)
             except Exception as e:
-                err = Gtk.MessageDialog(parent = self.window,
-                            modal = True,
-                            message_type = Gtk.MessageType.ERROR,
-                            buttons = Gtk.ButtonsType.OK,
-                            text = "Failed loading settings (%s)." % str(e))
-                err.run()
-                err.destroy()
+                error_dialog(self.window, "Failed loading settings (%s)", e)
             else:
                 self.current_filename = filename
             finally:
@@ -463,14 +457,7 @@ class JackMixer(SerializedObject):
             channel = InputChannel(self, name, stereo, value)
             self.add_channel_precreated(channel)
         except Exception:
-            e = sys.exc_info()[0]
-            err = Gtk.MessageDialog(self.window,
-                            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                            Gtk.MessageType.ERROR,
-                            Gtk.ButtonsType.OK,
-                            "Channel creation failed")
-            err.run()
-            err.destroy()
+            error_dialog(self.window, "Channel creation failed.")
             return
         if volume_cc != -1:
             channel.channel.volume_midi_cc = volume_cc
@@ -537,13 +524,7 @@ class JackMixer(SerializedObject):
             channel.color = color
             self.add_output_channel_precreated(channel)
         except Exception:
-            err = Gtk.MessageDialog(self.window,
-                            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                            Gtk.MessageType.ERROR,
-                            Gtk.ButtonsType.OK,
-                            "Channel creation failed")
-            err.run()
-            err.destroy()
+            error_dialog(self.window, "Channel creation failed")
             return
 
         if volume_cc != -1:
@@ -760,6 +741,16 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         #self.save_to_xml(f)
         #f.close
 
+
+
+def error_dialog(parent, msg, *args):
+    log.exception(msg, *args)
+    err = Gtk.MessageDialog(parent=parent, modal=True, destroy_with_parent=True,
+        message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.OK, text=msg % args)
+    err.run()
+    err.destroy()
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument('-c', '--config', help='use a non default configuration file')
@@ -774,14 +765,7 @@ def main():
     try:
         mixer = JackMixer(args.client_name)
     except Exception as e:
-        log.exception("Mixer creation failed.")
-        err = Gtk.MessageDialog(parent = None,
-                                modal = True,
-                                message_type = Gtk.MessageType.ERROR,
-                                buttons = Gtk.ButtonsType.OK,
-                                text = "Mixer creation failed (%s)" % str(e))
-        err.run()
-        err.destroy()
+        error_dialog(None, "Mixer creation failed (%s).", e)
         sys.exit(1)
 
     if not mixer.nsm_client and args.config:
@@ -791,13 +775,8 @@ def main():
         try:
             mixer.load_from_xml(f)
         except Exception as e:
-            err = Gtk.MessageDialog(parent = mixer.window,
-                            modal =  True,
-                            message_type = Gtk.MessageType.ERROR,
-                            buttons = Gtk.ButtonsType.OK,
-                            text = "Failed loading settings (%s)." % str(e))
-            err.run()
-            err.destroy()
+            error_dialog(mixer.window, "Failed loading settings (%s).", e)
+
         mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)), 300)
         f.close()
 

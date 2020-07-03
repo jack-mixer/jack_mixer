@@ -47,8 +47,8 @@
 
 #define PEAK_FRAMES_CHUNK 4800
 
-// we don't know how much to allocate, but we don't want to wait with 
-// allocating until we're in the process() callback, so we just take a 
+// we don't know how much to allocate, but we don't want to wait with
+// allocating until we're in the process() callback, so we just take a
 // fairly big chunk: 4 periods per buffer, 4096 samples per period.
 // (not sure if the '*4' is needed)
 #define MAX_BLOCK_SIZE (4 * 4096)
@@ -98,7 +98,7 @@ struct channel
   int midi_cc_solo_index;
   bool midi_cc_volume_picked_up;
   bool midi_cc_balance_picked_up;
-  
+
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
 
@@ -386,7 +386,7 @@ channel_autoset_volume_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_volume_index = i;
 
-      LOG_NOTICE("New channel \"%s\" volume mapped to CC#%i", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" volume mapped to CC#%i", channel_ptr->name, i);
 
       break;
     }
@@ -406,7 +406,7 @@ channel_autoset_balance_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_balance_index = i;
 
-      LOG_NOTICE("New channel \"%s\" balance mapped to CC#%i", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" balance mapped to CC#%i", channel_ptr->name, i);
 
       break;
     }
@@ -426,7 +426,7 @@ channel_autoset_mute_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_mute_index = i;
 
-      LOG_NOTICE("New channel \"%s\" mute mapped to CC#%i", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" mute mapped to CC#%i", channel_ptr->name, i);
 
       break;
     }
@@ -446,7 +446,7 @@ channel_autoset_solo_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_solo_index = i;
 
-      LOG_NOTICE("New channel \"%s\" solo mapped to CC#%i", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" solo mapped to CC#%i", channel_ptr->name, i);
 
       break;
     }
@@ -498,12 +498,12 @@ remove_channel(
     assert(channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] == channel_ptr);
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] = NULL;
   }
-  
+
   free(channel_ptr->frames_left);
   free(channel_ptr->frames_right);
   free(channel_ptr->prefader_frames_left);
   free(channel_ptr->prefader_frames_right);
-  
+
   free(channel_ptr);
 }
 
@@ -722,7 +722,7 @@ mix_one(
     }
 
     if ((!channel_ptr->mixer_ptr->soloed_channels && !output_mix_channel->soloed_channels) ||
-        (channel_ptr->mixer_ptr->soloed_channels && 
+        (channel_ptr->mixer_ptr->soloed_channels &&
          g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel_ptr) != NULL) ||
         (output_mix_channel->soloed_channels &&
         g_slist_find(output_mix_channel->soloed_channels, channel_ptr) != NULL)) {
@@ -1062,7 +1062,7 @@ process(
     update_channel_buffers(channel_ptr, nframes);
   }
 
-  // Fill output buffers with the input 
+  // Fill output buffers with the input
   for (node_ptr = mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;

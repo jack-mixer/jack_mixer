@@ -944,26 +944,44 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             timeout_label.set_text('This window will close in %d seconds.' % window.timeout)
             if window.timeout == 0:
                 window.destroy()
-                entry.set_value(self.mixer.last_midi_channel)
+                status, data1, data2 = self.mixer.last_midi_event
+                if (status & 0xF0) == 0xB0 and data1 >= 0 and data1 <= 127:
+                    entry.set_value(data1)
                 return False
             return True
         window.show_all()
         GObject.timeout_add_seconds(1, close_sense_timeout, window, entry)
 
     def on_sense_midi_volume_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_volume_cc.get_value())
+        midi_cc = int(self.entry_volume_cc.get_value())
+        if 0 >= midi_cc <= 127:
+            self.mixer.last_midi_event = (0xB0, midi_cc, 0)
+        else:
+            self.mixer.last_midi_event = (0, 0, 0)
         self.sense_popup_dialog(self.entry_volume_cc)
 
     def on_sense_midi_balance_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_balance_cc.get_value())
+        midi_cc = int(self.entry_balance_cc.get_value())
+        if 0 >= midi_cc <= 127:
+            self.mixer.last_midi_event = (0xB0, midi_cc, 0)
+        else:
+            self.mixer.last_midi_event = (0, 0, 0)
         self.sense_popup_dialog(self.entry_balance_cc)
 
     def on_sense_midi_mute_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_mute_cc.get_value())
+        midi_cc = int(self.entry_mute_cc.get_value())
+        if 0 >= midi_cc <= 127:
+            self.mixer.last_midi_event = (0xB0, midi_cc, 0)
+        else:
+            self.mixer.last_midi_event = (0, 0, 0)
         self.sense_popup_dialog(self.entry_mute_cc)
 
     def on_sense_midi_solo_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_solo_cc.get_value())
+        midi_cc = int(self.entry_solo_cc.get_value())
+        if 0 >= midi_cc <= 127:
+            self.mixer.last_midi_event = (0xB0, midi_cc, 0)
+        else:
+            self.mixer.last_midi_event = (0, 0, 0)
         self.sense_popup_dialog(self.entry_solo_cc)
 
     def on_response_cb(self, dlg, response_id, *args):

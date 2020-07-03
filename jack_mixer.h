@@ -33,6 +33,7 @@
 #endif
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "scale.h"
 
@@ -42,6 +43,13 @@ typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_threshold_t;
 
 enum midi_behavior_mode { Jump_To_Value, Pick_Up };
+
+struct midi_event {
+    uint8_t status;
+    uint8_t data1;
+    uint8_t data2;
+};
+
 
 jack_mixer_t
 create(
@@ -60,15 +68,15 @@ const char*
 get_client_name(
   jack_mixer_t mixer);
 
-int
-get_last_midi_channel(
-  jack_mixer_t mixer);
+void
+get_last_midi_event(
+  jack_mixer_t mixer,
+  struct midi_event * event);
 
 unsigned int
-set_last_midi_channel(
+set_last_midi_event(
   jack_mixer_t mixer,
-  int new_channel);
-
+  struct midi_event * event);
 
 int
 get_midi_behavior_mode(

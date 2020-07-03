@@ -125,7 +125,7 @@ struct jack_mixer
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
-  int last_midi_channel;
+  struct midi_event * last_midi_event;
   enum midi_behavior_mode midi_behavior;
 
   struct channel* midi_cc_map[128];
@@ -1088,7 +1088,9 @@ process(
       (unsigned int)in_event.buffer[1],
       (unsigned int)in_event.buffer[2]);
 
-    mixer_ptr->last_midi_channel = (int)in_event.buffer[1];
+    mixer_ptr->last_midi_event->status = (uint8_t) in_event.buffer[0];
+    mixer_ptr->last_midi_event->data1 = (uint8_t) in_event.buffer[1];
+    mixer_ptr->last_midi_event->data2 = (uint8_t) in_event.buffer[2];
     channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]];
 
     /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
@@ -1230,8 +1232,8 @@ create(
   (void) stereo;
   int ret;
   struct jack_mixer * mixer_ptr;
+  struct midi_event * midi_evt;
   int i;
-
 
   mixer_ptr = malloc(sizeof(struct jack_mixer));
   if (mixer_ptr == NULL)
@@ -1250,7 +1252,16 @@ create(
 
   mixer_ptr->soloed_channels = NULL;
 
-  mixer_ptr->last_midi_channel = -1;
+  midi_evt = malloc(sizeof(struct midi_event));
+  if (midi_evt == NULL)
+  {
+    goto exit;
+  }
+
+  mixer_ptr->last_midi_event = (struct midi_event *) midi_evt;
+  mixer_ptr->last_midi_event->status = 0;
+  mixer_ptr->last_midi_event->data1 = 0;
+  mixer_ptr->last_midi_event->data2 = 0;
 
   mixer_ptr->midi_behavior = Jump_To_Value;
 
@@ -1351,18 +1362,24 @@ get_client_name(
   return jack_get_client_name(mixer_ctx_ptr->jack_client);
 }
 
-int
-get_last_midi_channel(
-  jack_mixer_t mixer)
+void
+get_last_midi_event(
+  jack_mixer_t mixer,
+  struct midi_event * event)
 {
-  return mixer_ctx_ptr->last_midi_channel;
+  event->status = mixer_ctx_ptr->last_midi_event->status;
+  event->data1 = mixer_ctx_ptr->last_midi_event->data1;
+  event->data2 = mixer_ctx_ptr->last_midi_event->data2;
 }
 
 unsigned int
-set_last_midi_channel(
+set_last_midi_event(
   jack_mixer_t mixer,
-  int new_channel) {
-  mixer_ctx_ptr->last_midi_channel = new_channel;
+  struct midi_event * event)
+{
+  mixer_ctx_ptr->last_midi_event->status = event->status;
+  mixer_ctx_ptr->last_midi_event->data1 = event->data1;
+  mixer_ctx_ptr->last_midi_event->data2 = event->data2;
   return 0;
 }
 

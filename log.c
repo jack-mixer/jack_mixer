@@ -31,6 +31,6 @@ void jack_mixer_log(int level, const char * format, ...)
   va_list arglist;
 
   va_start(arglist, format);
-  vprintf(format, arglist);
+  vfprintf(stderr, format, arglist);
   va_end(arglist);
 }

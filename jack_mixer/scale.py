@@ -18,7 +18,7 @@
 import logging
 import math
 
-import jack_mixer_c
+from ._jack_mixer import Scale
 
 
 log = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class Base:
         self.marks = []
         self.scale_id = scale_id
         self.description = description
-        self.scale = jack_mixer_c.Scale()
+        self.scale = Scale()
 
     def add_threshold(self, db, scale, is_mark, text=None):
         self.scale.add_threshold(db, scale)

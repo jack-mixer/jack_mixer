@@ -1,4 +1,74 @@
+[build-system]
+# https://thiblahute.gitlab.io/mesonpep517/
+build-backend = "mesonpep517.buildapi"
+requires = [
+    "cython",
+    "wheel",
+    "mesonpep517 @ git+https://gitlab.com/SpotlightKid/mesonpep517@allfixes",
+    "ninja"
+]
+
+
+[tool.mesonpep517.entry-points]
+console_scripts = [
+    "jack_mixer = jack_mixer.app:main"
+]
+
+
+[tool.mesonpep517.metadata]
+summary = "A GTK+ JACK audio mixer application"
+description-file = "README.md"
+# 'keywords' metadata field not supported by mesonpep517 (yet)
+#keywords = "mixer,audio,music,jack,gtk"
+license = "GPL2+"
+author = "Nedko Arnaudov"
+author-email = "nedko (a.t) arnaudov (dot) name"
+maintainer = "Christopher Arndt"
+maintainer-email = "inf@chrisarndt.de"
+home-page = "https://rdio.space/jackmixer/"
+project-urls = [
+    "Source, https://github.com/jack-mixer/jack-mixer",
+]
+requires= [
+    "PyGObject",
+    "pycairo",
+    "pyxdg",
+]
+requires-python = ">=3.6"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Multimedia :: Sound/Audio :: Mixers",
+]
+meson-python-option-name = "python3"
+meson-options = [
+    "-Dwheel=true",
+    "--buildtype=release"
+]
+
+
+[tool.isort]
+ensure_newline_before_comments = true
+force_grid_wrap = 0
+include_trailing_comma = true
+line_length = 99
+multi_line_output = 3
+use_parentheses = true
+
+
 [tool.black]
 line-length = 99
-target-version = ['py36', 'py37', 'py38']
-force-exclude = 'nsmclient\.py'
+target-version = ['py36', 'py37', 'py38', 'py39']
+force-exclude = 'jack_mixer/nsmclient\.py'

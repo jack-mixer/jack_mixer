@@ -18,7 +18,7 @@
 import xml.dom
 import xml.dom.minidom
 
-from serialization import SerializationBackend
+from .serialization import SerializationBackend
 
 
 class XmlSerializationError(Exception):

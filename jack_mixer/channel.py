@@ -23,11 +23,11 @@ from gi.repository import Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 
-import abspeak
-import meter
-import slider
-from serialization import SerializedObject
-from styling import set_background_color, random_color
+from . import abspeak
+from . import meter
+from . import slider
+from .serialization import SerializedObject
+from .styling import set_background_color, random_color
 
 
 log = logging.getLogger(__name__)
@@ -344,6 +344,7 @@ class Channel(Gtk.Box, SerializedObject):
         balance = self.balance_adjustment.get_value()
         log.debug("%s balance: %f", self.channel_name, balance)
         self.channel.balance = balance
+        self.channel.set_midi_cc_balance_picked_up(False)
         self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):
@@ -490,6 +491,7 @@ class Channel(Gtk.Box, SerializedObject):
         if update_engine:
             if not from_midi:
                 self.channel.volume = db
+                self.channel.set_midi_cc_volume_picked_up(False)
             self.app.update_monitor(self)
 
     # ---------------------------------------------------------------------------------------------
@@ -1096,13 +1098,16 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             if name != self.channel.channel_name:
                 self.channel.channel_name = name
 
-            if self.direct_output.get_active() and not self.channel.post_fader_output_channel:
-                self.channel.wants_direct_output = True
-                self.app.add_direct_output(self.channel)
-            elif not self.direct_output.get_active() and self.channel.post_fader_output_channel:
-                self.channel.wants_direct_output = False
-                self.channel.post_fader_output_channel.remove()
-                self.channel.post_fader_output_channel = None
+            if self.channel and isinstance(self.channel, InputChannel):
+                if self.direct_output.get_active() and not self.channel.post_fader_output_channel:
+                    self.channel.wants_direct_output = True
+                    self.app.add_direct_output(self.channel)
+                elif (
+                    not self.direct_output.get_active() and self.channel.post_fader_output_channel
+                ):
+                    self.channel.wants_direct_output = False
+                    self.channel.post_fader_output_channel.remove()
+                    self.channel.post_fader_output_channel = None
 
             for control in ("volume", "balance", "mute", "solo"):
                 widget = getattr(self, "entry_{}_cc".format(control), None)

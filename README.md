@@ -14,15 +14,15 @@ information.
 
 ## Installation
 
-To build and install jack_mixer one would typically run:
+To build and install jack_mixer run:
 
 ```console
-./autogen.sh --prefix=/usr
-make
-sudo make install
+meson builddir --prefix=/usr --buildtype=release
+meson compile -C builddir
+[sudo] meson install -C builddir
 ```
 
-Please read the file [INSTALL] for more information.
+Please read the file [INSTALL.md] for more information and requirements.
 
 
 ## Using MIDI CCs to control jack_mixer
@@ -67,5 +67,5 @@ K-meter implemenatation taken from jkmeter, licensed under
 the GPL 2, by Fons Adriaensen.
 
 [COPYING]: ./COPYING
-[INSTALL]: ./INSTALL
+[INSTALL.md]: ./INSTALL.md
 [create an issue]: https://github.com/jack-mixer/jack_mixer/issues

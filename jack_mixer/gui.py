@@ -21,13 +21,14 @@ import os
 
 import gi  # noqa: F401
 from gi.repository import GObject
-from serialization import SerializedObject
 
 try:
     import xdg
     from xdg import BaseDirectory
 except ImportError:
     xdg = None
+
+from .serialization import SerializedObject
 
 
 log = logging.getLogger(__name__)

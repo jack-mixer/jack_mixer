@@ -70,8 +70,8 @@ class Base:
 
 
 # IEC 60268-18 Peak programme level meters - Digital audio peak level meter
-# Adapted from meterpridge, may be wrong, I'm not buying standards, event if they cost $45
-# If someone has the standart, please eighter share it with me or fix the code.
+# Adapted from meterbridge, may be wrong, I'm not buying standards, event if they cost $45
+# If someone has the standard, please either share it with me or fix the code.
 class IEC268(Base):
     '''IEC 60268-18 Peak programme level meters - Digital audio peak level meter'''
     def __init__(self):
@@ -153,17 +153,23 @@ def scale_test2(scale):
         print("%.2f maps to %.1f dB" % (s, scale.scale_to_db(s)))
 
 
-def print_db_to_scale(db):
+def print_db_to_scale(scale, db):
     print("%-.1f dB maps to %f" % (db, scale.db_to_scale(db)))
 
 
 def scale_test3(scale):
-    print_db_to_scale(+77.0)
-    print_db_to_scale(+7.0)
-    print_db_to_scale(0.0)
-    print_db_to_scale(-107.0)
+    print_db_to_scale(scale, +77.0)
+    print_db_to_scale(scale, +7.0)
+    print_db_to_scale(scale, 0.0)
+    print_db_to_scale(scale, -107.0)
 
 
-#scale = linear_30dB()
-#scale_test2(scale)
-#scale_test3(scale)
+def _test(*args, **kwargs):
+    scale = Linear30dB()
+    scale_test1(scale)
+    scale_test2(scale)
+    scale_test3(scale)
+
+
+if __name__ == '__main__':
+    _test()

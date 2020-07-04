@@ -1123,6 +1123,7 @@ class ControlGroup(Gtk.Alignment):
 
         .control_group #label,
         .control_group #mute,
+        .control_group #pre_fader,
         .control_group #solo {
             padding: 0px .2em;
         }
@@ -1143,14 +1144,18 @@ class ControlGroup(Gtk.Alignment):
         mute = Gtk.ToggleButton()
         mute.set_label("M")
         mute.set_name("mute")
+        mute.set_tooltip_text("Mute output channel send")
         mute.connect("toggled", self.on_mute_toggled)
         self.mute = mute
         solo = Gtk.ToggleButton()
         solo.set_name("solo")
         solo.set_label("S")
+        solo.set_tooltip_text("Solo output send")
         solo.connect("toggled", self.on_solo_toggled)
         self.solo = solo
-        pre = Gtk.ToggleButton("Pre")
+        pre = Gtk.ToggleButton("P")
+        pre.set_name("pre_fader")
+        pre.set_tooltip_text("Pre (on) / Post (off) fader send")
         pre.connect("toggled", self.on_prefader_toggled)
 
         self.buttons_box.pack_start(pre, True, True, button_padding)

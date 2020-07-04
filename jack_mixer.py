@@ -667,9 +667,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             if isinstance(channel, OutputChannel):
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
+        width, height = self.window.get_size()
         if self.visible:
             self.window.show_all()
-
+        self.paned.set_position(self.paned_position/self.width*width)
+        self.window.resize(self.width, self.height)
+ 
     def serialize(self, object_backend):
         width, height = self.window.get_size()
         object_backend.add_property('geometry',
@@ -687,7 +690,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
     def unserialize_property(self, name, value):
         if name == 'geometry':
             width, height = value.split('x')
-            self.window.resize(int(width), int(height))
+            self.width = int(width)
+            self.height = int(height)
             return True
         if name == 'solo_channels':
             self._init_solo_channels = value.split('|')
@@ -696,8 +700,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             self.visible = value == 'True'
             return True
         if name == 'paned_position':
-            pos = int(value)
-            self.paned.set_position(pos)
+            self.paned_position = int(value)
             return True
         return False
 

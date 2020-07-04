@@ -36,15 +36,17 @@ from gi.repository import GLib
 old_path = sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'jack_mixer'))
 
-import jack_mixer_c
 
 import gui
 import scale
-from channel import *
+from channel import (InputChannel, NewInputChannelDialog, NewOutputChannelDialog, OutputChannel,
+                     OutputChannelPropertiesDialog)
+from _jack_mixer import Mixer
 from nsmclient import NSMClient
 from serialization_xml import XmlSerialization
 from serialization import SerializedObject, Serializator
 from preferences import PreferencesDialog
+
 
 # restore Python modules lookup path
 sys.path = old_path
@@ -86,7 +88,7 @@ class JackMixer(SerializedObject):
 
     def create_mixer(self, client_name, with_nsm = True):
         self.create_ui(with_nsm)
-        self.mixer = jack_mixer_c.Mixer(client_name)
+        self.mixer = Mixer(client_name)
         if not self.mixer:
             sys.exit(1)
 
@@ -672,7 +674,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)
- 
+
     def serialize(self, object_backend):
         width, height = self.window.get_size()
         object_backend.add_property('geometry',

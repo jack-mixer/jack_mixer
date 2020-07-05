@@ -800,7 +800,7 @@ static PyMethodDef output_channel_methods[] = {
 	{"set_muted", (PyCFunction)OutputChannel_set_muted, METH_VARARGS, "Set a channel as muted"},
 	{"is_solo", (PyCFunction)OutputChannel_is_solo, METH_VARARGS, "Is a channel set as solo"},
 	{"is_muted", (PyCFunction)OutputChannel_is_muted, METH_VARARGS, "Is a channel set as muted"},
-	{"set_prefader", (PyCFunction)OutputChannel_set_in_prefader, METH_VARARGS, "Set a channel as prefader"},
+	{"set_in_prefader", (PyCFunction)OutputChannel_set_in_prefader, METH_VARARGS, "Set a channel as prefader"},
 	{NULL}
 };
 

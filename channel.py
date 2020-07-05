@@ -1039,7 +1039,7 @@ class NewInputChannelDialog(NewChannelDialog):
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
-        NewChannelDialog.create_ui(self)
+        ChannelPropertiesDialog.create_ui(self)
 
         table = self.properties_table
         table.attach(Gtk.Label(label='Color'), 0, 1, 4, 5)

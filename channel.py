@@ -1112,22 +1112,19 @@ class ControlGroup(Gtk.Alignment):
 
         self.vbox.pack_start(self.hbox, True, True, button_padding)
         css = b"""
-        .control_group {
-            min-width: 0px;
-            padding: 0px;
-        }
+.control_group {
+    min-width: 0px;
+    padding: 0px;
+}
 
-        .control_group #label {
-            font-size: smaller;
-        }
-
-        .control_group #label,
-        .control_group #mute,
-        .control_group #pre_fader,
-        .control_group #solo {
-            padding: 0px .2em;
-        }
-        """
+.control_group #label,
+.control_group #mute,
+.control_group #pre_fader,
+.control_group #solo {
+    font-size: smaller;
+    padding: 0px .1em;
+}
+"""
 
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(css)

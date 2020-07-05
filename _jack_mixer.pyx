@@ -352,6 +352,15 @@ cdef class Channel:
         """Remove channel."""
         remove_channel(self._channel)
 
+    def set_midi_cc_balance_picked_up(self, bool status):
+        """Set whether balance value is out-of-sync with MIDI control."""
+        channel_set_midi_cc_balance_picked_up(self._channel, status)
+
+    def set_midi_cc_volume_picked_up(self, bool status):
+        """Set whether volume value is out-of-sync with MIDI control."""
+        channel_set_midi_cc_volume_picked_up(self._channel, status)
+
+
 
 cdef class OutputChannel(Channel):
     """Jack Mixer output channel representation.

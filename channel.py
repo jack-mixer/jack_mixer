@@ -328,6 +328,7 @@ class Channel(Gtk.VBox, SerializedObject):
         if update_engine:
             if not from_midi:
                 self.channel.volume = db
+                self.channel.set_midi_cc_volume_picked_up(False)
             self.app.update_monitor(self)
 
     def on_volume_changed(self, adjustment):
@@ -340,6 +341,7 @@ class Channel(Gtk.VBox, SerializedObject):
         balance = self.balance_adjustment.get_value()
         log.debug("%s balance: %f", self.channel_name, balance)
         self.channel.balance = balance
+        self.channel.set_midi_cc_balance_picked_up(False)
         self.app.update_monitor(self)
 
     def on_key_pressed(self, widget, event):

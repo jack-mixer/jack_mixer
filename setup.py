@@ -42,7 +42,7 @@ for mod in pkgconf_modules:
         libraries.extend([lib[2:] for lib in res.split() if lib.startswith("-l")])
 
 define_macros = [
-    ("LOG_LEVEL", 0),
+    ("LOG_LEVEL", 2),
 ]
 
 cython_directives = {

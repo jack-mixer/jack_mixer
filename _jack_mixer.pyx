@@ -1,6 +1,4 @@
-#
-# _jack_mixer.pyx
-#
+"""Python bindings for jack_mixer.c and scale.c. using Cython."""
 
 __all__ = ("Scale", "Mixer")
 
@@ -16,11 +14,28 @@ cdef void midi_change_callback_func(void *userdata) with gil:
 
 
 class MidiBehaviour(enum.IntEnum):
+    """MIDI control behaviour.
+
+    `JUMP_TO_VALUE`
+
+    Received MIDI control messages affect mixer directly.
+
+    `PICK_UP`
+
+    Received MIDI control messages have to match up with current
+    mixer value first (within a small margin), before further
+    changes take effect.
+    """
     JUMP_TO_VALUE = 0
     PICK_UP = 1
 
 
 cdef class Scale:
+    """Mixer level scale representation.
+
+    Wraps `jack_mixer_scale_t` struct.
+    """
+
     cdef jack_mixer_scale_t _scale
 
     def __cinit__(self):
@@ -31,22 +46,32 @@ cdef class Scale:
             scale_destroy(self._scale)
 
     cpdef bool add_threshold(self, float db, float scale_value):
+        """Add scale treshold."""
         return scale_add_threshold(self._scale, db, scale_value)
 
     cpdef void remove_thresholds(self):
+        """Remove scale threshold."""
         scale_remove_thresholds(self._scale)
 
     cpdef void calculate_coefficients(self):
+        """Calculate scale coefficents."""
         scale_calculate_coefficients(self._scale)
 
     cpdef double db_to_scale(self, double db):
+        """Return scale value responding to given dB value."""
         return scale_db_to_scale(self._scale, db)
 
     cpdef double scale_to_db(self, double scale_value):
+        """Return dB value responding to given scale value."""
         return scale_scale_to_db(self._scale, scale_value)
 
 
 cdef class Mixer:
+    """Jack Mixer representation.
+
+    Wraps `jack_mixer_t` struct.
+    """
+
     cdef jack_mixer_t _mixer
     cdef bool _stereo
 
@@ -59,19 +84,27 @@ cdef class Mixer:
             mixer_destroy(self._mixer)
 
     def destroy(self):
+        """Close mixer Jack client and detroy mixer instance.
+
+        The instance must not be used anymore after calling this
+        method.
+        """
         if self._mixer:
             mixer_destroy(self._mixer)
 
     @property
     def channels_count(self):
+        """Number of mixer channels."""
         return mixer_get_channels_count(self._mixer)
 
     @property
     def client_name(self):
+        """Jack client name of mixer."""
         return mixer_get_client_name(self._mixer).decode('utf-8')
 
     @property
     def last_midi_channel(self):
+        """Last received MIDI control change (sic!) message."""
         return mixer_get_last_midi_channel(self._mixer)
 
     @last_midi_channel.setter
@@ -80,6 +113,10 @@ cdef class Mixer:
 
     @property
     def midi_behavior_mode(self):
+        """MIDI control change behaviour mode.
+
+        See `MidiBehaviour` enum for more information.
+        """
         return MidiBehaviour(mixer_get_midi_behavior_mode(self._mixer))
 
     @midi_behavior_mode.setter
@@ -88,12 +125,20 @@ cdef class Mixer:
                                      mode.value if isinstance(mode, MidiBehaviour) else mode)
 
     cpdef add_channel(self, channel_name, stereo=None):
+        """Add a stereo or mono input channel with given name to the mixer.
+
+        Returns a `Channel` instance.
+        """
         if stereo is None:
             stereo = self._stereo
 
         return Channel.new(mixer_add_channel(self._mixer, channel_name.encode('utf-8'), stereo))
 
     cpdef add_output_channel(self, channel_name, stereo=None, system=False):
+        """Add a stereo or mono output channel with given name to the mixer.
+
+        Returns a `OutputChannel` instance.
+        """
         if stereo is None:
             stereo = self._stereo
 
@@ -103,6 +148,11 @@ cdef class Mixer:
 
 
 cdef class Channel:
+    """Jack Mixer (input) channel representation.
+
+    Wraps `jack_mixer_channel_t` struct.
+    """
+
     cdef jack_mixer_channel_t _channel
     cdef object _midi_change_callback
 
@@ -111,12 +161,24 @@ cdef class Channel:
 
     @staticmethod
     cdef Channel new(jack_mixer_channel_t chan_ptr):
+        """Create a new Channel instance.
+
+        A pointer to an initialzed `jack_mixer_channel_t` struct must be
+        passed in.
+
+        This should not be called directly but only via `Mixer.add_channel()`.
+        """
         cdef Channel channel = Channel.__new__(Channel)
         channel._channel = chan_ptr
         return channel
 
     @property
     def abspeak(self):
+        """Absolute peak of channel meter.
+
+        Set to `None` to reset the absolute peak to -inf.
+        Trying to set it to any other value will raise a `ValueError`.
+        """
         return channel_abspeak_read(self._channel)
 
     @abspeak.setter
@@ -127,6 +189,7 @@ cdef class Channel:
 
     @property
     def balance(self):
+        """Channel balance property."""
         return channel_balance_read(self._channel)
 
     @balance.setter
@@ -135,10 +198,16 @@ cdef class Channel:
 
     @property
     def is_stereo(self):
+        """Is channel stereo or mono?"""
         return channel_is_stereo(self._channel)
 
     @property
     def meter(self):
+        """Read channel meter.
+
+        If channel is stereo, return a two-item tupel with (left, right) value.
+        If channel is mono, return a tupel with the value as the only item.
+        """
         cdef double left, right
 
         if channel_is_stereo(self._channel):
@@ -150,6 +219,12 @@ cdef class Channel:
 
     @property
     def midi_change_callback(self):
+        """Function to be called when a channel property is changed via MIDI.
+
+        The callback function takes no arguments.
+
+        Assign `None` to remove any existing callback.
+        """
         return self._midi_change_callback
 
     @midi_change_callback.setter
@@ -164,6 +239,7 @@ cdef class Channel:
 
     @property
     def name(self):
+        """Channel name property."""
         return channel_get_name(self._channel).decode('utf-8')
 
     @name.setter
@@ -172,6 +248,7 @@ cdef class Channel:
 
     @property
     def out_mute(self):
+        """Channel solo status property."""
         return channel_is_out_muted(self._channel)
 
     @out_mute.setter
@@ -183,6 +260,7 @@ cdef class Channel:
 
     @property
     def solo(self):
+        """Channel solo status property."""
         return channel_is_soloed(self._channel)
 
     @solo.setter
@@ -194,10 +272,15 @@ cdef class Channel:
 
     @property
     def midi_in_got_events(self):
+        """Did channel receive any MIDI events assigned to one of its controls?
+
+        Reading this property also resets it to False.
+        """
         return channel_get_midi_in_got_events(self._channel)
 
     @property
     def midi_scale(self):
+        """MIDI scale used by channel."""
         raise AttributeError("midi_scale can only be set.")
 
     @midi_scale.setter
@@ -206,6 +289,7 @@ cdef class Channel:
 
     @property
     def volume(self):
+        """Channel volume property."""
         return channel_volume_read(self._channel)
 
     @volume.setter
@@ -214,6 +298,7 @@ cdef class Channel:
 
     @property
     def balance_midi_cc(self):
+        """MIDI CC assigned to control channel balance."""
         return channel_get_balance_midi_cc(self._channel)
 
     @balance_midi_cc.setter
@@ -222,6 +307,7 @@ cdef class Channel:
 
     @property
     def mute_midi_cc(self):
+        """MIDI CC assigned to control channel mute status."""
         return channel_get_mute_midi_cc(self._channel)
 
     @mute_midi_cc.setter
@@ -230,6 +316,7 @@ cdef class Channel:
 
     @property
     def solo_midi_cc(self):
+        """MIDI CC assigned to control channel solo status."""
         return channel_get_solo_midi_cc(self._channel)
 
     @solo_midi_cc.setter
@@ -238,6 +325,7 @@ cdef class Channel:
 
     @property
     def volume_midi_cc(self):
+        """MIDI CC assigned to control channel volume."""
         return channel_get_volume_midi_cc(self._channel)
 
     @volume_midi_cc.setter
@@ -245,22 +333,34 @@ cdef class Channel:
         channel_set_volume_midi_cc(self._channel, cc)
 
     def autoset_balance_midi_cc(self):
+        """Auto assign MIDI CC for channel balance."""
         channel_autoset_balance_midi_cc(self._channel)
 
     def autoset_mute_midi_cc(self):
+        """Auto assign MIDI CC for channel mute status."""
         channel_autoset_mute_midi_cc(self._channel)
 
     def autoset_solo_midi_cc(self):
+        """Auto assign MIDI CC for channel solo status."""
         channel_autoset_solo_midi_cc(self._channel)
 
     def autoset_volume_midi_cc(self):
+        """Auto assign MIDI CC for channel volume."""
         channel_autoset_volume_midi_cc(self._channel)
 
     def remove(self):
+        """Remove channel."""
         remove_channel(self._channel)
 
 
 cdef class OutputChannel(Channel):
+    """Jack Mixer output channel representation.
+
+    Wraps `jack_mixer_output_channel_t` struct.
+
+    Inherits from `Channel` class.
+    """
+
     cdef jack_mixer_output_channel_t _output_channel
 
     def __init__(self):
@@ -269,6 +369,14 @@ cdef class OutputChannel(Channel):
 
     @staticmethod
     cdef OutputChannel new(jack_mixer_output_channel_t chan_ptr):
+        """Create a new OutputChannel instance.
+
+        A pointer to an initialzed `jack_mixer_output_channel_t` struct must
+        be passed in.
+
+        This should not be called directly but only via
+        `Mixer.add_output_channel()`.
+        """
         cdef OutputChannel channel = OutputChannel.__new__(OutputChannel)
         channel._output_channel = chan_ptr
         channel._channel = <jack_mixer_channel_t> chan_ptr

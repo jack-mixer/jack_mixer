@@ -21,8 +21,6 @@
  *
  *****************************************************************************/
 
-#include "config.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,10 +36,7 @@
 #include <glib.h>
 
 #include "jack_mixer.h"
-//#define LOG_LEVEL LOG_LEVEL_DEBUG
 #include "log.h"
-
-#include "jack_compat.h"
 
 #define VOLUME_TRANSITION_SECONDS 0.01
 

@@ -22,10 +22,10 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
 
-import abspeak
-import meter
-import slider
-from serialization import SerializedObject
+from . import abspeak
+from . import meter
+from . import slider
+from .serialization import SerializedObject
 
 try:
     import phat

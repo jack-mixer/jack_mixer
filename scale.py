@@ -18,7 +18,7 @@
 import logging
 import math
 
-from _jack_mixer import Scale
+from ._jack_mixer import Scale
 
 
 log = logging.getLogger(__name__)

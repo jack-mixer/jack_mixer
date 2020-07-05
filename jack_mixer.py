@@ -36,16 +36,15 @@ from gi.repository import GLib
 old_path = sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'jack_mixer'))
 
-
-import gui
-import scale
-from channel import (InputChannel, NewInputChannelDialog, NewOutputChannelDialog, OutputChannel,
+from . import gui
+from . import scale
+from ._jack_mixer import Mixer
+from .channel import (InputChannel, NewInputChannelDialog, NewOutputChannelDialog, OutputChannel,
                      OutputChannelPropertiesDialog)
-from _jack_mixer import Mixer
-from nsmclient import NSMClient
-from serialization_xml import XmlSerialization
-from serialization import SerializedObject, Serializator
-from preferences import PreferencesDialog
+from .nsmclient import NSMClient
+from .serialization_xml import XmlSerialization
+from .serialization import SerializedObject, Serializator
+from .preferences import PreferencesDialog
 
 
 # restore Python modules lookup path

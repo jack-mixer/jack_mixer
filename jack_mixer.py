@@ -687,7 +687,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
         width, height = self.window.get_size()
-        if self.visible:
+        if self.visible or self.nsm_client == None:
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)

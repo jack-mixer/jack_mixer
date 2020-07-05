@@ -1184,4 +1184,4 @@ class ControlGroup(Gtk.Alignment):
         self.app.update_monitor(self)
 
     def on_prefader_toggled(self, button):
-        self.output_channel.channel.set_prefader(self.input_channel.channel, button.get_active() == 1)
+        self.output_channel.channel.set_in_prefader(self.input_channel.channel, button.get_active())

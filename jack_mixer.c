@@ -1828,3 +1828,15 @@ output_channel_set_in_prefader(
     output_channel_ptr->prefader_channels = g_slist_remove(output_channel_ptr->prefader_channels, channel);
   }
 }
+
+bool
+output_channel_is_in_prefader(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel)
+{
+  struct output_channel *output_channel_ptr = output_channel;
+
+  if (g_slist_find(output_channel_ptr->prefader_channels, channel) != NULL)
+    return true;
+  return false;
+}

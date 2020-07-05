@@ -293,4 +293,9 @@ void output_channel_set_in_prefader(jack_mixer_output_channel_t output_channel,
   jack_mixer_channel_t input_channel,
   bool prefader_value);
 
+bool
+output_channel_is_in_prefader(
+  jack_mixer_output_channel_t output_channel,
+  jack_mixer_channel_t channel);
+
 #endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */

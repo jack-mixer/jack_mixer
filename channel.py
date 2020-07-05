@@ -618,6 +618,7 @@ class OutputChannel(Channel):
 
     _init_muted_channels = None
     _init_solo_channels = None
+    _init_prefader_channels = None
 
     def __init__(self, app, name, stereo, value = None):
         Channel.__init__(self, app, name, stereo, value)
@@ -708,8 +709,11 @@ class OutputChannel(Channel):
                 ctlgroup.mute.set_active(True)
             if self._init_solo_channels and input_channel.channel.name in self._init_solo_channels:
                 ctlgroup.solo.set_active(True)
+            if self._init_prefader_channels and input_channel.channel.name in self._init_prefader_channels:
+                ctlgroup.prefader.set_active(True)
         self._init_muted_channels = None
         self._init_solo_channels = None
+        self._init_prefader_channels = None
 
     channel_properties_dialog = None
     def on_channel_properties(self):
@@ -754,15 +758,20 @@ class OutputChannel(Channel):
             object_backend.add_property("solo_buttons", "true")
         muted_channels = []
         solo_channels = []
+        prefader_in_channels = []
         for input_channel in self.app.channels:
             if self.channel.is_muted(input_channel.channel):
                 muted_channels.append(input_channel)
             if self.channel.is_solo(input_channel.channel):
                 solo_channels.append(input_channel)
+            if self.channel.is_in_prefader(input_channel.channel):
+                prefader_in_channels.append(input_channel)
         if muted_channels:
             object_backend.add_property('muted_channels', '|'.join([x.channel.name for x in muted_channels]))
         if solo_channels:
             object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
+        if prefader_in_channels:
+            object_backend.add_property('prefader_channels', '|'.join([x.channel.name for x in prefader_in_channels]))
         object_backend.add_property("color", self.color.to_string())
         Channel.serialize(self, object_backend)
 
@@ -786,6 +795,9 @@ class OutputChannel(Channel):
             return True
         if name == 'solo_channels':
             self._init_solo_channels = value.split('|')
+            return True
+        if name == 'prefader_channels':
+            self._init_prefader_channels = value.split('|')
             return True
         if name == 'color':
             c = Gdk.RGBA()
@@ -1154,7 +1166,7 @@ class ControlGroup(Gtk.Alignment):
         pre.set_name("pre_fader")
         pre.set_tooltip_text("Pre (on) / Post (off) fader send")
         pre.connect("toggled", self.on_prefader_toggled)
-
+        self.prefader = pre
         self.buttons_box.pack_start(pre, True, True, button_padding)
         self.buttons_box.pack_start(mute, True, True, button_padding)
         if self.output_channel.display_solo_buttons:

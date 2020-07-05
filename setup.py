@@ -131,8 +131,8 @@ for size_dir in os.listdir(IMG_DIR):
     if isdir(join(IMG_DIR, size_dir)):
         data_files.append(
             (
-                join("share/icons/hicolor", size_dir, "app"),
-                glob(join(IMG_DIR, size_dir, "app", "*")),
+                join("share/icons/hicolor", size_dir, "apps"),
+                glob(join(IMG_DIR, size_dir, "*")),
             )
         )
 

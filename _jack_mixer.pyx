@@ -326,6 +326,10 @@ cdef class OutputChannel(Channel):
         if self._output_channel:
             return output_channel_is_solo(self._output_channel, channel._channel)
 
+    def set_in_prefader(self, Channel channel, bool value):
+        if self._output_channel:
+            output_channel_set_in_prefader(self._output_channel, channel._channel, value)
+
     def set_solo(self, Channel channel, bool value):
         if self._output_channel:
             output_channel_set_solo(self._output_channel, channel._channel, value)

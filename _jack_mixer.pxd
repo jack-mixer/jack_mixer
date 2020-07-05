@@ -124,6 +124,10 @@ cdef extern from "jack_mixer.h":
     cdef void output_channel_set_prefader(
         jack_mixer_output_channel_t output_channel,
         bool pfl_value)
+    cdef void output_channel_set_in_prefader(
+        jack_mixer_output_channel_t output_channel,
+        jack_mixer_channel_t input_channel,
+        bool prefader_value)
     cdef bool output_channel_is_solo(
         jack_mixer_output_channel_t output_channel,
         jack_mixer_channel_t channel)

@@ -5,8 +5,8 @@ import argparse
 import os
 import sys
 from glob import glob
-from os.path import abspath, dirname, exists, isdir, join
-from subprocess import CalledProcessError, check_output
+from os.path import dirname, exists, isdir, join
+from subprocess import check_output
 
 from setuptools import setup
 from distutils.extension import Extension
@@ -67,8 +67,8 @@ def check_mod_version(mod, *min_versions):
     try:
         res = check_output([PKG_CONFIG, "--modversion", mod])
         ver = StrictVersion(res.decode())
-    except (CalledProcessError, UnicodeError, ValueError):
-        pass
+    except Exception as exc:
+        print("Error detecting %s version: %s" % (mod, exc))
     else:
         print("Detected %s version %s." % (mod, ver))
         if (ver.version[0] == 0 and ver >= min_versions[0]) or (
@@ -129,12 +129,14 @@ libraries = get_pkgconfig(pkgconf_dependencies, "--libs-only-l", "-l")
 
 for size_dir in os.listdir(IMG_DIR):
     if isdir(join(IMG_DIR, size_dir)):
-        data_files.append(
-            (
-                join("share/icons/hicolor", size_dir, "apps"),
-                glob(join(IMG_DIR, size_dir, "*")),
+        images = glob(join(IMG_DIR, size_dir, "*"))
+        if images:
+            data_files.append(
+                (
+                    join("share/icons/hicolor", size_dir, "apps"),
+                    images,
+                )
             )
-        )
 
 if args.debug:
     define_macros.append(("LOG_LEVEL", 0))
@@ -184,6 +186,10 @@ setup(
     ext_modules=extensions,
     install_requires=py_dependencies,
     python_requires=">=3.5",
-    entry_points={"console_scripts": ["jack_mixer=jack_mixer.jack_mixer:main",],},
+    entry_points={
+        "console_scripts": [
+            "jack_mixer=jack_mixer.jack_mixer:main",
+        ],
+    },
     zip_safe=True,
 )

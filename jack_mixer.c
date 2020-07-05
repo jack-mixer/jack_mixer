@@ -38,7 +38,7 @@
 #include <glib.h>
 
 #include "jack_mixer.h"
-//#define LOG_LEVEL LOG_LEVEL_DEBUG
+#define LOG_LEVEL LOG_LEVEL_DEBUG
 #include "log.h"
 
 #include "jack_compat.h"
@@ -55,6 +55,19 @@
 
 #define FLOAT_EXISTS(x) (!((x) - (x)))
 
+struct volume
+{
+  float value;
+  unsigned int idx;
+  float value_new;
+};
+
+struct frames
+{
+  jack_default_audio_sample_t *left;
+  jack_default_audio_sample_t *right;
+};
+
 struct channel
 {
   struct jack_mixer * mixer_ptr;
@@ -63,12 +76,19 @@ struct channel
   bool out_mute;
   float volume_transition_seconds;
   unsigned int num_volume_transition_steps;
-  float volume;
+  /*float volume;
   jack_nframes_t volume_idx;
-  float volume_new;
+  float volume_new;*/
+  struct volume volume;
+  GData *send_volumes;
   float balance;
   jack_nframes_t balance_idx;
   float balance_new;
+  /*GData *volumes_left;
+  GData *volumes_left_new;
+  GData *volumes_right;
+  GData *volumes_right_new;*/
+  float volume_initial;
   float volume_left;
   float volume_left_new;
   float volume_right;
@@ -83,10 +103,10 @@ struct channel
   float peak_left;
   float peak_right;
 
+  GData *frames;
   jack_default_audio_sample_t * tmp_mixed_frames_left;
   jack_default_audio_sample_t * tmp_mixed_frames_right;
-  jack_default_audio_sample_t * frames_left;
-  jack_default_audio_sample_t * frames_right;
+
   jack_default_audio_sample_t * prefader_frames_left;
   jack_default_audio_sample_t * prefader_frames_right;
 
@@ -115,7 +135,8 @@ struct output_channel {
   GSList *soloed_channels;
   GSList *muted_channels;
   GSList *prefader_channels;
-
+  /*jack_default_audio_sample_t * frames_left;
+  jack_default_audio_sample_t * frames_right;*/
   bool system; /* system channel, without any associated UI */
   bool prefader;
 };
@@ -453,6 +474,14 @@ channel_autoset_solo_midi_cc(
   }
 }
 
+#define frames_ptr ((struct frames *)frames)
+
+void free_frames(jack_mixer_frames_t frames) {
+  LOG_DEBUG("Freeing frames");
+  free(frames_ptr->right);
+  free(frames_ptr->left);
+}
+
 void
 remove_channel(
   jack_mixer_channel_t channel)
@@ -468,6 +497,7 @@ remove_channel(
     struct output_channel *output_channel_ptr = list_ptr->data;
     output_channel_set_solo(output_channel_ptr, channel, false);
     output_channel_set_muted(output_channel_ptr, channel, false);
+    output_channel_set_in_prefader(output_channel_ptr, channel, false);
   }
 
   jack_port_unregister(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left);
@@ -499,8 +529,17 @@ remove_channel(
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] = NULL;
   }
 
-  free(channel_ptr->frames_left);
-  free(channel_ptr->frames_right);
+
+  
+  GSList *node_ptr;
+  struct output_channel * output_channel_ptr;
+
+  for (node_ptr = channel_ptr->mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr)) {
+    output_channel_ptr = (struct output_channel *) node_ptr->data;
+    LOG_DEBUG("remove channel %s", output_channel_ptr->channel.name);
+    g_datalist_remove_data(&channel_ptr->frames, output_channel_ptr->channel.name);
+  }
+
   free(channel_ptr->prefader_frames_left);
   free(channel_ptr->prefader_frames_right);
 
@@ -532,16 +571,15 @@ channel_volume_write(
   double volume)
 {
   assert(channel_ptr);
-  /*If changing volume and find we're in the middle of a previous transition,
-   *then set current volume to place in transition to avoid a jump.*/
-  if (channel_ptr->volume_new != channel_ptr->volume) {
-    channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-     (channel_ptr->volume_new - channel_ptr->volume) /
-     channel_ptr->num_volume_transition_steps;
+  GSList *node_ptr;
+  struct output_channel * output_channel_ptr;
+  LOG_DEBUG("channel_volume_write %s %f", channel_ptr->name, volume);
+  for (node_ptr = channel_ptr->mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr)) {
+    output_channel_ptr = node_ptr->data;
+    LOG_DEBUG(" %s ", output_channel_ptr->channel.name);
+    
+    channel_volume_send_write(channel, output_channel_ptr, volume);
   }
-  channel_ptr->volume_idx = 0;
-  channel_ptr->volume_new = db_to_value(volume);
-  channel_ptr->midi_out_has_events = true;
 }
 
 double
@@ -549,7 +587,57 @@ channel_volume_read(
   jack_mixer_channel_t channel)
 {
   assert(channel_ptr);
-  return value_to_db(channel_ptr->volume_new);
+  return value_to_db(channel_ptr->volume.value_new);
+}
+
+void
+channel_volume_send_write(
+  jack_mixer_channel_t channel,
+  jack_mixer_output_channel_t output_channel,
+  double volume)
+{
+  assert(channel_ptr);
+  struct output_channel *output_channel_ptr = output_channel;
+
+  struct volume *send_volume;
+  LOG_DEBUG("%s volume setting for %s to %f", channel_ptr->name, output_channel_ptr->channel.name, volume);
+  if (channel_ptr->send_volumes != NULL)
+    send_volume = g_datalist_get_data(&channel_ptr->send_volumes, output_channel_ptr->channel.name);
+  if (send_volume == NULL && channel_ptr->send_volumes != NULL) {
+    LOG_DEBUG("%s volume setting to %f", channel_ptr->name, volume);
+    send_volume = new_volume(db_to_value(volume));
+    g_datalist_set_data_full(&channel_ptr->send_volumes, output_channel_ptr->channel.name, send_volume, free); 
+  } else {
+    send_volume = &channel_ptr->volume;
+  }
+  LOG_DEBUG("channel_volume_send_write: HERE");
+  if (send_volume != NULL) {
+    /*If changing volume and find we're in the middle of a previous transition,
+      then set current volume to place in transition to avoid a jump.*/
+    if (send_volume->value_new != send_volume->value) {
+      send_volume->value = send_volume->value + send_volume->idx *
+       (send_volume->value_new - send_volume->value) /
+      channel_ptr->num_volume_transition_steps;
+    }
+    send_volume->idx = 0;
+    send_volume->value_new = db_to_value(volume);
+    channel_ptr->midi_out_has_events = true;
+  }
+}
+
+double
+  channel_volume_send_read(
+  jack_mixer_channel_t channel,
+  jack_mixer_output_channel_t output_channel)
+{
+  assert(channel_ptr);
+  struct output_channel *output_channel_ptr = output_channel;
+
+  struct volume *send_volume = g_datalist_get_data(&channel_ptr->send_volumes, output_channel_ptr->channel.name);
+  if (send_volume != NULL) 
+    return value_to_db(send_volume->value_new);
+  else
+    return 0.;
 }
 
 void
@@ -727,11 +815,12 @@ mix_one(
         (output_mix_channel->soloed_channels &&
         g_slist_find(output_mix_channel->soloed_channels, channel_ptr) != NULL)) {
 
+      struct frames *frames = g_datalist_get_data(&channel_ptr->frames, output_mix_channel->channel.name);
       for (i = start ; i < end ; i++)
       {
         if (! output_mix_channel->prefader &&
          g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL) {
-          frame_left = channel_ptr->frames_left[i-start];
+          frame_left = frames->left[i-start];
         } else {
           frame_left = channel_ptr->prefader_frames_left[i-start];
         }
@@ -742,7 +831,7 @@ mix_one(
         {
           if (! output_mix_channel->prefader &&
               g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL) {
-            frame_right = channel_ptr->frames_right[i-start];
+            frame_right = frames->right[i-start];
           } else {
             frame_right = channel_ptr->prefader_frames_right[i-start];
           }
@@ -759,14 +848,14 @@ mix_one(
   for (i = start ; i < end ; i++)
   {
     if (! output_mix_channel->prefader) {
-      float volume = mix_channel->volume;
-      float volume_new = mix_channel->volume_new;
+      float volume = mix_channel->volume.value;
+      float volume_new = mix_channel->volume.value_new;
       float vol = volume;
       float balance = mix_channel->balance;
       float balance_new = mix_channel->balance_new;
       float bal = balance;
       if (volume != volume_new) {
-        vol = mix_channel->volume_idx * (volume_new - volume) / steps + volume;
+        vol = mix_channel->volume.idx * (volume_new - volume) / steps + volume;
       }
       if (balance != balance_new) {
         bal = mix_channel->balance_idx * (balance_new - balance) / steps + balance;
@@ -829,10 +918,10 @@ mix_one(
 
       mix_channel->peak_frames = 0;
     }
-    mix_channel->volume_idx++;
-    if ((mix_channel->volume != mix_channel->volume_new) && (mix_channel->volume_idx == steps)) {
-      mix_channel->volume = mix_channel->volume_new;
-      mix_channel->volume_idx = 0;
+    mix_channel->volume.idx++;
+    if ((mix_channel->volume.value != mix_channel->volume.value_new) && (mix_channel->volume.idx == steps)) {
+      mix_channel->volume.value = mix_channel->volume.value_new;
+      mix_channel->volume.idx = 0;
     }
     mix_channel->balance_idx++;
     if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx == steps)) {
@@ -858,130 +947,122 @@ calc_channel_frames(
   jack_default_audio_sample_t frame_left = 0.0f;
   jack_default_audio_sample_t frame_right = 0.0f;
   unsigned int steps = channel_ptr->num_volume_transition_steps;
-  for (i = start ; i < end ; i++)
-  {
-    if (i-start >= MAX_BLOCK_SIZE)
-    {
-      fprintf(stderr, "i-start too high: %d - %d\n", i, start);
-    }
-    channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
-    if (channel_ptr->stereo)
-      channel_ptr->prefader_frames_right[i-start] = channel_ptr->right_buffer_ptr[i];
+  GSList *node_ptr;
+  struct output_channel * output_channel_ptr;
 
-    if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
-    {
-      channel_ptr->NaN_detected = true;
-      channel_ptr->frames_left[i-start] = NAN;
-      break;
-    }
-    float volume = channel_ptr->volume;
-    float volume_new = channel_ptr->volume_new;
-    float vol = volume;
-    float balance = channel_ptr->balance;
-    float balance_new = channel_ptr->balance_new;
-    float bal = balance;
-    if (channel_ptr->volume != channel_ptr->volume_new) {
-      vol = channel_ptr->volume_idx * (volume_new - volume) / steps + volume;
-    }
-    if (channel_ptr->balance != channel_ptr->balance_new) {
-      bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
-    }
-    float vol_l;
-    float vol_r;
-    if (channel_ptr->stereo) {
-      if (bal > 0) {
-        vol_l = vol * (1 - bal);
-        vol_r = vol;
-      } else {
-        vol_l = vol;
-        vol_r = vol * (1 + bal);
+  for (node_ptr = channel_ptr->mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr)) {
+    output_channel_ptr = node_ptr->data;
+    struct frames *frames = g_datalist_get_data(&channel_ptr->frames, output_channel_ptr->channel.name);
+    //LOG_DEBUG("%s frames != NULL? %d", channel_ptr->name, frames != NULL);
+    for (i = start ; i < end ; i++) {
+      if (i-start >= MAX_BLOCK_SIZE) {
+        fprintf(stderr, "i-start too high: %d - %d\n", i, start);
       }
-    } else {
-      vol_l = vol * (1 - bal);
-      vol_r = vol * (1 + bal);
-    }
-    frame_left = channel_ptr->left_buffer_ptr[i] * vol_l;
-    if (channel_ptr->stereo)
-    {
-      if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i]))
-      {
+      channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
+      if (channel_ptr->stereo)
+        channel_ptr->prefader_frames_right[i-start] = channel_ptr->right_buffer_ptr[i];
+
+      if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i])) {
         channel_ptr->NaN_detected = true;
-        channel_ptr->frames_right[i-start] = NAN;
+        frames->left[i-start] = NAN;
         break;
       }
+      float volume = channel_ptr->volume.value;
+      float volume_new = channel_ptr->volume.value_new;
+      float vol = volume;
+      float balance = channel_ptr->balance;
+      float balance_new = channel_ptr->balance_new;
+      float bal = balance;
+      if (channel_ptr->volume.value != channel_ptr->volume.value_new) {
+        vol = channel_ptr->volume.idx * (volume_new - volume) / steps + volume;
+      }
+      if (channel_ptr->balance != channel_ptr->balance_new) {
+        bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
+      }
+      float vol_l;
+      float vol_r;
+      if (channel_ptr->stereo) {
+        if (bal > 0) {
+          vol_l = vol * (1 - bal);
+          vol_r = vol;
+        } else {
+          vol_l = vol;
+          vol_r = vol * (1 + bal);
+        }
+      } else {
+        vol_l = vol * (1 - bal);
+        vol_r = vol * (1 + bal);
+      }
+      frame_left = channel_ptr->left_buffer_ptr[i] * vol_l;
+      if (channel_ptr->stereo) {
+        if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i])) {
+          channel_ptr->NaN_detected = true;
+          frames->right[i-start] = NAN;
+          break;
+        }
 
-      frame_right = channel_ptr->right_buffer_ptr[i] * vol_r;
-    }
+        frame_right = channel_ptr->right_buffer_ptr[i] * vol_r;
+      }
 
-    channel_ptr->frames_left[i-start] = frame_left;
-    channel_ptr->frames_right[i-start] = frame_right;
+      frames->left[i-start] = frame_left;
+      frames->right[i-start] = frame_right;
 
-    if (channel_ptr->stereo)
-    {
-      frame_left = fabsf(frame_left);
-      frame_right = fabsf(frame_right);
+      if (channel_ptr->stereo) {
+        frame_left = fabsf(frame_left);
+        frame_right = fabsf(frame_right);
 
-      if (channel_ptr->peak_left < frame_left)
-      {
-        channel_ptr->peak_left = frame_left;
+        if (channel_ptr->peak_left < frame_left) {
+          channel_ptr->peak_left = frame_left;
 
-        if (frame_left > channel_ptr->abspeak)
-        {
-          channel_ptr->abspeak = frame_left;
+          if (frame_left > channel_ptr->abspeak) {
+            channel_ptr->abspeak = frame_left;
+          }
+        }
+
+        if (channel_ptr->peak_right < frame_right) {
+          channel_ptr->peak_right = frame_right;
+
+          if (frame_right > channel_ptr->abspeak) {
+            channel_ptr->abspeak = frame_right;
+          }
+        }
+      } else {
+        frame_left = (fabsf(frame_left) + fabsf(frame_right)) / 2;
+
+        if (channel_ptr->peak_left < frame_left) {
+          channel_ptr->peak_left = frame_left;
+
+          if (frame_left > channel_ptr->abspeak) {
+            channel_ptr->abspeak = frame_left;
+          }
         }
       }
 
-      if (channel_ptr->peak_right < frame_right)
-      {
-        channel_ptr->peak_right = frame_right;
+      channel_ptr->peak_frames++;
+      if (channel_ptr->peak_frames >= PEAK_FRAMES_CHUNK) {
+        channel_ptr->meter_left = channel_ptr->peak_left;
+        channel_ptr->peak_left = 0.0;
 
-        if (frame_right > channel_ptr->abspeak)
-        {
-          channel_ptr->abspeak = frame_right;
+        if (channel_ptr->stereo) {
+          channel_ptr->meter_right = channel_ptr->peak_right;
+          channel_ptr->peak_right = 0.0;
         }
+
+        channel_ptr->peak_frames = 0;
       }
-    }
-    else
-    {
-      frame_left = (fabsf(frame_left) + fabsf(frame_right)) / 2;
-
-      if (channel_ptr->peak_left < frame_left)
-      {
-        channel_ptr->peak_left = frame_left;
-
-        if (frame_left > channel_ptr->abspeak)
-        {
-          channel_ptr->abspeak = frame_left;
-        }
+      channel_ptr->volume.idx++;
+      if ((channel_ptr->volume.value != channel_ptr->volume.value_new) &&
+       (channel_ptr->volume.idx == steps)) {
+        channel_ptr->volume.value = channel_ptr->volume.value_new;
+        channel_ptr->volume.idx = 0;
       }
+      channel_ptr->balance_idx++;
+      if ((channel_ptr->balance != channel_ptr->balance_new) &&
+       (channel_ptr->balance_idx >= steps)) {
+        channel_ptr->balance = channel_ptr->balance_new;
+        channel_ptr->balance_idx = 0;
+       }
     }
-
-    channel_ptr->peak_frames++;
-    if (channel_ptr->peak_frames >= PEAK_FRAMES_CHUNK)
-    {
-      channel_ptr->meter_left = channel_ptr->peak_left;
-      channel_ptr->peak_left = 0.0;
-
-      if (channel_ptr->stereo)
-      {
-        channel_ptr->meter_right = channel_ptr->peak_right;
-        channel_ptr->peak_right = 0.0;
-      }
-
-      channel_ptr->peak_frames = 0;
-    }
-    channel_ptr->volume_idx++;
-    if ((channel_ptr->volume != channel_ptr->volume_new) &&
-     (channel_ptr->volume_idx == steps)) {
-      channel_ptr->volume = channel_ptr->volume_new;
-      channel_ptr->volume_idx = 0;
-    }
-    channel_ptr->balance_idx++;
-    if ((channel_ptr->balance != channel_ptr->balance_new) &&
-     (channel_ptr->balance_idx >= steps)) {
-      channel_ptr->balance = channel_ptr->balance_new;
-      channel_ptr->balance_idx = 0;
-     }
   }
 }
 
@@ -1132,7 +1213,7 @@ process(
       {
           int current_midi =  (int)(127 *
            scale_db_to_scale(channel_ptr->midi_scale,
-           value_to_db(channel_ptr->volume)));
+           value_to_db(channel_ptr->volume.value)));
           if (mixer_ptr->midi_behavior == Pick_Up &&
            !channel_ptr->midi_cc_volume_picked_up ) {
           if (in_event.buffer[2] == current_midi) {
@@ -1142,15 +1223,15 @@ process(
         if ((mixer_ptr->midi_behavior == Pick_Up &&
          channel_ptr->midi_cc_volume_picked_up) ||
          mixer_ptr->midi_behavior == Jump_To_Value) {
-            if (channel_ptr->volume_new != channel_ptr->volume) {
-              channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-               (channel_ptr->volume_new - channel_ptr->volume) /
+            if (channel_ptr->volume.value_new != channel_ptr->volume.value) {
+              channel_ptr->volume.value = channel_ptr->volume.value + channel_ptr->volume.idx *
+               (channel_ptr->volume.value_new - channel_ptr->volume.value) /
                channel_ptr->num_volume_transition_steps;
             }
-            channel_ptr->volume_idx = 0;
-            channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
+            channel_ptr->volume.idx = 0;
+            channel_ptr->volume.value_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
              (double)in_event.buffer[2] / 127));
-            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
+            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume.value_new);
         }
       }
       else if (channel_ptr->midi_cc_mute_index == in_event.buffer[1])
@@ -1206,7 +1287,7 @@ process(
       }
       midi_out_buffer[0] = 0xB0; /* control change */
       midi_out_buffer[1] = cc_channel_index;
-      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume_new)));
+      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume.value_new)));
 
       LOG_DEBUG(
         "%u: CC#%u <- %u",
@@ -1388,8 +1469,7 @@ set_midi_behavior_mode(
 }
 
 jack_mixer_channel_t
-add_channel(
-  jack_mixer_t mixer,
+add_channel(jack_mixer_t mixer,
   const char * channel_name,
   bool stereo)
 {
@@ -1455,8 +1535,11 @@ add_channel(
   channel_ptr->num_volume_transition_steps =
     channel_ptr->volume_transition_seconds *
     jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
-  channel_ptr->volume = 0.0;
-  channel_ptr->volume_new = 0.0;
+
+  channel_ptr->volume_initial = -INFINITY;
+  channel_ptr->volume.value = 0.0;
+  channel_ptr->volume.value_new = 0.0;
+  g_datalist_init(&channel_ptr->send_volumes);
   channel_ptr->balance = 0.0;
   channel_ptr->balance_new = 0.0;
   channel_ptr->meter_left = -1.0;
@@ -1468,10 +1551,20 @@ add_channel(
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
 
-  channel_ptr->frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
-  channel_ptr->frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
-  channel_ptr->prefader_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
-  channel_ptr->prefader_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  GSList *node_ptr;
+  struct output_channel *output_channel_ptr;
+  g_datalist_init(&channel_ptr->frames);
+  for (node_ptr = mixer_ctx_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
+  {
+    output_channel_ptr = node_ptr->data;
+    LOG_DEBUG("%s adding output %s", channel_ptr->name, output_channel_ptr->channel.name);
+    struct frames *frames = calloc(1, sizeof(frames));
+    frames->left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+    frames->right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+    g_datalist_set_data_full(&channel_ptr->frames, output_channel_ptr->channel.name, frames, free_frames);
+    channel_ptr->prefader_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+    channel_ptr->prefader_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+  }
 
   channel_ptr->NaN_detected = false;
 
@@ -1579,12 +1672,13 @@ create_output_channel(
   channel_ptr->stereo = stereo;
   channel_ptr->out_mute = false;
 
+  channel_ptr->send_volumes = NULL;
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
     channel_ptr->volume_transition_seconds *
     jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
-  channel_ptr->volume = 0.0;
-  channel_ptr->volume_new = 0.0;
+  channel_ptr->volume.value = 0.0;
+  channel_ptr->volume.value_new = 0.0;
   channel_ptr->balance = 0.0;
   channel_ptr->balance_new = 0.0;
   channel_ptr->meter_left = -1.0;
@@ -1597,8 +1691,7 @@ create_output_channel(
 
   channel_ptr->tmp_mixed_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
   channel_ptr->tmp_mixed_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
-  channel_ptr->frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
-  channel_ptr->frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+
   channel_ptr->prefader_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
   channel_ptr->prefader_frames_right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
 
@@ -1642,6 +1735,12 @@ fail:
   return NULL;
 }
 
+struct volume *new_volume(double volume) {
+  LOG_DEBUG("making new volume");
+  struct volume *vol = calloc(1, sizeof(struct volume));
+  vol->value = vol->value_new = volume;
+}
+
 jack_mixer_output_channel_t
 add_output_channel(
   jack_mixer_t mixer,
@@ -1661,6 +1760,15 @@ add_output_channel(
   ((struct jack_mixer*)mixer)->output_channels_list = g_slist_prepend(
                   ((struct jack_mixer*)mixer)->output_channels_list, channel_ptr);
 
+  GSList *list_ptr;
+  for (list_ptr = mixer_ctx_ptr->input_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr)) {
+    struct channel *input_channel_ptr = list_ptr->data;
+    struct frames *frames = calloc(1, sizeof(frames));
+    frames->left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+    frames->right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
+    g_datalist_set_data_full(&input_channel_ptr->frames, channel_ptr->name, frames, free_frames);
+    channel_volume_send_write(input_channel_ptr, channel_ptr, input_channel_ptr->volume_initial);
+  }
   return output_channel_ptr;
 }
 
@@ -1720,11 +1828,10 @@ remove_output_channel(
   g_slist_free(output_channel_ptr->soloed_channels);
   g_slist_free(output_channel_ptr->muted_channels);
   g_slist_free(output_channel_ptr->prefader_channels);
-
   free(channel_ptr->tmp_mixed_frames_left);
   free(channel_ptr->tmp_mixed_frames_right);
-  free(channel_ptr->frames_left);
-  free(channel_ptr->frames_right);
+  /*free(output_channel_ptr->frames_left);
+  free(output_channel_ptr->frames_right);*/
   free(channel_ptr->prefader_frames_left);
   free(channel_ptr->prefader_frames_right);
 

@@ -23,8 +23,10 @@ from gi.repository import Gdk
 from gi.repository import GObject
 
 import abspeak
+import math
 import meter
 import slider
+
 from serialization import SerializedObject
 
 try:
@@ -80,8 +82,8 @@ class Channel(Gtk.VBox, SerializedObject):
         self.mixer = app.mixer
         self.gui_factory = app.gui_factory
         self._channel_name = name
-        self.stereo = stereo
         self.initial_value = value
+        self.stereo = stereo
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)

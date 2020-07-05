@@ -39,6 +39,7 @@ typedef void * jack_mixer_t;
 typedef void * jack_mixer_channel_t;
 typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_threshold_t;
+typedef void * jack_mixer_frames_t;
 
 enum midi_behavior_mode { Jump_To_Value, Pick_Up };
 
@@ -79,8 +80,7 @@ set_midi_behavior_mode(
   enum midi_behavior_mode mode);
 
 jack_mixer_channel_t
-add_channel(
-  jack_mixer_t mixer,
+add_channel(jack_mixer_t mixer,
   const char * channel_name,
   bool stereo);
 
@@ -111,6 +111,8 @@ channel_set_midi_change_callback(
   void (*midi_change_callback) (void*),
   void *user_data);
 
+struct volume *new_volume(double volume);
+
 /* volume is in dBFS */
 void
 channel_volume_write(
@@ -120,6 +122,16 @@ channel_volume_write(
 double
 channel_volume_read(
   jack_mixer_channel_t channel);
+
+void channel_volume_send_write(
+  jack_mixer_channel_t channel,
+  jack_mixer_output_channel_t output_channel,
+  double volume);
+
+double
+  channel_volume_send_read(
+  jack_mixer_channel_t channel,
+  jack_mixer_output_channel_t output_channel);
 
 void
 channels_volumes_read(jack_mixer_t mixer_ptr);
@@ -191,6 +203,8 @@ channel_autoset_mute_midi_cc(
 void
 channel_autoset_solo_midi_cc(
   jack_mixer_channel_t channel);
+
+void free_frames(jack_mixer_frames_t frames);
 
 void
 remove_channel(

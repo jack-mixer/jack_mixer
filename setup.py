@@ -6,7 +6,7 @@ import os
 import sys
 from glob import glob
 from os.path import abspath, dirname, exists, isdir, join
-from subprocess import check_output
+from subprocess import CalledProcessError, check_output
 
 from setuptools import setup
 from distutils.extension import Extension
@@ -67,7 +67,7 @@ def check_mod_version(mod, *min_versions):
     try:
         res = check_output([PKG_CONFIG, "--modversion", mod])
         ver = StrictVersion(res.decode())
-    except (subprocess.CalledProcessError, UnicodeError, ValueError):
+    except (CalledProcessError, UnicodeError, ValueError):
         pass
     else:
         print("Detected %s version %s." % (mod, ver))

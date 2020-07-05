@@ -306,34 +306,37 @@ cdef class OutputChannel(Channel):
         channel._channel = <jack_mixer_channel_t> chan_ptr
         return channel
 
+    def is_in_prefader(self, Channel channel):
+        """Is a channel set as prefader?"""
+        if self._output_channel:
+            return output_channel_is_in_prefader(self._output_channel, channel._channel)
+
+    def set_in_prefader(self, Channel channel, bool value):
+        """Set a channel as prefader."""
+        if self._output_channel:
+            output_channel_set_in_prefader(self._output_channel, channel._channel, value)
+
     def is_muted(self, Channel channel):
+        """Is a channel set as muted?"""
         if self._output_channel:
             return output_channel_is_muted(self._output_channel, channel._channel)
 
     def set_muted(self, Channel channel, bool value):
+        """Set a channel as muted."""
         if self._output_channel:
             output_channel_set_muted(self._output_channel, channel._channel, value)
 
-    def is_prefader(self):
-        if self._output_channel:
-            return output_channel_is_prefader(self._output_channel)
-
-    def set_prefader(self, bool value):
-        if self._output_channel:
-            output_channel_set_prefader(self._output_channel, value)
-
     def is_solo(self, Channel channel):
+        """Is a channel set as solo?"""
         if self._output_channel:
             return output_channel_is_solo(self._output_channel, channel._channel)
 
-    def set_in_prefader(self, Channel channel, bool value):
-        if self._output_channel:
-            output_channel_set_in_prefader(self._output_channel, channel._channel, value)
-
     def set_solo(self, Channel channel, bool value):
+        """Set a channel as solo."""
         if self._output_channel:
             output_channel_set_solo(self._output_channel, channel._channel, value)
 
     def remove(self):
+        """Remove output channel."""
         if self._output_channel:
             remove_output_channel(self._output_channel)

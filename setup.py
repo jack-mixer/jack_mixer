@@ -22,7 +22,7 @@ except ImportError:
 SRC_DIR = ""
 DATA_DIR = "data"
 IMG_DIR = join(DATA_DIR, "art")
-PKG_CONFIG = os.environ.get("PKG_CONFIG_PATH", "pkg-config")
+PKG_CONFIG = os.environ.get("PKG_CONFIG", "pkg-config")
 JACK1_MIN_VERSION = StrictVersion("0.125.0")
 JACK2_MIN_VERSION = StrictVersion("1.9.11")
 

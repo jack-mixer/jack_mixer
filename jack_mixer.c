@@ -1578,7 +1578,8 @@ add_channel(jack_mixer_t mixer,
   channel_ptr->midi_change_callback = NULL;
   channel_ptr->midi_change_callback_data = NULL;
   channel_ptr->midi_out_has_events = false;
-
+  channel_ptr->midi_in_got_events = false;
+  
   channel_ptr->midi_scale = NULL;
 
   channel_ptr->mixer_ptr->input_channels_list = g_slist_prepend(

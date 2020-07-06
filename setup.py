@@ -68,7 +68,7 @@ def check_mod_version(mod, *min_versions):
         res = check_output([PKG_CONFIG, "--modversion", mod])
         ver = StrictVersion(res.decode())
     except Exception as exc:
-        print("Error detecting %s version: %s" % (mod, exc))
+        sys.exit("Error detecting %s version: %s" % (mod, exc))
     else:
         print("Detected %s version %s." % (mod, ver))
         if (ver.version[0] == 0 and ver >= min_versions[0]) or (

@@ -4,6 +4,9 @@ __all__ = ("Scale", "Mixer")
 
 import enum
 
+ctypedef unsigned char uint8_t
+ctypedef bint bool
+
 from _jack_mixer cimport *
 
 
@@ -103,13 +106,17 @@ cdef class Mixer:
         return mixer_get_client_name(self._mixer).decode('utf-8')
 
     @property
-    def last_midi_channel(self):
-        """Last received MIDI control change (sic!) message."""
-        return mixer_get_last_midi_channel(self._mixer)
+    def last_midi_event(self):
+        """Last received MIDI event message."""
+        cdef uint8_t status, data1, data2
+        mixer_get_last_midi_event(self._mixer, &status, &data1, &data2)
+        return (status, data1, data2)
 
-    @last_midi_channel.setter
-    def last_midi_channel(self, int channel):
-        mixer_set_last_midi_channel(self._mixer, channel)
+    @last_midi_event.setter
+    def last_midi_event(self, event):
+        if not isinstance(event, (bytes, bytearray, list, tuple)) or len(event) < 3:
+            raise TypeError("event must be a sequence with at least 3 elements.")
+        mixer_set_last_midi_event(self._mixer, event[0], event[1], event[2])
 
     @property
     def midi_behavior_mode(self):
@@ -205,8 +212,8 @@ cdef class Channel:
     def meter(self):
         """Read channel meter.
 
-        If channel is stereo, return a two-item tupel with (left, right) value.
-        If channel is mono, return a tupel with the value as the only item.
+        If channel is stereo, return a two-item tuple with (left, right) value.
+        If channel is mono, return a tuple with the value as the only item.
         """
         cdef double left, right
 

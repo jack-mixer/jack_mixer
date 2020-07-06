@@ -71,12 +71,16 @@ get_client_name(
 void
 get_last_midi_event(
   jack_mixer_t mixer,
-  struct midi_event * event);
+  uint8_t * status,
+  uint8_t * data1,
+  uint8_t * data2);
 
-unsigned int
+void
 set_last_midi_event(
   jack_mixer_t mixer,
-  struct midi_event * event);
+  uint8_t status,
+  uint8_t data1,
+  uint8_t data2);
 
 int
 get_midi_behavior_mode(
@@ -87,11 +91,26 @@ set_midi_behavior_mode(
   jack_mixer_t mixer,
   enum midi_behavior_mode mode);
 
+void
+channels_volumes_read(
+  jack_mixer_t mixer);
+
 jack_mixer_channel_t
 add_channel(
   jack_mixer_t mixer,
   const char * channel_name,
   bool stereo);
+
+jack_mixer_output_channel_t
+add_output_channel(
+  jack_mixer_t mixer,
+  const char * channel_name,
+  bool stereo,
+  bool system);
+
+void
+remove_channels(
+  jack_mixer_t mixer);
 
 const char *
 channel_get_name(
@@ -129,9 +148,6 @@ channel_volume_write(
 double
 channel_volume_read(
   jack_mixer_channel_t channel);
-
-void
-channels_volumes_read(jack_mixer_t mixer_ptr);
 
 /* balance is from -1.0 (full left) to +1.0 (full right) */
 void
@@ -179,10 +195,12 @@ channel_set_solo_midi_cc(
   jack_mixer_channel_t channel,
   int new_cc);
 
-void channel_set_midi_cc_volume_picked_up(jack_mixer_channel_t channel,
+void channel_set_midi_cc_volume_picked_up(
+  jack_mixer_channel_t channel,
   bool status);
 
-void channel_set_midi_cc_balance_picked_up(jack_mixer_channel_t channel,
+void channel_set_midi_cc_balance_picked_up(
+  jack_mixer_channel_t channel,
   bool status);
 
 void
@@ -204,10 +222,6 @@ channel_autoset_solo_midi_cc(
 void
 remove_channel(
   jack_mixer_channel_t channel);
-
-void
-remove_channels(
-  jack_mixer_t mixer);
 
 /* returned value is in dBFS */
 double
@@ -256,13 +270,6 @@ bool
 channel_get_midi_in_got_events(
   jack_mixer_channel_t channel);
 
-jack_mixer_output_channel_t
-add_output_channel(
-  jack_mixer_t mixer,
-  const char * channel_name,
-  bool stereo,
-  bool system);
-
 void
 remove_output_channel(
   jack_mixer_output_channel_t output_channel);
@@ -298,7 +305,8 @@ bool
 output_channel_is_prefader(
   jack_mixer_output_channel_t output_channel);
 
-void output_channel_set_in_prefader(jack_mixer_output_channel_t output_channel,
+void output_channel_set_in_prefader(
+  jack_mixer_output_channel_t output_channel,
   jack_mixer_channel_t input_channel,
   bool prefader_value);
 

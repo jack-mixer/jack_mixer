@@ -2,7 +2,8 @@
 # _jack_mixer.pxd
 #
 
-from libcpp cimport bool
+ctypedef unsigned char uint8_t
+ctypedef bint bool
 
 cdef extern from "jack_mixer.h":
     # scale.h
@@ -33,10 +34,14 @@ cdef extern from "jack_mixer.h":
     cdef void mixer_destroy "destroy" (jack_mixer_t mixer)
     cdef unsigned int mixer_get_channels_count "get_channels_count" (jack_mixer_t mixer)
     cdef const char * mixer_get_client_name "get_client_name" (jack_mixer_t mixer)
-    cdef int mixer_get_last_midi_channel "get_last_midi_channel" (jack_mixer_t mixer)
-    cdef unsigned int mixer_set_last_midi_channel "set_last_midi_channel" (
-        jack_mixer_t mixer,
-        int new_channel)
+    cdef void mixer_get_last_midi_event "get_last_midi_event" (jack_mixer_t mixer,
+        uint8_t * status,
+        uint8_t * data1,
+        uint8_t * data2)
+    cdef void mixer_set_last_midi_event "set_last_midi_event" (jack_mixer_t mixer,
+        uint8_t status,
+        uint8_t data1,
+        uint8_t data2)
     cdef int mixer_get_midi_behavior_mode "get_midi_behavior_mode" (jack_mixer_t mixer)
     cdef unsigned int mixer_set_midi_behavior_mode "set_midi_behavior_mode" (
         jack_mixer_t mixer,

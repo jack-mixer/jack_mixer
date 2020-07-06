@@ -1365,22 +1365,25 @@ get_client_name(
 void
 get_last_midi_event(
   jack_mixer_t mixer,
-  struct midi_event * event)
+  uint8_t * status,
+  uint8_t * data1,
+  uint8_t * data2)
 {
-  event->status = mixer_ctx_ptr->last_midi_event->status;
-  event->data1 = mixer_ctx_ptr->last_midi_event->data1;
-  event->data2 = mixer_ctx_ptr->last_midi_event->data2;
+  *status = mixer_ctx_ptr->last_midi_event->status;
+  *data1 = mixer_ctx_ptr->last_midi_event->data1;
+  *data2 = mixer_ctx_ptr->last_midi_event->data2;
 }
 
-unsigned int
+void
 set_last_midi_event(
   jack_mixer_t mixer,
-  struct midi_event * event)
+  uint8_t status,
+  uint8_t data1,
+  uint8_t data2)
 {
-  mixer_ctx_ptr->last_midi_event->status = event->status;
-  mixer_ctx_ptr->last_midi_event->data1 = event->data1;
-  mixer_ctx_ptr->last_midi_event->data2 = event->data2;
-  return 0;
+  mixer_ctx_ptr->last_midi_event->status = status;
+  mixer_ctx_ptr->last_midi_event->data1 = data1;
+  mixer_ctx_ptr->last_midi_event->data2 = data2;
 }
 
 int

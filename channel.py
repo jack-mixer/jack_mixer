@@ -954,7 +954,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
     def on_sense_midi_volume_clicked(self, *args):
         midi_cc = int(self.entry_volume_cc.get_value())
-        if 0 >= midi_cc <= 127:
+        if 0 <= midi_cc <= 127:
             self.mixer.last_midi_event = (0xB0, midi_cc, 0)
         else:
             self.mixer.last_midi_event = (0, 0, 0)
@@ -962,7 +962,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
     def on_sense_midi_balance_clicked(self, *args):
         midi_cc = int(self.entry_balance_cc.get_value())
-        if 0 >= midi_cc <= 127:
+        if 0 <= midi_cc <= 127:
             self.mixer.last_midi_event = (0xB0, midi_cc, 0)
         else:
             self.mixer.last_midi_event = (0, 0, 0)
@@ -970,7 +970,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
     def on_sense_midi_mute_clicked(self, *args):
         midi_cc = int(self.entry_mute_cc.get_value())
-        if 0 >= midi_cc <= 127:
+        if 0 <= midi_cc <= 127:
             self.mixer.last_midi_event = (0xB0, midi_cc, 0)
         else:
             self.mixer.last_midi_event = (0, 0, 0)
@@ -978,7 +978,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
     def on_sense_midi_solo_clicked(self, *args):
         midi_cc = int(self.entry_solo_cc.get_value())
-        if 0 >= midi_cc <= 127:
+        if 0 <= midi_cc <= 127:
             self.mixer.last_midi_event = (0xB0, midi_cc, 0)
         else:
             self.mixer.last_midi_event = (0, 0, 0)

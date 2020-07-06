@@ -92,7 +92,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.use_custom_widgets = self.config["Preferences"]["use_custom_widgets"] == 'True'
 
         try:
-            self.midi_behavior_mode = self.config["Preferences"]["midi_behavior_mode"]
+            self.midi_behavior_mode = int(self.config["Preferences"]["midi_behavior_mode"])
         except:
             self.midi_behavior_mode = 0
 

@@ -40,7 +40,6 @@ py_dependencies = [
 sources = [
     "jack_mixer.c",
     "log.c",
-    "memory_atomic.c",
     "scale.c",
     # "_jack_mixer.pyx/.c" is append below
 ]

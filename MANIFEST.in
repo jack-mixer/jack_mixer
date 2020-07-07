@@ -7,5 +7,4 @@ include _jack_mixer.c
 include _jack_mixer.pyx
 include _jack_mixer.pxd
 include *.c *.h
-
-exclude config.h
+include meson.build

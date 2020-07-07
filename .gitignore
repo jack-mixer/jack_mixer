@@ -19,3 +19,6 @@ dist/
 # Cython stuff
 _jack_mixer.c
 _jack_mixer.*.so
+
+# recommended meson build directory
+builddir/

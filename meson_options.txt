@@ -1,0 +1,1 @@
+option('jack-midi', type : 'feature', value : 'enabled', description : 'Enable JACK MIDI support')

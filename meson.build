@@ -18,4 +18,5 @@ jack_mix_box_sources = files([
 executable('jack_mix_box',
            jack_mix_box_sources,
            dependencies : [glib_dep, jack_dep, math_dep],
+           c_args : get_option('jack-midi').enabled() ? '-DHAVE_JACK_MIDI' : [],
            install : true)

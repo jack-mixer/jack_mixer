@@ -8,3 +8,4 @@ include _jack_mixer.pyx
 include _jack_mixer.pxd
 include *.c *.h
 include meson.build
+include meson_options.txt

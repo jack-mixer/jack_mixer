@@ -1,6 +1,6 @@
 include AUTHORS
 include COPYING
-include INSTALL
+include INSTALL.md
 include NEWS
 include README
 include _jack_mixer.c

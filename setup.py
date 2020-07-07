@@ -48,7 +48,7 @@ sources = [
 # Pre-processor defines
 define_macros = []
 
-# Extra data files to installed under Python sys.prefix
+# Extra data files to be installed under Python sys.prefix
 data_files = [("share/applications", [join(DATA_DIR, "jack_mixer.desktop")])]
 
 # Directives for Cython .pyx to .c compilation

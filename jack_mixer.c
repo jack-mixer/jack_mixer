@@ -55,107 +55,7 @@
 
 #define FLOAT_EXISTS(x) (!((x) - (x)))
 
-struct volume
-{
-  float value;
-  unsigned int idx;
-  float value_new;
-};
 
-struct frames
-{
-  jack_default_audio_sample_t *left;
-  jack_default_audio_sample_t *right;
-};
-
-struct channel
-{
-  struct jack_mixer * mixer_ptr;
-  char * name;
-  bool stereo;
-  bool out_mute;
-  float volume_transition_seconds;
-  unsigned int num_volume_transition_steps;
-  /*float volume;
-  jack_nframes_t volume_idx;
-  float volume_new;*/
-  struct volume volume;
-  GData *send_volumes;
-  float balance;
-  jack_nframes_t balance_idx;
-  float balance_new;
-  /*GData *volumes_left;
-  GData *volumes_left_new;
-  GData *volumes_right;
-  GData *volumes_right_new;*/
-  float volume_initial;
-  float volume_left;
-  float volume_left_new;
-  float volume_right;
-  float volume_right_new;
-  float meter_left;
-  float meter_right;
-  float abspeak;
-  jack_port_t * port_left;
-  jack_port_t * port_right;
-
-  jack_nframes_t peak_frames;
-  float peak_left;
-  float peak_right;
-
-  GData *frames;
-  jack_default_audio_sample_t * tmp_mixed_frames_left;
-  jack_default_audio_sample_t * tmp_mixed_frames_right;
-
-  jack_default_audio_sample_t * prefader_frames_left;
-  jack_default_audio_sample_t * prefader_frames_right;
-
-  bool NaN_detected;
-
-  int midi_cc_volume_index;
-  int midi_cc_balance_index;
-  int midi_cc_mute_index;
-  int midi_cc_solo_index;
-  bool midi_cc_volume_picked_up;
-  bool midi_cc_balance_picked_up;
-
-  jack_default_audio_sample_t * left_buffer_ptr;
-  jack_default_audio_sample_t * right_buffer_ptr;
-
-  bool midi_in_got_events;
-  void (*midi_change_callback) (void*);
-  void *midi_change_callback_data;
-  bool midi_out_has_events;
-
-  jack_mixer_scale_t midi_scale;
-};
-
-struct output_channel {
-  struct channel channel;
-  GSList *soloed_channels;
-  GSList *muted_channels;
-  GSList *prefader_channels;
-  /*jack_default_audio_sample_t * frames_left;
-  jack_default_audio_sample_t * frames_right;*/
-  bool system; /* system channel, without any associated UI */
-  bool prefader;
-};
-
-struct jack_mixer
-{
-  pthread_mutex_t mutex;
-  jack_client_t * jack_client;
-  GSList *input_channels_list;
-  GSList *output_channels_list;
-  GSList *soloed_channels;
-
-  jack_port_t * port_midi_in;
-  jack_port_t * port_midi_out;
-  int last_midi_channel;
-  enum midi_behavior_mode midi_behavior;
-
-  struct channel* midi_cc_map[128];
-};
 
 static jack_mixer_output_channel_t create_output_channel(
   jack_mixer_t mixer,
@@ -195,6 +95,21 @@ channel_get_name(
   jack_mixer_channel_t channel)
 {
   return channel_ptr->name;
+}
+
+const char *
+  channel_get_current_send_name(
+  jack_mixer_channel_t channel){
+  return channel_ptr->current_send;
+}
+
+void
+channel_set_current_send_name(
+  jack_mixer_channel_t channel,
+  const char *name) {
+  LOG_DEBUG("channel_set_current_send_name '%s'/'%s'", channel_ptr->name, name);
+  memset(channel_ptr->current_send, 0, 64);
+  strncpy(channel_ptr->current_send, name, 63);
 }
 
 void
@@ -571,15 +486,22 @@ channel_volume_write(
   double volume)
 {
   assert(channel_ptr);
-  GSList *node_ptr;
-  struct output_channel * output_channel_ptr;
-  LOG_DEBUG("channel_volume_write %s %f", channel_ptr->name, volume);
-  for (node_ptr = channel_ptr->mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr)) {
-    output_channel_ptr = node_ptr->data;
-    LOG_DEBUG(" %s ", output_channel_ptr->channel.name);
-    
-    channel_volume_send_write(channel, output_channel_ptr, volume);
+  struct channel *c = channel;
+  struct volume *vol;
+  if (strcmp(channel_ptr->current_send, "") != 0) {
+    vol = g_datalist_get_data(&channel_ptr->send_volumes, channel_ptr->current_send);
+  } else {
+    vol = channel_ptr->volume;
   }
+  LOG_DEBUG("channel_volume_write %s %f", channel_ptr->name, volume);
+  if (vol->value_new != vol->value) {
+    vol->value = vol->value + vol->idx *
+     (vol->value_new - vol->value) /
+     channel_ptr->num_volume_transition_steps;
+  }
+  vol->idx = 0;
+  vol->value_new = db_to_value(volume);
+  channel_ptr->midi_out_has_events = true;
 }
 
 double
@@ -587,7 +509,14 @@ channel_volume_read(
   jack_mixer_channel_t channel)
 {
   assert(channel_ptr);
-  return value_to_db(channel_ptr->volume.value_new);
+  struct channel *c = channel;
+  if (strcmp(channel_ptr->current_send, "") != 0) {
+    LOG_DEBUG("channel_volume_read: '%s'/'%s'", c->name, channel_ptr->current_send);
+    struct volume *vol = g_datalist_get_data(&channel_ptr->send_volumes, channel_ptr->current_send);
+    return value_to_db(vol->value_new);
+  } else {
+    return value_to_db(channel_ptr->volume->value_new);
+  }
 }
 
 void
@@ -599,18 +528,18 @@ channel_volume_send_write(
   assert(channel_ptr);
   struct output_channel *output_channel_ptr = output_channel;
 
-  struct volume *send_volume;
-  LOG_DEBUG("%s volume setting for %s to %f", channel_ptr->name, output_channel_ptr->channel.name, volume);
-  if (channel_ptr->send_volumes != NULL)
+  struct volume *send_volume = NULL;
+  
+  if (channel_ptr->send_volumes != NULL) {
+    LOG_DEBUG("door number 1");
     send_volume = g_datalist_get_data(&channel_ptr->send_volumes, output_channel_ptr->channel.name);
-  if (send_volume == NULL && channel_ptr->send_volumes != NULL) {
-    LOG_DEBUG("%s volume setting to %f", channel_ptr->name, volume);
+  }
+  if (send_volume == NULL) {
+    LOG_DEBUG("door number 2");
     send_volume = new_volume(db_to_value(volume));
     g_datalist_set_data_full(&channel_ptr->send_volumes, output_channel_ptr->channel.name, send_volume, free); 
-  } else {
-    send_volume = &channel_ptr->volume;
   }
-  LOG_DEBUG("channel_volume_send_write: HERE");
+  LOG_DEBUG("channel_volume_send_write:  '%s'/'%s' %f'", channel_ptr->name, output_channel_ptr->channel.name, send_volume->value);
   if (send_volume != NULL) {
     /*If changing volume and find we're in the middle of a previous transition,
       then set current volume to place in transition to avoid a jump.*/
@@ -621,7 +550,8 @@ channel_volume_send_write(
     }
     send_volume->idx = 0;
     send_volume->value_new = db_to_value(volume);
-    channel_ptr->midi_out_has_events = true;
+
+    //channel_ptr->midi_out_has_events = true;
   }
 }
 
@@ -848,14 +778,14 @@ mix_one(
   for (i = start ; i < end ; i++)
   {
     if (! output_mix_channel->prefader) {
-      float volume = mix_channel->volume.value;
-      float volume_new = mix_channel->volume.value_new;
+      float volume = mix_channel->volume->value;
+      float volume_new = mix_channel->volume->value_new;
       float vol = volume;
       float balance = mix_channel->balance;
       float balance_new = mix_channel->balance_new;
       float bal = balance;
       if (volume != volume_new) {
-        vol = mix_channel->volume.idx * (volume_new - volume) / steps + volume;
+        vol = mix_channel->volume->idx * (volume_new - volume) / steps + volume;
       }
       if (balance != balance_new) {
         bal = mix_channel->balance_idx * (balance_new - balance) / steps + balance;
@@ -918,10 +848,10 @@ mix_one(
 
       mix_channel->peak_frames = 0;
     }
-    mix_channel->volume.idx++;
-    if ((mix_channel->volume.value != mix_channel->volume.value_new) && (mix_channel->volume.idx == steps)) {
-      mix_channel->volume.value = mix_channel->volume.value_new;
-      mix_channel->volume.idx = 0;
+    mix_channel->volume->idx++;
+    if ((mix_channel->volume->value != mix_channel->volume->value_new) && (mix_channel->volume->idx == steps)) {
+      mix_channel->volume->value = mix_channel->volume->value_new;
+      mix_channel->volume->idx = 0;
     }
     mix_channel->balance_idx++;
     if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx == steps)) {
@@ -953,6 +883,8 @@ calc_channel_frames(
   for (node_ptr = channel_ptr->mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr)) {
     output_channel_ptr = node_ptr->data;
     struct frames *frames = g_datalist_get_data(&channel_ptr->frames, output_channel_ptr->channel.name);
+    struct volume *svol = g_datalist_get_data(&channel_ptr->send_volumes, output_channel_ptr->channel.name);
+    if (svol == NULL) svol = channel_ptr->volume;
     //LOG_DEBUG("%s frames != NULL? %d", channel_ptr->name, frames != NULL);
     for (i = start ; i < end ; i++) {
       if (i-start >= MAX_BLOCK_SIZE) {
@@ -967,14 +899,14 @@ calc_channel_frames(
         frames->left[i-start] = NAN;
         break;
       }
-      float volume = channel_ptr->volume.value;
-      float volume_new = channel_ptr->volume.value_new;
+      float volume = svol->value;
+      float volume_new = svol->value_new;
       float vol = volume;
       float balance = channel_ptr->balance;
       float balance_new = channel_ptr->balance_new;
       float bal = balance;
-      if (channel_ptr->volume.value != channel_ptr->volume.value_new) {
-        vol = channel_ptr->volume.idx * (volume_new - volume) / steps + volume;
+      if (svol->value != svol->value_new) {
+        vol = svol->idx * (volume_new - volume) / steps + volume;
       }
       if (channel_ptr->balance != channel_ptr->balance_new) {
         bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
@@ -1050,11 +982,11 @@ calc_channel_frames(
 
         channel_ptr->peak_frames = 0;
       }
-      channel_ptr->volume.idx++;
-      if ((channel_ptr->volume.value != channel_ptr->volume.value_new) &&
-       (channel_ptr->volume.idx == steps)) {
-        channel_ptr->volume.value = channel_ptr->volume.value_new;
-        channel_ptr->volume.idx = 0;
+      svol->idx++;
+      if ((svol->value != svol->value_new) &&
+       (svol->idx >= steps)) {
+        svol->value = svol->value_new;
+        svol->idx = 0;
       }
       channel_ptr->balance_idx++;
       if ((channel_ptr->balance != channel_ptr->balance_new) &&
@@ -1213,7 +1145,7 @@ process(
       {
           int current_midi =  (int)(127 *
            scale_db_to_scale(channel_ptr->midi_scale,
-           value_to_db(channel_ptr->volume.value)));
+           value_to_db(channel_ptr->volume->value)));
           if (mixer_ptr->midi_behavior == Pick_Up &&
            !channel_ptr->midi_cc_volume_picked_up ) {
           if (in_event.buffer[2] == current_midi) {
@@ -1223,15 +1155,15 @@ process(
         if ((mixer_ptr->midi_behavior == Pick_Up &&
          channel_ptr->midi_cc_volume_picked_up) ||
          mixer_ptr->midi_behavior == Jump_To_Value) {
-            if (channel_ptr->volume.value_new != channel_ptr->volume.value) {
-              channel_ptr->volume.value = channel_ptr->volume.value + channel_ptr->volume.idx *
-               (channel_ptr->volume.value_new - channel_ptr->volume.value) /
+            if (channel_ptr->volume->value_new != channel_ptr->volume->value) {
+              channel_ptr->volume->value = channel_ptr->volume->value + channel_ptr->volume->idx *
+               (channel_ptr->volume->value_new - channel_ptr->volume->value) /
                channel_ptr->num_volume_transition_steps;
             }
-            channel_ptr->volume.idx = 0;
-            channel_ptr->volume.value_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
+            channel_ptr->volume->idx = 0;
+            channel_ptr->volume->value_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
              (double)in_event.buffer[2] / 127));
-            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume.value_new);
+            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume->value_new);
         }
       }
       else if (channel_ptr->midi_cc_mute_index == in_event.buffer[1])
@@ -1287,7 +1219,7 @@ process(
       }
       midi_out_buffer[0] = 0xB0; /* control change */
       midi_out_buffer[1] = cc_channel_index;
-      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume.value_new)));
+      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume->value_new)));
 
       LOG_DEBUG(
         "%u: CC#%u <- %u",
@@ -1471,6 +1403,8 @@ set_midi_behavior_mode(
 jack_mixer_channel_t
 add_channel(jack_mixer_t mixer,
   const char * channel_name,
+  const char * send_name,
+  double volume_initial,
   bool stereo)
 {
   struct channel * channel_ptr;
@@ -1536,9 +1470,9 @@ add_channel(jack_mixer_t mixer,
     channel_ptr->volume_transition_seconds *
     jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
 
-  channel_ptr->volume_initial = -INFINITY;
-  channel_ptr->volume.value = 0.0;
-  channel_ptr->volume.value_new = 0.0;
+  channel_ptr->volume_initial = volume_initial;
+  channel_ptr->volume = new_volume(volume_initial);
+  channel_set_current_send_name(channel_ptr, send_name);
   g_datalist_init(&channel_ptr->send_volumes);
   channel_ptr->balance = 0.0;
   channel_ptr->balance_new = 0.0;
@@ -1550,14 +1484,17 @@ add_channel(jack_mixer_t mixer,
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;
   channel_ptr->peak_frames = 0;
+  g_datalist_init(&channel_ptr->frames);
 
   GSList *node_ptr;
   struct output_channel *output_channel_ptr;
-  g_datalist_init(&channel_ptr->frames);
+  struct volume *send_volume;
   for (node_ptr = mixer_ctx_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     output_channel_ptr = node_ptr->data;
     LOG_DEBUG("%s adding output %s", channel_ptr->name, output_channel_ptr->channel.name);
+    send_volume = new_volume(channel_ptr->volume_initial);
+    g_datalist_set_data_full(&channel_ptr->send_volumes, output_channel_ptr->channel.name, send_volume, free);
     struct frames *frames = calloc(1, sizeof(frames));
     frames->left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
     frames->right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
@@ -1672,14 +1609,13 @@ create_output_channel(
 
   channel_ptr->stereo = stereo;
   channel_ptr->out_mute = false;
-
+  memset(channel_ptr->current_send, 0, 64);
   channel_ptr->send_volumes = NULL;
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
     channel_ptr->volume_transition_seconds *
     jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
-  channel_ptr->volume.value = 0.0;
-  channel_ptr->volume.value_new = 0.0;
+  channel_ptr->volume = new_volume(0);
   channel_ptr->balance = 0.0;
   channel_ptr->balance_new = 0.0;
   channel_ptr->meter_left = -1.0;
@@ -1738,8 +1674,10 @@ fail:
 
 struct volume *new_volume(double volume) {
   LOG_DEBUG("making new volume");
-  struct volume *vol = calloc(1, sizeof(struct volume));
+  struct volume *vol = malloc(sizeof(struct volume));
   vol->value = vol->value_new = volume;
+  vol->idx = 0;
+  return vol;
 }
 
 jack_mixer_output_channel_t
@@ -1762,13 +1700,16 @@ add_output_channel(
                   ((struct jack_mixer*)mixer)->output_channels_list, channel_ptr);
 
   GSList *list_ptr;
+  struct volume *send_volume = NULL;
   for (list_ptr = mixer_ctx_ptr->input_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr)) {
     struct channel *input_channel_ptr = list_ptr->data;
     struct frames *frames = calloc(1, sizeof(frames));
+    send_volume = new_volume(db_to_value(input_channel_ptr->volume_initial));
     frames->left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
     frames->right = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
     g_datalist_set_data_full(&input_channel_ptr->frames, channel_ptr->name, frames, free_frames);
-    channel_volume_send_write(input_channel_ptr, channel_ptr, input_channel_ptr->volume_initial);
+    LOG_DEBUG("add_output_channel adding send_volumes '%s'/'%s'", channel_ptr->name, output_channel_ptr->channel.name);
+    g_datalist_set_data_full(&input_channel_ptr->send_volumes, output_channel_ptr->channel.name, send_volume, free); 
   }
   return output_channel_ptr;
 }
@@ -1935,4 +1876,11 @@ output_channel_set_in_prefader(
       return;
     output_channel_ptr->prefader_channels = g_slist_remove(output_channel_ptr->prefader_channels, channel);
   }
+}
+
+
+
+struct volume *channel_get_current_send_volume(jack_mixer_channel_t channel)
+{
+	
 }

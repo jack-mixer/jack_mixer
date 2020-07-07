@@ -39,7 +39,6 @@ def lookup_scale(scales, scale_id):
             return scale
     return None
 
-
 class Factory(GObject.GObject, SerializedObject):
 
     def __init__(self, topwindow, meter_scales, slider_scales):

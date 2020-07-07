@@ -67,6 +67,7 @@ class JackMixer(SerializedObject):
     def __init__(self, client_name='jack_mixer'):
         self.visible = False
         self.nsm_client = None
+        self.current_send = ""
 
         if os.environ.get('NSM_URL'):
             self.nsm_client = NSMClient(prettyName = "jack_mixer",
@@ -452,7 +453,7 @@ class JackMixer(SerializedObject):
             self.channel_remove_output_menu_item.set_sensitive(False)
         dlg.destroy()
 
-    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, value):
+    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, value, current_send):
         try:
             channel = InputChannel(self, name, stereo, value)
             self.add_channel_precreated(channel)
@@ -475,6 +476,8 @@ class JackMixer(SerializedObject):
             channel.channel.solo_midi_cc = solo_cc
         else:
             channel.channel.autoset_solo_midi_cc()
+        log.debug("add_channel current_send: %s" % current_send)
+        channel.channel.current_send = current_send
         return channel
 
     def add_channel_precreated(self, channel):
@@ -522,6 +525,8 @@ class JackMixer(SerializedObject):
             channel = OutputChannel(self, name, stereo, value)
             channel.display_solo_buttons = display_solo_buttons
             channel.color = color
+            for inc in self.channels:
+                inc.slider_adjustment.send_dbs[channel._channel_name] = inc.slider_adjustment.default_db
             self.add_output_channel_precreated(channel)
         except Exception:
             error_dialog(self.window, "Channel creation failed")
@@ -542,13 +547,25 @@ class JackMixer(SerializedObject):
 
         return channel
 
+    def on_output_channel_show(self, channel):
+        self.current_send = channel._channel_name
+        for outc in self.output_channels:
+            if outc != channel:
+                outc.shown = False
+                outc.show.set_active(False)
+        for inc in self.channels:
+            log.debug("on_output_channel_show: '%s'/'%s'" % (inc._channel_name,
+                channel._channel_name))
+            inc.channel.current_send = channel._channel_name
+            inc.slider_adjustment.set_value_db(inc.channel.volume)
+
     def add_output_channel_precreated(self, channel):
         frame = Gtk.Frame()
         frame.add(channel)
         self.hbox_outputs.pack_end(frame, False, True, 0)
         self.hbox_outputs.reorder_child(frame, 0)
         channel.realize()
-
+        channel.connect("output-channel-show", self.on_output_channel_show)
         channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
         self.channel_edit_output_menu.append(channel_edit_menu_item)
         channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
@@ -663,6 +680,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                     channel.solo = True
                 self.add_channel_precreated(channel)
         self._init_solo_channels = None
+
         for channel in self.unserialized_channels:
             if isinstance(channel, OutputChannel):
                 self.add_output_channel_precreated(channel)

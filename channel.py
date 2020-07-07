@@ -82,7 +82,6 @@ class Channel(Gtk.VBox, SerializedObject):
         self.mixer = app.mixer
         self.gui_factory = app.gui_factory
         self._channel_name = name
-        self.initial_value = value
         self.stereo = stereo
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
@@ -95,6 +94,11 @@ class Channel(Gtk.VBox, SerializedObject):
         self.future_solo_midi_cc = None
         self.css_name = "css_name_%d" % Channel.num_instances
         Channel.num_instances += 1
+        if value == True or value == None:
+            self.volume_initial = -math.inf
+        else:
+            self.volume_initial = 0
+
 
     def get_channel_name(self):
         return self._channel_name
@@ -148,11 +152,7 @@ class Channel(Gtk.VBox, SerializedObject):
         self.volume_digits.connect("key-press-event", self.on_volume_digits_key_pressed)
         self.volume_digits.connect("focus-out-event", self.on_volume_digits_focus_out)
 
-        if self.initial_value != None:
-            if self.initial_value == True:
-                self.slider_adjustment.set_value(0)
-            else:
-                self.slider_adjustment.set_value_db(0)
+        self.slider_adjustment.set_value_db(self.volume_initial)
 
         self.connect("key-press-event", self.on_key_pressed)
         self.connect("scroll-event", self.on_scroll)
@@ -326,9 +326,12 @@ class Channel(Gtk.VBox, SerializedObject):
 
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
-
         if update_engine:
             if not from_midi:
+                self.channel.volume = db
+                #if self.slider_adjustment.current_send != None:
+                #    self.channel.set_send_volume(self.slider_adjustment.current_send.channel, db)
+                #else:
                 self.channel.volume = db
             self.app.update_monitor(self)
 
@@ -427,7 +430,10 @@ class InputChannel(Channel):
         Channel.__init__(self, app, name, stereo, value)
 
     def realize(self):
-        self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
+        log.debug("InputChannel.realize: '%s', current_send: '%s'" %
+                (self.channel_name, self.app.current_send))
+        self.channel = self.mixer.add_channel(self.channel_name,
+                self.app.current_send, self.volume_initial, self.stereo)
 
         if self.channel == None:
             raise Exception("Cannot create a channel")
@@ -623,6 +629,7 @@ class OutputChannel(Channel):
 
     def __init__(self, app, name, stereo, value = None):
         Channel.__init__(self, app, name, stereo, value)
+        self.shown = False
 
     def get_display_solo_buttons(self):
         return self._display_solo_buttons
@@ -666,6 +673,11 @@ class OutputChannel(Channel):
         set_background_color(self.label_name_event_box, self.css_name,
                self.color.to_string())
         self.vbox.pack_start(self.label_name_event_box, True, True, 0)
+        self.show = Gtk.ToggleButton(label='Show')
+        self.show.connect("clicked", self.on_show_clicked)
+        self.show.connect("toggled", self.on_show_toggled)
+        self.vbox.pack_start(self.show, False, False, 0)
+
         frame = Gtk.Frame()
         frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(self.abspeak);
@@ -714,6 +726,7 @@ class OutputChannel(Channel):
         self._init_solo_channels = None
 
     channel_properties_dialog = None
+
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
             self.channel_properties_dialog = OutputChannelPropertiesDialog(self, self.app)
@@ -724,6 +737,23 @@ class OutputChannel(Channel):
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
+
+    def set_shown(self, shown):
+        self.shown = shown
+        #self.show.set_active(shown)
+
+    def on_show_toggled(self, button):
+        if self.shown and not self.show.get_active():
+            self.show.set_active(True)
+            return True
+        if not self.shown and self.show.get_active():
+            self.shown = True
+            self.emit("output-channel-show")
+            return True
+
+    def on_show_clicked(self, button):
+        if self.show.get_active():
+            return True
 
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
@@ -795,6 +825,11 @@ class OutputChannel(Channel):
             self.color = c
             return True
         return Channel.unserialize_property(self, name, value)
+
+GObject.signal_new("output-channel-show", OutputChannel,
+        GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+        None, [])
+
 
 class ChannelPropertiesDialog(Gtk.Dialog):
     channel = None
@@ -1016,14 +1051,14 @@ class NewInputChannelDialog(NewChannelDialog):
         self.entry_solo_cc.set_value(-1)
 
     def get_result(self):
-        log.debug('minus_inf active?: %s', self.zero_dB.get_active())
         return {'name': self.entry_name.get_text(),
                 'stereo': self.stereo.get_active(),
                 'volume_cc': int(self.entry_volume_cc.get_value()),
                 'balance_cc': int(self.entry_balance_cc.get_value()),
                 'mute_cc': int(self.entry_mute_cc.get_value()),
                 'solo_cc': int(self.entry_solo_cc.get_value()),
-                'value': self.minus_inf.get_active()
+                'value': self.minus_inf.get_active(),
+                'current_send': self.app.current_send
                }
 
 

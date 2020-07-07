@@ -32,6 +32,9 @@
 #include "jack_mixer.h"
 %}
 #endif
+#include <jack/jack.h>
+#include <stdbool.h>
+#include <glib.h>
 
 #include "scale.h"
 
@@ -43,6 +46,108 @@ typedef void * jack_mixer_frames_t;
 
 enum midi_behavior_mode { Jump_To_Value, Pick_Up };
 
+struct volume
+{
+  float value;
+  unsigned int idx;
+  float value_new;
+};
+
+struct frames
+{
+  jack_default_audio_sample_t *left;
+  jack_default_audio_sample_t *right;
+};
+
+struct channel
+{
+  struct jack_mixer * mixer_ptr;
+  char * name;
+  bool stereo;
+  bool out_mute;
+  float volume_transition_seconds;
+  unsigned int num_volume_transition_steps;
+  /*float volume;
+  jack_nframes_t volume_idx;
+  float volume_new;*/
+  struct volume *volume;
+  GData *send_volumes;
+  char current_send[64];
+  float balance;
+  jack_nframes_t balance_idx;
+  float balance_new;
+  /*GData *volumes_left;
+  GData *volumes_left_new;
+  GData *volumes_right;
+  GData *volumes_right_new;*/
+  float volume_initial;
+  float volume_left;
+  float volume_left_new;
+  float volume_right;
+  float volume_right_new;
+  float meter_left;
+  float meter_right;
+  float abspeak;
+  jack_port_t * port_left;
+  jack_port_t * port_right;
+
+  jack_nframes_t peak_frames;
+  float peak_left;
+  float peak_right;
+
+  GData *frames;
+  jack_default_audio_sample_t * tmp_mixed_frames_left;
+  jack_default_audio_sample_t * tmp_mixed_frames_right;
+
+  jack_default_audio_sample_t * prefader_frames_left;
+  jack_default_audio_sample_t * prefader_frames_right;
+
+  bool NaN_detected;
+
+  int midi_cc_volume_index;
+  int midi_cc_balance_index;
+  int midi_cc_mute_index;
+  int midi_cc_solo_index;
+  bool midi_cc_volume_picked_up;
+  bool midi_cc_balance_picked_up;
+
+  jack_default_audio_sample_t * left_buffer_ptr;
+  jack_default_audio_sample_t * right_buffer_ptr;
+
+  bool midi_in_got_events;
+  void (*midi_change_callback) (void*);
+  void *midi_change_callback_data;
+  bool midi_out_has_events;
+
+  jack_mixer_scale_t midi_scale;
+};
+
+struct output_channel {
+  struct channel channel;
+  GSList *soloed_channels;
+  GSList *muted_channels;
+  GSList *prefader_channels;
+  /*jack_default_audio_sample_t * frames_left;
+  jack_default_audio_sample_t * frames_right;*/
+  bool system; /* system channel, without any associated UI */
+  bool prefader;
+};
+
+struct jack_mixer
+{
+  pthread_mutex_t mutex;
+  jack_client_t * jack_client;
+  GSList *input_channels_list;
+  GSList *output_channels_list;
+  GSList *soloed_channels;
+
+  jack_port_t * port_midi_in;
+  jack_port_t * port_midi_out;
+  int last_midi_channel;
+  enum midi_behavior_mode midi_behavior;
+
+  struct channel* midi_cc_map[128];
+};
 jack_mixer_t
 create(
   const char * jack_client_name_ptr,
@@ -82,10 +187,24 @@ set_midi_behavior_mode(
 jack_mixer_channel_t
 add_channel(jack_mixer_t mixer,
   const char * channel_name,
+  const char *send_name,
+  double volume_initial,
   bool stereo);
 
 const char *
 channel_get_name(
+  jack_mixer_channel_t channel);
+
+const char *
+  channel_get_current_send_name(
+  jack_mixer_channel_t channel);
+
+void
+  channel_set_current_send_name(jack_mixer_channel_t channel,
+  const char *name);
+
+struct volume*
+  channel_get_current_send_volume(
   jack_mixer_channel_t channel);
 
 /* returned values are in dBFS */

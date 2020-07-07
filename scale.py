@@ -50,7 +50,6 @@ class Base:
 
     def db_to_scale(self, db):
         '''Convert dBFS value to number in range 0.0-1.0 used in GUI'''
-        log.debug("db_to_scale(%f)", db)
         return self.scale.db_to_scale(db)
 
     def scale_to_db(self, scale):

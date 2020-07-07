@@ -214,6 +214,8 @@ Channel_set_volume(ChannelObject *self, PyObject *value, void *closure)
 		PyErr_SetString(PyExc_RuntimeError, "unitialized channel");
 		return -1;
 	}
+	struct channel *c = (struct channel *) self->channel;
+	fprintf(stderr, "Channel_set_volume '%s', %f\n", c->name, PyFloat_AsDouble(value));
 	channel_volume_write(self->channel, PyFloat_AsDouble(value));
 	channel_set_midi_cc_volume_picked_up(self->channel, false);
 	return 0;
@@ -494,6 +496,19 @@ Channel_get_midi_in_got_events(ChannelObject *self, void *closure)
 	return result;
 }
 
+static PyObject*
+Channel_get_current_send_name(ChannelObject *self, void *closure)
+{
+	return PyUnicode_FromString(channel_get_current_send_name(self->channel));
+}
+
+static int
+Channel_set_current_send_name(ChannelObject *self, PyObject *value, void *closure)
+{
+	channel_set_current_send_name(self->channel, PyUnicode_AsUTF8(value));
+	return 0;
+}
+
 static PyGetSetDef Channel_getseters[] = {
 	{"is_stereo",
 		(getter)Channel_get_is_stereo, NULL,
@@ -546,6 +561,9 @@ static PyGetSetDef Channel_getseters[] = {
 	{"midi_in_got_events",
 		(getter)Channel_get_midi_in_got_events, NULL,
 		"Got new MIDI IN events", NULL},
+	{"current_send",
+		(getter)Channel_get_current_send_name, (setter)Channel_set_current_send_name,
+		"Name of Current Send", NULL},
 	{NULL}
 };
 
@@ -594,6 +612,19 @@ Channel_autoset_solo_midi_cc(ChannelObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject*
+Channel_set_send_volume(ChannelObject *self, PyObject *args)
+{
+	PyObject *output_channel;
+	double volume;
+
+	if (! PyArg_ParseTuple(args, "Od", &output_channel, &volume)) return NULL;
+
+	channel_volume_send_write(self->channel, ((ChannelObject *)output_channel)->channel, volume);
+	//channel_set_midi_cc_volume_picked_up(self->channel, false);
+	return Py_None;
+}
+
 static PyMethodDef channel_methods[] = {
 	{"remove", (PyCFunction)Channel_remove, METH_VARARGS, "Remove"},
 	{"autoset_volume_midi_cc",
@@ -604,6 +635,8 @@ static PyMethodDef channel_methods[] = {
 		(PyCFunction)Channel_autoset_mute_midi_cc, METH_VARARGS, "Autoset Mute MIDI CC"},
 	{"autoset_solo_midi_cc",
 		(PyCFunction)Channel_autoset_solo_midi_cc, METH_VARARGS, "Autoset Solo MIDI CC"},
+	{"set_send_volume",
+		(PyCFunction)Channel_set_send_volume, METH_VARARGS, "Set Channel Send Volume"},
 	{NULL}
 };
 
@@ -979,12 +1012,14 @@ static PyObject*
 Mixer_add_channel(MixerObject *self, PyObject *args)
 {
 	char *name;
+	char *out_name;
+	double volume;
 	int stereo;
 	jack_mixer_channel_t channel;
 
-	if (! PyArg_ParseTuple(args, "si", &name, &stereo)) return NULL;
+	if (! PyArg_ParseTuple(args, "ssdi", &name, &out_name, &volume, &stereo)) return NULL;
 
-	channel = add_channel(self->mixer, name, (bool)stereo);
+	channel = add_channel(self->mixer, name, out_name, volume, (bool)stereo);
 
 	if (channel == NULL) {
 		PyErr_SetString(PyExc_RuntimeError, "error adding channel");

@@ -30,6 +30,9 @@ class AdjustmentdBFS(Gtk.Adjustment):
     def __init__(self, scale, default_db, step_inc):
         self.default_value = scale.db_to_scale(default_db)
         self.db = default_db
+        self.default_db = default_db
+        self.send_dbs = {}
+        self.current_send = None
         self.scale = scale
         self.step_increment = step_inc
         Gtk.Adjustment.__init__(self, self.default_value, 0.0, 1.0, 0.02)
@@ -50,6 +53,9 @@ class AdjustmentdBFS(Gtk.Adjustment):
 
     def set_value_db(self, db, from_midi = False):
         self.db = db
+        if self.current_send != None:
+            self.send_dbs[self.current_send.channel.name] = db
+            print("HERE", db)
         self.disable_value_notify = True
         self.set_value(self.scale.db_to_scale(db))
         self.disable_value_notify = False
@@ -61,6 +67,8 @@ class AdjustmentdBFS(Gtk.Adjustment):
     def on_value_changed(self, adjustment):
         if not self.disable_value_notify:
             self.db = self.scale.scale_to_db(self.get_value())
+            if self.current_send != None:
+                self.send_dbs[self.current_send.channel.name] = self.db
             self.emit("volume-changed")
 
     def set_scale(self, scale):

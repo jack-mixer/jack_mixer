@@ -138,7 +138,7 @@ main(int argc, char *argv[])
 			free(channel_name);
 			abort();
 		}
-		channel = add_channel(mixer, channel_name, bStereo);
+		channel = add_channel(mixer, channel_name, NULL, initialVolume, bStereo);
 		if (channel == NULL) {
 			fprintf(stderr, "Failed to add channel %d, aborting\n", channel_index);
 			exit(1);

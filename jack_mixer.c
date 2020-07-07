@@ -1039,10 +1039,10 @@ process(
   jack_nframes_t nframes,
   void * context)
 {
-  jack_nframes_t i;
   GSList *node_ptr;
   struct channel * channel_ptr;
 #if defined(HAVE_JACK_MIDI)
+  jack_nframes_t i;
   jack_nframes_t event_count;
   jack_midi_event_t in_event;
   unsigned char* midi_out_buffer;

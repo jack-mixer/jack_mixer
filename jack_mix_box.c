@@ -123,7 +123,7 @@ main(int argc, char *argv[])
 	}
 
 	mixer = create(jack_cli_name, false);
-	main_mix_channel = add_output_channel(mixer, "MAIN", true, false);
+	main_mix_channel = add_output_channel(mixer, "MAIN", 0.0, true, false);
 	channel_set_midi_scale(main_mix_channel, scale);
 	channel_volume_write(main_mix_channel, 0.0);
 

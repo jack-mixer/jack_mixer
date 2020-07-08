@@ -329,10 +329,6 @@ class Channel(Gtk.VBox, SerializedObject):
         if update_engine:
             if not from_midi:
                 self.channel.volume = db
-                #if self.slider_adjustment.current_send != None:
-                #    self.channel.set_send_volume(self.slider_adjustment.current_send.channel, db)
-                #else:
-                self.channel.volume = db
             self.app.update_monitor(self)
 
     def on_volume_changed(self, adjustment):
@@ -643,7 +639,7 @@ class OutputChannel(Channel):
     display_solo_buttons = property(get_display_solo_buttons, set_display_solo_buttons)
 
     def realize(self):
-        self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
+        self.channel = self.mixer.add_output_channel(self.channel_name, self.volume_initial, self.stereo)
         if self.channel == None:
             raise Exception("Cannot create a channel")
         Channel.realize(self)

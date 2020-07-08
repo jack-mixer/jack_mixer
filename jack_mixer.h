@@ -95,7 +95,8 @@ struct channel
   float peak_left;
   float peak_right;
 
-  GData *frames;
+  struct frames *frames;
+  GData *send_frames;
   jack_default_audio_sample_t * tmp_mixed_frames_left;
   jack_default_audio_sample_t * tmp_mixed_frames_right;
 
@@ -383,7 +384,8 @@ channel_get_midi_in_got_events(
 jack_mixer_output_channel_t
 add_output_channel(
   jack_mixer_t mixer,
-  const char * channel_name,
+  const char * channel_name, 
+  double volume_initial,
   bool stereo,
   bool system);
 

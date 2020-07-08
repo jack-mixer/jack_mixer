@@ -93,7 +93,7 @@ class JackMixer(SerializedObject):
 
         self.window.set_title(client_name)
 
-        self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
+        self.monitor_channel = self.mixer.add_output_channel("Monitor", 0.0, True, True)
         self.save = False
 
         GLib.timeout_add(80, self.read_meters)
@@ -503,7 +503,7 @@ class JackMixer(SerializedObject):
 
         # create post fader output channel matching the input channel
         channel.post_fader_output_channel = self.mixer.add_output_channel(
-                        channel.channel.name + ' Out', channel.channel.is_stereo, True)
+                        channel.channel.name + ' Out', 0.0, channel.channel.is_stereo, True)
         channel.post_fader_output_channel.volume = 0
         channel.post_fader_output_channel.set_solo(channel.channel, True)
 
@@ -554,8 +554,6 @@ class JackMixer(SerializedObject):
                 outc.shown = False
                 outc.show.set_active(False)
         for inc in self.channels:
-            log.debug("on_output_channel_show: '%s'/'%s'" % (inc._channel_name,
-                channel._channel_name))
             inc.channel.current_send = channel._channel_name
             inc.slider_adjustment.set_value_db(inc.channel.volume)
 

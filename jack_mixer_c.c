@@ -996,8 +996,6 @@ Mixer_set_midi_behavior_mode(MixerObject *self, PyObject *value, void *closure)
 	return -1;
 }
 
-
-
 static PyGetSetDef Mixer_getseters[] = {
 	{"channels_count", (getter)Mixer_get_channels_count, NULL,
 		"channels count", NULL},
@@ -1035,11 +1033,13 @@ Mixer_add_output_channel(MixerObject *self, PyObject *args)
 	char *name;
 	int stereo = 1;
 	int system = 0;
+	double volume;
+
 	jack_mixer_output_channel_t channel;
 
-	if (! PyArg_ParseTuple(args, "s|bb", &name, &stereo, &system)) return NULL;
+	if (! PyArg_ParseTuple(args, "sd|bb", &name, &volume, &stereo, &system)) return NULL;
 
-	channel = add_output_channel(self->mixer, name, (bool)stereo, (bool)system);
+	channel = add_output_channel(self->mixer, name, volume, (bool)stereo, (bool)system);
 
 	return OutputChannel_New(channel);
 }

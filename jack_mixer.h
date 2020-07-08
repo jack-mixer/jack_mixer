@@ -23,15 +23,7 @@
 #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
 #define JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
 
-#ifdef SWIG
-%module jack_mixer_c
-%include "typemaps.i"
-%apply double *OUTPUT { double * left_ptr, double * right_ptr, double * mono_ptr };
-%{
 #include <stdbool.h>
-#include "jack_mixer.h"
-%}
-#endif
 
 #include "scale.h"
 

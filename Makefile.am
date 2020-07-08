@@ -35,7 +35,7 @@ jack_mixer_c_la_LDFLAGS = -module -avoid-version
 jack_mixer_c_la_LIBADD = $(JACKMIXER_LIBS)
 
 jack_mixer_c_la_SOURCES = \
-	jack_mixer.c jack_mixer.h list.h memory_atomic.c memory_atomic.h log.h log.c scale.c scale.h jack_compat.h \
+	jack_mixer.c jack_mixer.h list.h log.h log.c scale.c scale.h jack_compat.h \
 	jack_mixer_c.c
 
 dist_jack_mixer_DATA = abspeak.py channel.py gui.py meter.py scale.py serialization.py serialization_xml.py slider.py preferences.py nsmclient.py

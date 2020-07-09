@@ -518,6 +518,29 @@ channel_stereo_meter_read(
   *right_ptr = value_to_db(channel_ptr->meter_right);
 }
 
+double interpolate(double start, double end, int step, int steps) {
+  double ret;
+  double frac = 0.01;
+  LOG_DEBUG("%f -> %f, %d", start, end, step);
+  if (start <= 0) {
+    if (step <= frac * steps) {
+      ret = frac * end * step / steps;
+    } else {
+      ret = db_to_value(value_to_db(frac * end) + (value_to_db(end) - value_to_db(frac * end)) * step / steps);;
+    }
+  } else if (end <= 0) {
+      if (step >= (1 - frac) * steps) {
+        ret = frac * start - frac * start * step / steps;
+      } else {
+        ret = db_to_value(value_to_db(start) + (value_to_db(frac * start) - value_to_db(start)) * step / steps);
+      }
+    } else {
+    ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
+  }
+  LOG_DEBUG("interpolate: %f", ret);
+  return ret;
+}
+
 void
 channel_mono_meter_read(
   jack_mixer_channel_t channel,
@@ -535,9 +558,8 @@ channel_volume_write(
   /*If changing volume and find we're in the middle of a previous transition,
    *then set current volume to place in transition to avoid a jump.*/
   if (channel_ptr->volume_new != channel_ptr->volume) {
-    channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-     (channel_ptr->volume_new - channel_ptr->volume) /
-     channel_ptr->num_volume_transition_steps;
+    channel_ptr->volume = interpolate(channel_ptr->volume, channel_ptr->volume_new, channel_ptr->volume_idx,
+     channel_ptr->num_volume_transition_steps);
   }
   channel_ptr->volume_idx = 0;
   channel_ptr->volume_new = db_to_value(volume);
@@ -766,7 +788,7 @@ mix_one(
       float balance_new = mix_channel->balance_new;
       float bal = balance;
       if (volume != volume_new) {
-        vol = mix_channel->volume_idx * (volume_new - volume) / steps + volume;
+        vol = interpolate(volume, volume_new,  mix_channel->volume_idx, steps);
       }
       if (balance != balance_new) {
         bal = mix_channel->balance_idx * (balance_new - balance) / steps + balance;
@@ -881,7 +903,7 @@ calc_channel_frames(
     float balance_new = channel_ptr->balance_new;
     float bal = balance;
     if (channel_ptr->volume != channel_ptr->volume_new) {
-      vol = channel_ptr->volume_idx * (volume_new - volume) / steps + volume;
+      vol = interpolate(volume, volume_new, channel_ptr->volume_idx, steps);
     }
     if (channel_ptr->balance != channel_ptr->balance_new) {
       bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
@@ -1143,9 +1165,8 @@ process(
          channel_ptr->midi_cc_volume_picked_up) ||
          mixer_ptr->midi_behavior == Jump_To_Value) {
             if (channel_ptr->volume_new != channel_ptr->volume) {
-              channel_ptr->volume = channel_ptr->volume + channel_ptr->volume_idx *
-               (channel_ptr->volume_new - channel_ptr->volume) /
-               channel_ptr->num_volume_transition_steps;
+              channel_ptr->volume = interpolate(channel_ptr->volume, channel_ptr->volume_new, channel_ptr->volume_idx,
+               channel_ptr->num_volume_transition_steps);
             }
             channel_ptr->volume_idx = 0;
             channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,

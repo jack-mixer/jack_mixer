@@ -89,6 +89,29 @@ db_to_value(
   return powf(10.0, db/20.0);
 }
 
+float interpolate(float start, float end, int step, int steps) {
+  float ret;
+  float frac = 0.01;
+  LOG_DEBUG("%f -> %f, %d", start, end, step);
+  if (start <= 0) {
+    if (step <= frac * steps) {
+      ret = frac * end * step / steps;
+    } else {
+      ret = db_to_value(value_to_db(frac * end) + (value_to_db(end) - value_to_db(frac * end)) * step / steps);;
+    }
+  } else if (end <= 0) {
+      if (step >= (1 - frac) * steps) {
+        ret = frac * start - frac * start * step / steps;
+      } else {
+        ret = db_to_value(value_to_db(start) + (value_to_db(frac * start) - value_to_db(start)) * step / steps);
+      }
+    } else {
+    ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
+  }
+  LOG_DEBUG("interpolate: %f", ret);
+  return ret;
+}
+
 #define channel_ptr ((struct channel *)channel)
 
 const char*
@@ -457,8 +480,8 @@ remove_channel(
   free(channel_ptr->frames->left);
   free(channel_ptr->frames->right);
   free(channel_ptr->frames);
-  free(channel_ptr->tmp_mixed_frames_left);
-  free(channel_ptr->tmp_mixed_frames_right);
+  /*free(channel_ptr->tmp_mixed_frames_left);
+  free(channel_ptr->tmp_mixed_frames_right);*/
   free(channel_ptr->prefader_frames_left);
   free(channel_ptr->prefader_frames_right);
 
@@ -498,9 +521,8 @@ channel_volume_write(
   }
   LOG_DEBUG("channel_volume_write %s %f", channel_ptr->name, volume);
   if (vol->value_new != vol->value) {
-    vol->value = vol->value + vol->idx *
-     (vol->value_new - vol->value) /
-     channel_ptr->num_volume_transition_steps;
+    vol->value = interpolate(vol->value, vol->value_new, vol->idx,
+     channel_ptr->num_volume_transition_steps);
   }
   vol->idx = 0;
   vol->value_new = db_to_value(volume);
@@ -547,9 +569,8 @@ channel_volume_send_write(
     /*If changing volume and find we're in the middle of a previous transition,
       then set current volume to place in transition to avoid a jump.*/
     if (send_volume->value_new != send_volume->value) {
-      send_volume->value = send_volume->value + send_volume->idx *
-       (send_volume->value_new - send_volume->value) /
-      channel_ptr->num_volume_transition_steps;
+      send_volume->value = interpolate(send_volume->value, send_volume->value_new, send_volume->idx,
+       channel_ptr->num_volume_transition_steps);
     }
     send_volume->idx = 0;
     send_volume->value_new = db_to_value(volume);
@@ -910,7 +931,7 @@ calc_channel_frames(
       float balance_new = channel_ptr->balance_new;
       float bal = balance;
       if (svol->value != svol->value_new) {
-        vol = svol->idx * (volume_new - volume) / steps + volume;
+        vol = interpolate(volume, volume_new, svol->idx, steps);
       }
       if (channel_ptr->balance != channel_ptr->balance_new) {
         bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
@@ -977,7 +998,7 @@ calc_channel_frames(
     float balance_new = channel_ptr->balance_new;
     float bal = balance;
     if (svol->value != svol->value_new) {
-      vol = svol->idx * (volume_new - volume) / steps + volume;
+      vol = interpolate(volume, volume_new, svol->idx, steps);
     }
     if (channel_ptr->balance != channel_ptr->balance_new) {
       bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
@@ -1226,9 +1247,8 @@ process(
          channel_ptr->midi_cc_volume_picked_up) ||
          mixer_ptr->midi_behavior == Jump_To_Value) {
             if (channel_ptr->volume->value_new != channel_ptr->volume->value) {
-              channel_ptr->volume->value = channel_ptr->volume->value + channel_ptr->volume->idx *
-               (channel_ptr->volume->value_new - channel_ptr->volume->value) /
-               channel_ptr->num_volume_transition_steps;
+              channel_ptr->volume->value = interpolate(channel_ptr->volume->value, channel_ptr->volume->value_new,
+               channel_ptr->volume->idx, channel_ptr->num_volume_transition_steps);
             }
             channel_ptr->volume->idx = 0;
             channel_ptr->volume->value_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,

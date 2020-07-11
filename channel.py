@@ -152,8 +152,6 @@ class Channel(Gtk.VBox, SerializedObject):
         self.volume_digits.connect("key-press-event", self.on_volume_digits_key_pressed)
         self.volume_digits.connect("focus-out-event", self.on_volume_digits_focus_out)
 
-        self.slider_adjustment.set_value_db(self.volume_initial)
-
         self.connect("key-press-event", self.on_key_pressed)
         self.connect("scroll-event", self.on_scroll)
 
@@ -369,7 +367,6 @@ class Channel(Gtk.VBox, SerializedObject):
             object_backend.add_property('mute_midi_cc', str(self.channel.mute_midi_cc))
         if self.channel.solo_midi_cc != -1:
             object_backend.add_property('solo_midi_cc', str(self.channel.solo_midi_cc))
-
 
     def unserialize_property(self, name, value):
         if name == "volume":

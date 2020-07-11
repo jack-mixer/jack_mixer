@@ -344,7 +344,7 @@ class JackMixer(SerializedObject):
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
             channel = self.add_channel(**result)
-            if self.visible:
+            if self.visible or self.nsm_client == None:
                 self.window.show_all()
 
     def on_add_output_channel(self, widget):
@@ -357,7 +357,7 @@ class JackMixer(SerializedObject):
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
             channel = self.add_output_channel(**result)
-            if self.visible:
+            if self.visible or self.nsm_client == None:
                 self.window.show_all()
 
     def on_edit_input_channel(self, widget, channel):

@@ -146,7 +146,9 @@ struct jack_mixer
   jack_port_t * port_midi_out;
   int last_midi_channel;
   enum midi_behavior_mode midi_behavior;
-
+  
+  char current_send[64];
+  
   struct channel* midi_cc_map[128];
 };
 jack_mixer_t
@@ -184,6 +186,15 @@ unsigned int
 set_midi_behavior_mode(
   jack_mixer_t mixer,
   enum midi_behavior_mode mode);
+
+const char *
+  get_current_send(
+  jack_mixer_t mixer);
+
+void
+  set_current_send(
+  jack_mixer_t mixer,
+  const char *name);
 
 jack_mixer_channel_t
 add_channel(jack_mixer_t mixer,
@@ -388,6 +399,7 @@ add_output_channel(
   double volume_initial,
   bool stereo,
   bool system);
+
 
 void
 remove_output_channel(

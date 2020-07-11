@@ -548,14 +548,23 @@ class JackMixer(SerializedObject):
         return channel
 
     def on_output_channel_show(self, channel):
-        self.current_send = channel._channel_name
+        for inc in self.channels:
+            if inc.channel.current_send != "":
+                inc.channel.current_send = channel._channel_name
+                inc.slider_adjustment.set_value_db(inc.channel.volume)
+            else:
+                vol = inc.channel.volume
+                log.debug("WAS BLANK '%s' setting volume to %f" % (inc._channel_name, vol))
+                for outc in self.output_channels:
+                    inc.channel.current_send = outc._channel_name
+                    inc.slider_adjustment.set_value_db(vol)
+                inc.channel.current_send = channel._channel_name
+
         for outc in self.output_channels:
             if outc != channel:
                 outc.shown = False
                 outc.show.set_active(False)
-        for inc in self.channels:
-            inc.channel.current_send = channel._channel_name
-            inc.slider_adjustment.set_value_db(inc.channel.volume)
+        self.current_send = channel._channel_name
 
     def add_output_channel_precreated(self, channel):
         frame = Gtk.Frame()
@@ -685,6 +694,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         del self.unserialized_channels
         width, height = self.window.get_size()
         if self.visible or self.nsm_client == None:
+            print("self.visible: ", self.visible)
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)

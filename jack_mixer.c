@@ -1150,10 +1150,16 @@ process(
 
     mixer_ptr->last_midi_channel = (int)in_event.buffer[1];
     channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]];
+    struct volume *volume;
 
     /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
     if (channel_ptr != NULL && channel_ptr->midi_scale != NULL)
     {
+      if (strcmp(channel_ptr->current_send, "") != 0) {
+        volume = g_datalist_get_data(&channel_ptr->send_volumes, channel_ptr->current_send);
+      } else {
+        volume = channel_ptr->volume;
+      } 
       if (channel_ptr->midi_cc_balance_index == (char)in_event.buffer[1])
       {
         byte = in_event.buffer[2];
@@ -1187,7 +1193,7 @@ process(
       {
           int current_midi =  (int)(127 *
            scale_db_to_scale(channel_ptr->midi_scale,
-           value_to_db(channel_ptr->volume->value)));
+           value_to_db(volume->value)));
           if (mixer_ptr->midi_behavior == Pick_Up &&
            !channel_ptr->midi_cc_volume_picked_up ) {
           if (in_event.buffer[2] == current_midi) {
@@ -1197,14 +1203,14 @@ process(
         if ((mixer_ptr->midi_behavior == Pick_Up &&
          channel_ptr->midi_cc_volume_picked_up) ||
          mixer_ptr->midi_behavior == Jump_To_Value) {
-            if (channel_ptr->volume->value_new != channel_ptr->volume->value) {
-              channel_ptr->volume->value = interpolate(channel_ptr->volume->value, channel_ptr->volume->value_new,
-               channel_ptr->volume->idx, channel_ptr->num_volume_transition_steps);
+            if (volume->value_new != volume->value) {
+              volume->value = interpolate(volume->value, volume->value_new,
+               volume->idx, channel_ptr->num_volume_transition_steps);
             }
-            channel_ptr->volume->idx = 0;
-            channel_ptr->volume->value_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
+            volume->idx = 0;
+            volume->value_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
              (double)in_event.buffer[2] / 127));
-            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume->value_new);
+            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, volume->value_new);
         }
       }
       else if (channel_ptr->midi_cc_mute_index == in_event.buffer[1])
@@ -1258,9 +1264,15 @@ process(
       {
         continue;
       }
+      struct volume *volume;
+      if (strcmp(channel_ptr->current_send, "") != 0) {
+        volume = g_datalist_get_data(&channel_ptr->send_volumes, channel_ptr->current_send);
+      } else {
+        volume = channel_ptr->volume;
+      }
       midi_out_buffer[0] = 0xB0; /* control change */
       midi_out_buffer[1] = cc_channel_index;
-      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume->value_new)));
+      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(volume->value_new)));
 
       LOG_DEBUG(
         "%u: CC#%u <- %u",

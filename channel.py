@@ -992,8 +992,11 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 class NewChannelDialog(ChannelPropertiesDialog):
     def create_ui(self):
         ChannelPropertiesDialog.create_ui(self)
-        self.properties_table.attach(Gtk.Label(label='Value'), 0, 1, 2, 3)
+        self.add_initial_value_radio()
+        self.vbox.show_all()
 
+    def add_initial_value_radio(self):
+        self.properties_table.attach(Gtk.Label(label='Value'), 0, 1, 2, 3)
         self.value_hbox = Gtk.HBox()
         self.properties_table.attach(self.value_hbox, 1, 2, 2, 3)
         self.minus_inf = Gtk.RadioButton(label='-Inf')
@@ -1001,7 +1004,6 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.value_hbox.pack_start(self.minus_inf, True, True, 0)
         self.value_hbox.pack_start(self.zero_dB, True, True, 0)
 
-        self.vbox.show_all()
 
 class NewInputChannelDialog(NewChannelDialog):
     def __init__(self, app):
@@ -1076,6 +1078,8 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         self.mixer = app.mixer
         self.app = app
         OutputChannelPropertiesDialog.create_ui(self)
+        self.add_initial_value_radio()
+        self.vbox.show_all()
         self.fill_ui()
         self.set_default_size(365, -1)
 

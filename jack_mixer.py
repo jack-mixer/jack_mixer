@@ -85,8 +85,8 @@ class JackMixer(SerializedObject):
             self.create_mixer(client_name, with_nsm = False)
 
     def create_mixer(self, client_name, with_nsm = True):
-        self.create_ui(with_nsm)
         self.mixer = jack_mixer_c.Mixer(client_name)
+        self.create_ui(with_nsm)
         if not self.mixer:
             sys.exit(1)
 
@@ -118,6 +118,8 @@ class JackMixer(SerializedObject):
         self.window.set_icon_name('jack_mixer')
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
         self.gui_factory.connect('midi-behavior-mode-changed', self.on_midi_behavior_mode_changed)
+        self.gui_factory.emit_midi_behavior_mode()
+
         self.vbox_top = Gtk.VBox()
         self.window.add(self.vbox_top)
 

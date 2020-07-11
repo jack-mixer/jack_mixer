@@ -90,10 +90,12 @@ class Factory(GObject.GObject, SerializedObject):
 
         self.use_custom_widgets = self.config["Preferences"]["use_custom_widgets"] == 'True'
 
+        mode = 0
         try:
-            self.midi_behavior_mode = int(self.config["Preferences"]["midi_behavior_mode"])
+            mode = int(self.config["Preferences"]["midi_behavior_mode"])
         except:
-            self.midi_behavior_mode = 0
+            pass
+        self.midi_behavior_mode = mode
 
     def write_preferences(self):
         self.config['Preferences'] = {}
@@ -147,6 +149,9 @@ class Factory(GObject.GObject, SerializedObject):
 
     def set_midi_behavior_mode(self, mode):
         self.midi_behavior_mode = int(mode)
+        self.emit_midi_behavior_mode()
+
+    def emit_midi_behavior_mode(self):
         self.emit("midi-behavior-mode-changed", self.midi_behavior_mode)
 
     def get_default_meter_scale(self):

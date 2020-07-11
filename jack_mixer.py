@@ -136,6 +136,7 @@ class JackMixer(SerializedObject):
 
         self.width = 420
         self.height = 420
+        self.paned_position = 210
         self.window.set_default_size(self.width, self.height)
 
         self.mixer_menu = Gtk.Menu()

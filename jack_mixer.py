@@ -231,7 +231,10 @@ class JackMixer(SerializedObject):
         self.nsm_client.announceGuiVisibility(False)
 
     def nsm_show_cb(self):
+        width, height = self.window.get_size()
         self.window.show_all()
+        self.paned.set_position(self.paned_position/self.width*width)
+
         self.visible = True
         self.nsm_client.announceGuiVisibility(True)
 
@@ -668,7 +671,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
         width, height = self.window.get_size()
-        if self.visible or self.nsm_client == None:
+        if self.visible:
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)
@@ -730,8 +733,10 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if not self.mixer:
             return
 
-        if self.visible:
+        if self.visible or self.nsm_client == None:
+            width, height = self.window.get_size()
             self.window.show_all()
+            self.paned.set_position(self.paned_position/self.width*width)
 
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)

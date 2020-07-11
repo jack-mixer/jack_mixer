@@ -134,7 +134,9 @@ class JackMixer(SerializedObject):
         help_menu_item = Gtk.MenuItem.new_with_mnemonic('_Help')
         self.menubar.append(help_menu_item)
 
-        self.window.set_default_size(420, 420)
+        self.width = 420
+        self.height = 420
+        self.window.set_default_size(self.width, self.height)
 
         self.mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(self.mixer_menu)
@@ -243,7 +245,7 @@ class JackMixer(SerializedObject):
         self.current_filename = path + '.xml'
         if os.path.isfile(self.current_filename):
             f = open(self.current_filename, 'r')
-            self.load_from_xml(f)
+            self.load_from_xml(f, from_nsm=True)
             f.close()
         else:
             f = open(self.current_filename, 'w')
@@ -647,7 +649,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         s.serialize(self, b)
         b.save(file)
 
-    def load_from_xml(self, file, silence_errors=False):
+    def load_from_xml(self, file, silence_errors=False, from_nsm=False):
         log.debug("Loading from XML...")
         self.unserialized_channels = []
         b = XmlSerialization()
@@ -671,7 +673,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 self.add_output_channel_precreated(channel)
         del self.unserialized_channels
         width, height = self.window.get_size()
-        if self.visible:
+        if self.visible or not from_nsm:
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)
@@ -736,7 +738,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if self.visible or self.nsm_client == None:
             width, height = self.window.get_size()
             self.window.show_all()
-            self.paned.set_position(self.paned_position/self.width*width)
+            if hasattr(self, 'paned_position'):
+                self.paned.set_position(self.paned_position/self.width*width)
 
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)

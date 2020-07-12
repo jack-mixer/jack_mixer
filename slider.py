@@ -55,7 +55,6 @@ class AdjustmentdBFS(Gtk.Adjustment):
         self.db = db
         if self.current_send != None:
             self.send_dbs[self.current_send.channel.name] = db
-            print("HERE", db)
         self.disable_value_notify = True
         self.set_value(self.scale.db_to_scale(db))
         self.disable_value_notify = False

@@ -98,7 +98,7 @@ class Channel(Gtk.VBox, SerializedObject):
             self.volume_initial = -math.inf
         else:
             self.volume_initial = 0
-
+        self.volume = self.volume_initial
 
     def get_channel_name(self):
         return self._channel_name
@@ -324,6 +324,14 @@ class Channel(Gtk.VBox, SerializedObject):
 
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
+        if self.app.current_send != "" and isinstance(self, InputChannel):
+            for send in self.sends:
+                if send.name == self.app.current_send:
+                    send.volume = db
+                    break
+
+        else:
+            self.volume = db
         if update_engine:
             if not from_midi:
                 self.channel.volume = db
@@ -421,6 +429,8 @@ class InputChannel(Channel):
 
     def __init__(self, app, name, stereo, value = None):
         Channel.__init__(self, app, name, stereo, value)
+        self.sends = []
+        self.volume = self.volume_initial
 
     def realize(self):
         log.debug("InputChannel.realize: '%s', current_send: '%s'" %
@@ -614,6 +624,15 @@ class InputChannel(Channel):
                 return True
         return Channel.unserialize_property(self, name, value)
 
+    def unserialize_child(self, name):
+        if name == Send.serialization_name():
+            send = Send("", 0.0)
+            self.sends.append(send)
+            return send
+
+    def serialization_get_childs(self):
+        return self.sends
+
 class OutputChannel(Channel):
     _display_solo_buttons = False
 
@@ -690,7 +709,7 @@ class OutputChannel(Channel):
 
         self.volume_digits.set_width_chars(6)
         self.pack_start(self.volume_digits, False, True, 0)
-
+        self.volume = self.volume_initial
         self.create_balance_widget()
 
         self.mute = Gtk.ToggleButton()
@@ -1212,3 +1231,26 @@ class ControlGroup(Gtk.Alignment):
 
     def on_prefader_toggled(self, button):
         self.output_channel.channel.set_in_prefader(self.input_channel.channel, button.get_active())
+
+class Send(SerializedObject):
+    def __init__(self, name, volume):
+        self.name = name
+        self.volume = volume
+
+    @classmethod
+    def serialization_name(cls):
+        return 'send'
+
+    def serialize(self, object_backend):
+        object_backend.add_property("name", "%s" % self.name)
+        object_backend.add_property("volume", "%f" % self.volume)
+
+    def unserialize_property(self, name, value):
+        if name == "name":
+            self.name = value
+            return True
+        if name == "volume":
+            self.volume = float(value)
+            return True
+        return False
+

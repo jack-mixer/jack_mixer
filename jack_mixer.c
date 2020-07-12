@@ -512,6 +512,7 @@ channel_volume_write(
   struct volume *vol;
   if (strcmp(channel_ptr->current_send, "") != 0) {
     vol = g_datalist_get_data(&channel_ptr->send_volumes, channel_ptr->current_send);
+    if (vol == NULL) return;
     if (vol->value_new != vol->value) {
       vol->value = interpolate(vol->value, vol->value_new, vol->idx,
        channel_ptr->num_volume_transition_steps);
@@ -1035,6 +1036,7 @@ calc_channel_frames(
 
   if (strcmp(channel_ptr->current_send, "") != 0) {
     frames = g_datalist_get_data(&channel_ptr->send_frames, channel_ptr->current_send);
+    if (frames == NULL) frames = channel_ptr->frames;
   } else {
     frames = channel_ptr->frames;
   }

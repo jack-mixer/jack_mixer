@@ -215,7 +215,6 @@ Channel_set_volume(ChannelObject *self, PyObject *value, void *closure)
 		return -1;
 	}
 	struct channel *c = (struct channel *) self->channel;
-	fprintf(stderr, "Channel_set_volume '%s', %f\n", c->name, PyFloat_AsDouble(value));
 	channel_volume_write(self->channel, PyFloat_AsDouble(value));
 	channel_set_midi_cc_volume_picked_up(self->channel, false);
 	return 0;

@@ -457,6 +457,9 @@ class JackMixer(SerializedObject):
         try:
             channel = InputChannel(self, name, stereo, value)
             self.add_channel_precreated(channel)
+            for outc in self.output_channels:
+                channel.sends.append(Send(outc._channel_name, outc.volume))
+
         except Exception:
             error_dialog(self.window, "Channel creation failed.")
             return
@@ -528,6 +531,9 @@ class JackMixer(SerializedObject):
             for inc in self.channels:
                 inc.slider_adjustment.send_dbs[channel._channel_name] = inc.slider_adjustment.default_db
             self.add_output_channel_precreated(channel)
+            for inc in self.channels:
+                inc.sends.append(Send(channel._channel_name, inc.volume_initial))
+
         except Exception:
             error_dialog(self.window, "Channel creation failed")
             return
@@ -548,10 +554,15 @@ class JackMixer(SerializedObject):
         return channel
 
     def on_output_channel_show(self, channel):
+        self.current_send = channel._channel_name
+        channel.shown = True
+        channel.show.set_active(True)
         for inc in self.channels:
             if inc.channel.current_send != "":
                 inc.channel.current_send = channel._channel_name
-                inc.slider_adjustment.set_value_db(inc.channel.volume)
+                for send in inc.sends:
+                    if send.name == channel._channel_name:
+                        inc.slider_adjustment.set_value_db(send.volume)
             else:
                 vol = inc.channel.volume
                 log.debug("WAS BLANK '%s' setting volume to %f" % (inc._channel_name, vol))
@@ -564,7 +575,6 @@ class JackMixer(SerializedObject):
             if outc != channel:
                 outc.shown = False
                 outc.show.set_active(False)
-        self.current_send = channel._channel_name
 
     def add_output_channel_precreated(self, channel):
         frame = Gtk.Frame()
@@ -687,10 +697,13 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                     channel.solo = True
                 self.add_channel_precreated(channel)
         self._init_solo_channels = None
-
         for channel in self.unserialized_channels:
             if isinstance(channel, OutputChannel):
                 self.add_output_channel_precreated(channel)
+        for outc in self.output_channels:
+           if outc._channel_name == self.current_send:
+               self.on_output_channel_show(outc)
+               break
         del self.unserialized_channels
         width, height = self.window.get_size()
         if self.visible or self.nsm_client == None:
@@ -698,7 +711,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)
- 
+
     def serialize(self, object_backend):
         width, height = self.window.get_size()
         object_backend.add_property('geometry',
@@ -712,6 +725,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
         if solo_channels:
             object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
         object_backend.add_property('visible', '%s' % str(self.visible))
+        object_backend.add_property('current_send', self.current_send)
 
     def unserialize_property(self, name, value):
         if name == 'geometry':
@@ -727,6 +741,9 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             return True
         if name == 'paned_position':
             self.paned_position = int(value)
+            return True
+        if name == 'current_send':
+            self.current_send = value
             return True
         return False
 

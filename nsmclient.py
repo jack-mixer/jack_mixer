@@ -548,18 +548,14 @@ class NSMClient(object):
         """If you want a very strict client you can block any non-NSM quit-attempts, like ignoring a
         qt closeEvent, and instead send the NSM Server a request to close this client.
         This method is a shortcut to do just that.
-
-        Using this method will not result in a NSM-"client died unexpectedly"  message that usually
-        happens a client quits on its own. This message is harmless but may confuse a user."""
-
-        logger.info("instructing the NSM-Server to send SIGTERM to ourselves.")
-        if "server-control" in self.serverFeatures:
-            message = _OutgoingMessage("/nsm/server/stop")
-            message.add_arg("{}".format(self.ourClientId))
-            self.sock.sendto(message.build(), self.nsmOSCUrl)
-        else:
-            logger.warning("...but the NSM-Server does not support server control. Quitting on our own. Server only supports: {}".format(self.serverFeatures))
-            kill(getpid(), SIGTERM) #this calls the exit callback but nsm will output something like "client died unexpectedly."
+        """
+        logger.info("Sending SIGTERM to ourselves to trigger the exit callback.")
+        #if "server-control" in self.serverFeatures:
+        #    message = _OutgoingMessage("/nsm/server/stop")
+        #    message.add_arg("{}".format(self.ourClientId))
+        #    self.sock.sendto(message.build(), self.nsmOSCUrl)
+        #else:
+        kill(getpid(), SIGTERM) #this calls the exit callback
 
     def serverSendSaveToSelf(self):
         """Some clients want to offer a manual Save function, mostly for psychological reasons.

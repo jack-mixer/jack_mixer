@@ -1,4 +1,25 @@
 ==========
+Version 13
+==========
+
+ * Added NSM support.
+ * Store preferences to per session config file to override global
+   preferences.
+ * Added accelerator shortucts to menu items.
+ * New ctrl-click, double-click, scroll, and click-drag-anywhere
+   fader behaviors.
+ * Added MIDI 'Pick Up' behavior to avoid discontinuities.
+ * Can choose output channel colors.
+ * Changed to logorithmic ramping on volume changes.
+ * Added a pre/post fader button.
+ * Pick volume for new channels.
+ * Allow manual setting of MIDI control change numbers.
+ * Remove GConf; use plaintext .ini preferences file instead.
+ * Remove remnants of Swig python bindings.
+
+With contributions from Daniel Sheeler and Christopher Arndt.
+
+==========
 Version 12
 ==========
 

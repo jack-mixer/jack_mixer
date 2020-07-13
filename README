@@ -20,12 +20,12 @@ Read INSTALL for information on installation.
 Using MIDI CCs to control jack_mixer
 ------------------------------------
 
-MIDI CCs can be used to control volume and balance/panorama of channels.
+MIDI CCs can be used to control volume, balance/panorama, mute, and solo
+of channels.
 
-The default controller for main channel volume is 7, and the default for
-main channel balance is 8.  Default controllers for added channels are
-chosen using predefined algorithm, first free controller starting from 11,
-first for volume, next for balance/panorama.
+Default controllers for added channels are chosen using predefined algorithm,
+first free controller starting from 11, first for volume, next for
+balance/panorama.
 
 So, if you don't delete channels, you will get CC#11 used for first input
 channel volume, CC#12 for first channel balance/panorama, CC#13 for second

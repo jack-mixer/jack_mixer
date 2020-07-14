@@ -321,7 +321,14 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def update_volume(self, update_engine, from_midi = False):
         db = self.slider_adjustment.get_value_db()
-
+        if self.app.current_send != "" and isinstance(self, InputChannel):
+            for send in self.sends:
+                if send.name == self.app.current_send:
+                    if db == 0:
+                    send.volume = db
+                    break
+        else:
+            self.volume = db
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
         if update_engine:
@@ -447,7 +454,7 @@ class InputChannel(Channel):
 
         self.channel.midi_scale = self.slider_scale.scale
 
-        self.on_volume_changed(self.slider_adjustment)
+        #self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
 
         # vbox child at upper part

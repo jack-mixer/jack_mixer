@@ -510,6 +510,11 @@ class JackMixer(SerializedObject):
         channel.post_fader_output_channel.volume = 0
         channel.post_fader_output_channel.set_solo(channel.channel, True)
 
+        if self.current_send != "" and isinstance(channel, InputChannel):
+            for send in channel.sends:
+                if send.name == self.current_send:
+                    channel.slider_adjustment.set_value_db(send.volume)
+
     def read_meters(self):
         for channel in self.channels:
             channel.read_meter()
@@ -554,22 +559,19 @@ class JackMixer(SerializedObject):
         return channel
 
     def on_output_channel_show(self, channel):
-        self.current_send = channel._channel_name
-        channel.shown = True
-        channel.show.set_active(True)
-        for inc in self.channels:
-            if inc.channel.current_send != "":
+        if channel.shown == False:
+            self.current_send = ""
+            for inc in self.channels:
+                inc.channel.current_send = ""
+                inc.slider_adjustment.set_value_db(inc.volume)
+        else:
+            pass
+            self.current_send = channel._channel_name
+            for inc in self.channels:
                 inc.channel.current_send = channel._channel_name
                 for send in inc.sends:
                     if send.name == channel._channel_name:
                         inc.slider_adjustment.set_value_db(send.volume)
-            else:
-                vol = inc.channel.volume
-                log.debug("WAS BLANK '%s' setting volume to %f" % (inc._channel_name, vol))
-                for outc in self.output_channels:
-                    inc.channel.current_send = outc._channel_name
-                    inc.slider_adjustment.set_value_db(vol)
-                inc.channel.current_send = channel._channel_name
 
         for outc in self.output_channels:
             if outc != channel:
@@ -702,6 +704,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
                 self.add_output_channel_precreated(channel)
         for outc in self.output_channels:
            if outc._channel_name == self.current_send:
+               outc.show.set_active(True)
                self.on_output_channel_show(outc)
                break
         del self.unserialized_channels

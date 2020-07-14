@@ -324,14 +324,6 @@ class Channel(Gtk.VBox, SerializedObject):
 
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
-        if self.app.current_send != "" and isinstance(self, InputChannel):
-            for send in self.sends:
-                if send.name == self.app.current_send:
-                    send.volume = db
-                    break
-
-        else:
-            self.volume = db
         if update_engine:
             if not from_midi:
                 self.channel.volume = db
@@ -362,7 +354,7 @@ class Channel(Gtk.VBox, SerializedObject):
         return False
 
     def serialize(self, object_backend):
-        object_backend.add_property("volume", "%f" % self.slider_adjustment.get_value_db())
+        object_backend.add_property("volume", "%f" % self.volume)
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
 
         if hasattr(self.channel, 'out_mute'):
@@ -378,7 +370,7 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def unserialize_property(self, name, value):
         if name == "volume":
-            self.slider_adjustment.set_value_db(float(value))
+            self.volume = float(value)
             return True
         if name == "balance":
             self.balance_adjustment.set_value(float(value))
@@ -435,6 +427,7 @@ class InputChannel(Channel):
     def realize(self):
         log.debug("InputChannel.realize: '%s', current_send: '%s'" %
                 (self.channel_name, self.app.current_send))
+
         self.channel = self.mixer.add_channel(self.channel_name,
                 self.app.current_send, self.volume_initial, self.stereo)
 
@@ -626,7 +619,7 @@ class InputChannel(Channel):
 
     def unserialize_child(self, name):
         if name == Send.serialization_name():
-            send = Send("", 0.0)
+            send = Send("", -0.0)
             self.sends.append(send)
             return send
 
@@ -756,7 +749,8 @@ class OutputChannel(Channel):
 
     def on_show_toggled(self, button):
         if self.shown and not self.show.get_active():
-            self.show.set_active(True)
+            self.shown = False
+            self.emit("output-channel-show")
             return True
         if not self.shown and self.show.get_active():
             self.shown = True

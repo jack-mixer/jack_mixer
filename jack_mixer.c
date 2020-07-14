@@ -908,9 +908,12 @@ void calc_frames_from_volume(struct channel *channel_ptr, struct frames *frames,
     if (i-start >= MAX_BLOCK_SIZE) {
       fprintf(stderr, "i-start too high: %d - %d\n", i, start);
     }
+    if (channel_ptr->left_buffer_ptr == NULL) return;
     channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
-    if (channel_ptr->stereo)
+    if (channel_ptr->stereo) {
+      if (channel_ptr->right_buffer_ptr == NULL) return;
       channel_ptr->prefader_frames_right[i-start] = channel_ptr->right_buffer_ptr[i];
+    }
     if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i])) {
       channel_ptr->NaN_detected = true;
       frames->left[i-start] = NAN;
@@ -1027,6 +1030,7 @@ calc_channel_frames(
     output_channel_ptr = node_ptr->data;
     struct frames *frames = g_datalist_get_data(&channel_ptr->send_frames, output_channel_ptr->channel.name);
     struct volume *tmp_vol = g_datalist_get_data(&channel_ptr->send_volumes, output_channel_ptr->channel.name);
+    if (frames == NULL || tmp_vol == NULL) return;
     calc_frames_from_volume(channel_ptr, frames, tmp_vol, start, end);
   }
 

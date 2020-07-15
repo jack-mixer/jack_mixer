@@ -324,7 +324,6 @@ class Channel(Gtk.VBox, SerializedObject):
         if self.app.current_send != "" and isinstance(self, InputChannel):
             for send in self.sends:
                 if send.name == self.app.current_send:
-                    if db == 0:
                     send.volume = db
                     break
         else:

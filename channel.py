@@ -456,6 +456,14 @@ class InputChannel(Channel):
         self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect("button-press-event", self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
+
+        entries = [Gtk.TargetEntry.new("INPUT_CHANNEL", Gtk.TargetFlags.SAME_APP, 0)]
+        self.label_name_event_box.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, entries,
+                Gdk.DragAction.MOVE)
+        self.label_name_event_box.connect("drag-data-get", self.on_drag_data_get)
+        self.drag_dest_set(Gtk.DestDefaults.ALL, entries, Gdk.DragAction.MOVE)
+        self.connect_after("drag-data-received", self.on_drag_data_received)
+
         self.vbox.pack_start(self.label_name_event_box, True, True, 0)
 #         self.label_stereo = Gtk.Label()
 #         if self.stereo:
@@ -508,6 +516,16 @@ class InputChannel(Channel):
         self.monitor_button = Gtk.ToggleButton('MON')
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False, 0)
+
+    def on_drag_data_get(self, widget, drag_context, data, info, time):
+        channel = widget.get_parent().get_parent()
+        data.set(data.get_target(), 8, channel._channel_name.encode('utf-8'))
+
+    def on_drag_data_received(self, widget, drag_context, x, y, data, info, time):
+        source_name = data.get_data().decode('utf-8')
+        if source_name == self._channel_name:
+            return
+        self.emit("input-channel-order-changed", source_name, self._channel_name)
 
     def add_control_group(self, channel):
         control_group = ControlGroup(channel, self)
@@ -613,6 +631,10 @@ class InputChannel(Channel):
                 return True
         return Channel.unserialize_property(self, name, value)
 
+GObject.signal_new("input-channel-order-changed", InputChannel,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [GObject.TYPE_STRING, GObject.TYPE_STRING])
+
 class OutputChannel(Channel):
     _display_solo_buttons = False
 
@@ -660,6 +682,14 @@ class OutputChannel(Channel):
         self.label_name_event_box = Gtk.EventBox()
         self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
+
+        entries = [Gtk.TargetEntry.new("OUTPUT_CHANNEL", Gtk.TargetFlags.SAME_APP, 0)]
+        self.label_name_event_box.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, entries,
+                Gdk.DragAction.MOVE)
+        self.label_name_event_box.connect("drag-data-get", self.on_drag_data_get)
+        self.drag_dest_set(Gtk.DestDefaults.ALL, entries, Gdk.DragAction.MOVE)
+        self.connect_after("drag-data-received", self.on_drag_data_received)
+
         if not hasattr(self, 'color'):
             self.color = random_color()
         set_background_color(self.label_name_event_box, self.css_name,
@@ -716,6 +746,17 @@ class OutputChannel(Channel):
         self._init_prefader_channels = None
 
     channel_properties_dialog = None
+
+    def on_drag_data_get(self, widget, drag_context, data, info, time):
+        channel = widget.get_parent().get_parent()
+        data.set(data.get_target(), 8, channel._channel_name.encode('utf-8'))
+
+    def on_drag_data_received(self, widget, drag_context, x, y, data, info, time):
+        source_name = data.get_data().decode('utf-8')
+        if source_name == self._channel_name:
+            return
+        self.emit("output-channel-order-changed", source_name, self._channel_name)
+
     def on_channel_properties(self):
         if not self.channel_properties_dialog:
             self.channel_properties_dialog = OutputChannelPropertiesDialog(self, self.app)
@@ -987,6 +1028,10 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                         [x.channel.name for x in self.app.output_channels] + ['MAIN']:
                 sensitive = True
         self.ok_button.set_sensitive(sensitive)
+
+GObject.signal_new("output-channel-order-changed", OutputChannel,
+                GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+                None, [GObject.TYPE_STRING, GObject.TYPE_STRING])
 
 
 class NewChannelDialog(ChannelPropertiesDialog):

@@ -50,7 +50,6 @@ from preferences import PreferencesDialog
 sys.path = old_path
 log = logging.getLogger("jack_mixer")
 
-
 class JackMixer(SerializedObject):
 
     # scales suitable as meter scales
@@ -483,6 +482,7 @@ class JackMixer(SerializedObject):
             channel.channel.solo_midi_cc = solo_cc
         else:
             channel.channel.autoset_solo_midi_cc()
+
         return channel
 
     def add_channel_precreated(self, channel):
@@ -511,6 +511,31 @@ class JackMixer(SerializedObject):
                         channel.channel.name + ' Out', channel.channel.is_stereo, True)
         channel.post_fader_output_channel.volume = 0
         channel.post_fader_output_channel.set_solo(channel.channel, True)
+
+        channel.connect('input-channel-order-changed', self.on_input_channel_order_changed)
+
+    def on_input_channel_order_changed(self, widget, source_name, dest_name):
+        self.channels.clear()
+
+        channel_box = self.hbox_inputs
+        frames = channel_box.get_children()
+
+        for f in frames:
+            c = f.get_child()
+            if source_name == c._channel_name:
+                source_frame = f
+                break
+
+        for f in frames:
+            c = f.get_child()
+            if (dest_name == c._channel_name):
+                pos = frames.index(f)
+                channel_box.reorder_child(source_frame, pos)
+                break
+
+        for frame in self.hbox_inputs.get_children():
+            c = frame.get_child()
+            self.channels.append(c)
 
     def read_meters(self):
         for channel in self.channels:
@@ -568,6 +593,30 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_sensitive(True)
 
         self.output_channels.append(channel)
+        channel.connect('output-channel-order-changed', self.on_output_channel_order_changed)
+
+    def on_output_channel_order_changed(self, widget, source_name, dest_name):
+        self.output_channels.clear()
+        channel_box = self.hbox_outputs
+
+        frames = channel_box.get_children()
+
+        for f in frames:
+            c = f.get_child()
+            if source_name == c._channel_name:
+                 source_frame = f
+                 break
+
+        for f in frames:
+            c = f.get_child()
+            if (dest_name == c._channel_name):
+                pos = len(frames) - 1 - frames.index(f)
+                channel_box.reorder_child(source_frame, pos)
+                break
+
+        for frame in self.hbox_outputs.get_children():
+            c = frame.get_child()
+            self.output_channels.append(c)
 
     _monitored_channel = None
     def get_monitored_channel(self):

@@ -33,7 +33,6 @@ class MeterWidget(Gtk.DrawingArea):
         self.scale = scale
 
         self.connect("draw", self.draw)
-        #self.connect("size-request", self.on_size_request)
         self.connect("size-allocate", self.on_size_allocate)
 
         self.color_bg = Gdk.Color(0,0,0)
@@ -115,11 +114,22 @@ class MeterWidget(Gtk.DrawingArea):
         else:
             height = self.height
             gradient = cairo.LinearGradient(1, 1, width-1, height-1)
-            gradient.add_color_stop_rgb(0, 1, 0, 0)
-            gradient.add_color_stop_rgb(0.2, 1, 1, 0)
-            gradient.add_color_stop_rgb(1, 0, 1, 0)
+            if self.scale.scale_id == "K20":
+                gradient.add_color_stop_rgb(0, 1, 0, 0)
+                gradient.add_color_stop_rgb(0.38, 1, 1, 0)
+                gradient.add_color_stop_rgb(0.5, 0, 1, 0)
+                gradient.add_color_stop_rgb(1, 0, 0, 1)
+            else:
+                gradient.add_color_stop_rgb(0, 1, 0, 0)
+                gradient.add_color_stop_rgb(0.2, 1, 1, 0)
+                gradient.add_color_stop_rgb(1, 0, 1, 0)
             cairo_ctx.set_source(gradient)
         cairo_ctx.rectangle(x, self.height * (1 - value), width, self.height * value)
+        cairo_ctx.fill()
+
+    def draw_peak(self, cairo_ctx, value, x, width):
+        cairo_ctx.set_source_rgb(1, 1, 1)
+        cairo_ctx.rectangle(x, self.height * (1 - value), width, 2.5)
         cairo_ctx.fill()
 
     def set_scale(self, scale):
@@ -132,31 +142,39 @@ class MonoMeterWidget(MeterWidget):
     def __init__(self, scale):
         MeterWidget.__init__(self, scale)
         self.value = 0.0
+        self.pk = 0.0
         self.raw_value = 0.0
+        self.raw_pk = 0.0
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
         self.draw_value(cairo_ctx, self.value, self.width/4.0, self.width/2.0)
+        self.draw_peak(cairo_ctx, self.pk, self.width/4.0, self.width/2.0)
 
-    def set_value(self, value):
-        if value != self.raw_value:
-            self.raw_value = value
-            self.value = self.scale.db_to_scale(value)
-            self.invalidate_all()
-        if value == self.raw_value:
+    def set_values(self, pk, value):
+        if value == self.raw_value and pk == self.raw_pk:
             return
         self.raw_value = value
+        self.raw_pk = pk
         old_value = self.value
+        old_pk = self.pk
         self.value = self.scale.db_to_scale(value)
-        if (abs(old_value-self.value) * self.height) > 1:
+        self.pk = self.scale.db_to_scale(pk)
+        if (abs(old_value-self.value) * self.height) > 0.01 or (abs(old_pk-self.pk) * self.height) > 0.01:
             self.invalidate_all()
 
 
 class StereoMeterWidget(MeterWidget):
     def __init__(self, scale):
         MeterWidget.__init__(self, scale)
+        self.pk_left = 0.0
+        self.pk_right = 0.0
+
         self.left = 0.0
         self.right = 0.0
+
+        self.raw_left_pk = 0.0
+        self.raw_right_pk = 0.0
 
         self.raw_left = 0.0
         self.raw_right = 0.0
@@ -165,15 +183,25 @@ class StereoMeterWidget(MeterWidget):
         self.draw_background(cairo_ctx)
         self.draw_value(cairo_ctx, self.left, self.width/5.0, self.width/5.0)
         self.draw_value(cairo_ctx, self.right, self.width/5.0 * 3.0, self.width/5.0)
+        self.draw_peak(cairo_ctx, self.pk_left, self.width/5.0, self.width/5.0)
+        self.draw_peak(cairo_ctx, self.pk_right, self.width/5.0 * 3.0, self.width/5.0)
 
-    def set_values(self, left, right):
-        if left == self.raw_left and right == self.raw_right:
+
+    def set_values(self, pk_l, pk_r, left, right):
+        if left == self.raw_left and right == self.raw_right and pk_l == self.raw_left_pk and pk_r == self.raw_right_pk:
             return
         self.raw_left = left
         self.raw_right = right
+        self.raw_left_pk = pk_l
+        self.raw_right_pk = pk_r
         old_left = self.left
         old_right = self.right
+        old_pk_left = self.pk_left
+        old_pk_right = self.pk_right
         self.left = self.scale.db_to_scale(left)
         self.right = self.scale.db_to_scale(right)
-        if (abs(old_left-self.left) * self.height) > 0.01 or (abs(old_right-self.right) * self.height) > 0.01:
+        self.pk_left = self.scale.db_to_scale(pk_l)
+        self.pk_right = self.scale.db_to_scale(pk_r)
+
+        if (abs(old_left-self.left) * self.height) > 0.01 or (abs(old_right-self.right) * self.height) > 0.01 or (abs(old_pk_left-self.pk_left) * self.height) > 0.01 or (abs(old_pk_right-self.pk_right) * self.height) > 0.01:
             self.invalidate_all()

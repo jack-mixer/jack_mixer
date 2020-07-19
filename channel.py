@@ -305,10 +305,11 @@ class Channel(Gtk.VBox, SerializedObject):
         if not self.channel:
             return
         if self.stereo:
-            meter_left, meter_right = self.channel.meter
-            self.meter.set_values(meter_left, meter_right)
+            peak_left, peak_right, rms_left, rms_right = self.channel.kmeter
+            self.meter.set_values(peak_left, peak_right, rms_left, rms_right)
         else:
-            self.meter.set_value(self.channel.meter[0])
+            peak, rms = self.channel.kmeter
+            self.meter.set_values(peak, rms)
 
         self.abspeak.set_peak(self.channel.abspeak)
 

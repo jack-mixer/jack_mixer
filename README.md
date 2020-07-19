@@ -56,6 +56,10 @@ jack_mixer was initially written and supported by Nedko Arnaudov, it is now
 maintained by Frédéric Peters. You can reach Frédéric at fpeters (a.t) 0d (dot)
 be, and Nedko at nedko (a.t) arnaudov (dot) name.
 
+## Acknowledgements
+
+K-meter implemenatation taken from jkmeter, licensed under
+the GPL 2, by Fons Adriaensen.
 
 [COPYING]: ./COPYING
 [INSTALL]: ./INSTALL

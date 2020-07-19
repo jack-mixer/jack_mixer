@@ -54,6 +54,18 @@
 #define MAX_BLOCK_SIZE (4 * 4096)
 
 #define FLOAT_EXISTS(x) (!((x) - (x)))
+struct kmeter {
+  float          _z1;          // filter state
+  float          _z2;          // filter state
+  float          _rms;         // max rms value since last read()
+  float          _dpk;         // current digital peak value
+  int            _cnt;         // digital peak hold counter
+  bool           _flag;        // flag set by read(), resets _rms
+
+  int     _hold;        // number of JACK periods to hold peak value
+  float   _fall;        // per period fallback multiplier for peak value
+  float   _omega;       // ballistics filter constant.
+};
 
 struct channel
 {
@@ -76,6 +88,9 @@ struct channel
   float meter_left;
   float meter_right;
   float abspeak;
+  struct kmeter kmeter_left;
+  struct kmeter kmeter_right;
+
   jack_port_t * port_left;
   jack_port_t * port_right;
 
@@ -165,6 +180,29 @@ db_to_value(
   float db)
 {
   return powf(10.0, db/20.0);
+}
+
+double interpolate(double start, double end, int step, int steps) {
+  double ret;
+  double frac = 0.01;
+  LOG_DEBUG("%f -> %f, %d", start, end, step);
+  if (start <= 0) {
+    if (step <= frac * steps) {
+      ret = frac * end * step / steps;
+    } else {
+      ret = db_to_value(value_to_db(frac * end) + (value_to_db(end) - value_to_db(frac * end)) * step / steps);;
+    }
+  } else if (end <= 0) {
+      if (step >= (1 - frac) * steps) {
+        ret = frac * start - frac * start * step / steps;
+      } else {
+        ret = db_to_value(value_to_db(start) + (value_to_db(frac * start) - value_to_db(start)) * step / steps);
+      }
+    } else {
+    ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
+  }
+  LOG_DEBUG("interpolate: %f", ret);
+  return ret;
 }
 
 #define channel_ptr ((struct channel *)channel)
@@ -518,28 +556,6 @@ channel_stereo_meter_read(
   *right_ptr = value_to_db(channel_ptr->meter_right);
 }
 
-double interpolate(double start, double end, int step, int steps) {
-  double ret;
-  double frac = 0.01;
-  LOG_DEBUG("%f -> %f, %d", start, end, step);
-  if (start <= 0) {
-    if (step <= frac * steps) {
-      ret = frac * end * step / steps;
-    } else {
-      ret = db_to_value(value_to_db(frac * end) + (value_to_db(end) - value_to_db(frac * end)) * step / steps);;
-    }
-  } else if (end <= 0) {
-      if (step >= (1 - frac) * steps) {
-        ret = frac * start - frac * start * step / steps;
-      } else {
-        ret = db_to_value(value_to_db(start) + (value_to_db(frac * start) - value_to_db(start)) * step / steps);
-      }
-    } else {
-    ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
-  }
-  LOG_DEBUG("interpolate: %f", ret);
-  return ret;
-}
 
 void
 channel_mono_meter_read(
@@ -547,6 +563,34 @@ channel_mono_meter_read(
   double * mono_ptr)
 {
   *mono_ptr = value_to_db(channel_ptr->meter_left);
+}
+
+void
+channel_stereo_kmeter_read(
+  jack_mixer_channel_t channel,
+  double * left_ptr,
+  double * right_ptr,
+  double * left_rms_ptr,
+  double * right_rms_ptr)
+{
+  assert(channel_ptr);
+  *left_ptr = value_to_db(channel_ptr->kmeter_left._dpk);
+  *right_ptr = value_to_db(channel_ptr->kmeter_right._dpk);
+  *left_rms_ptr = value_to_db(channel_ptr->kmeter_left._rms);
+  *right_rms_ptr = value_to_db(channel_ptr->kmeter_right._rms);
+  channel_ptr->kmeter_left._flag = true;
+  channel_ptr->kmeter_right._flag = true;
+}
+
+void
+channel_mono_kmeter_read(
+  jack_mixer_channel_t channel,
+  double * mono_ptr,
+  double * mono_rms_ptr)
+{
+  *mono_ptr = value_to_db(channel_ptr->kmeter_left._dpk);
+  *mono_rms_ptr = value_to_db(channel_ptr->kmeter_left._rms);
+  channel_ptr->kmeter_left._flag = true;
 }
 
 void
@@ -721,6 +765,7 @@ mix_one(
   jack_nframes_t end)           /* index of sample to stop processing before */
 {
   jack_nframes_t i;
+
   GSList *node_ptr;
   struct channel * channel_ptr;
   jack_default_audio_sample_t frame_left;
@@ -778,6 +823,7 @@ mix_one(
 
   /* process main mix channel */
   unsigned int steps = mix_channel->num_volume_transition_steps;
+
   for (i = start ; i < end ; i++)
   {
     if (! output_mix_channel->prefader) {
@@ -837,6 +883,44 @@ mix_one(
       }
     }
 
+    if (mix_channel->stereo)
+    {
+      frame_left = fabsf(mix_channel->tmp_mixed_frames_left[i]);
+      frame_right = fabsf(mix_channel->tmp_mixed_frames_right[i]);
+
+      if (mix_channel->peak_left < frame_left)
+      {
+        mix_channel->peak_left = frame_left;
+
+        if (frame_left > mix_channel->abspeak)
+        {
+          mix_channel->abspeak = frame_left;
+        }
+      }
+
+      if (mix_channel->peak_right < frame_right)
+      {
+        mix_channel->peak_right = frame_right;
+
+        if (frame_right > mix_channel->abspeak)
+        {
+          mix_channel->abspeak = frame_right;
+        }
+      }
+    }
+    else
+    {
+      if (mix_channel->peak_left < frame_left)
+      {
+        mix_channel->peak_left = frame_left;
+
+        if (frame_left > mix_channel->abspeak)
+        {
+          mix_channel->abspeak = frame_left;
+        }
+      }
+    }
+
     mix_channel->peak_frames++;
     if (mix_channel->peak_frames >= PEAK_FRAMES_CHUNK)
     {
@@ -868,6 +952,8 @@ mix_one(
           mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
+  kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
+  kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
 }
 
 static inline void
@@ -880,6 +966,7 @@ calc_channel_frames(
   jack_default_audio_sample_t frame_left = 0.0f;
   jack_default_audio_sample_t frame_right = 0.0f;
   unsigned int steps = channel_ptr->num_volume_transition_steps;
+
   for (i = start ; i < end ; i++)
   {
     if (i-start >= MAX_BLOCK_SIZE)
@@ -968,6 +1055,7 @@ calc_channel_frames(
     }
     else
     {
+
       frame_left = (fabsf(frame_left) + fabsf(frame_right)) / 2;
 
       if (channel_ptr->peak_left < frame_left)
@@ -995,6 +1083,7 @@ calc_channel_frames(
 
       channel_ptr->peak_frames = 0;
     }
+
     channel_ptr->volume_idx++;
     if ((channel_ptr->volume != channel_ptr->volume_new) &&
      (channel_ptr->volume_idx == steps)) {
@@ -1006,8 +1095,12 @@ calc_channel_frames(
      (channel_ptr->balance_idx >= steps)) {
       channel_ptr->balance = channel_ptr->balance_new;
       channel_ptr->balance_idx = 0;
-     }
+    }
   }
+
+  kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
+  if (channel_ptr->stereo) kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
+
 }
 
 static inline void
@@ -1475,10 +1568,12 @@ add_channel(
 
   channel_ptr->stereo = stereo;
 
+  int sr = jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
+  int fsize = jack_get_buffer_size(channel_ptr->mixer_ptr->jack_client);
+
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
-    channel_ptr->volume_transition_seconds *
-    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
+    channel_ptr->volume_transition_seconds * sr + 1;
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
@@ -1487,6 +1582,9 @@ add_channel(
   channel_ptr->meter_right = -1.0;
   channel_ptr->abspeak = 0.0;
   channel_ptr->out_mute = false;
+
+  kmeter_init(&channel_ptr->kmeter_left, sr, fsize, .5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_right, sr, fsize, .5f, 15.0f);
 
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;
@@ -1603,10 +1701,12 @@ create_output_channel(
   channel_ptr->stereo = stereo;
   channel_ptr->out_mute = false;
 
+  int sr = jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
+  int fsize = jack_get_buffer_size(channel_ptr->mixer_ptr->jack_client);
+
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
   channel_ptr->num_volume_transition_steps =
-    channel_ptr->volume_transition_seconds *
-    jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client) + 1;
+    channel_ptr->volume_transition_seconds * sr + 1;
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
@@ -1614,6 +1714,8 @@ create_output_channel(
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;
   channel_ptr->abspeak = 0.0;
+  kmeter_init(&channel_ptr->kmeter_left, sr, fsize, 0.5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_right, sr, fsize, 0.5f, 15.0f);
 
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;
@@ -1697,6 +1799,63 @@ remove_channels(
   {
     struct channel *input_channel_ptr = list_ptr->data;
     remove_channel((jack_mixer_channel_t)input_channel_ptr);
+  }
+}
+
+#define km ((struct kmeter *) kmeter)
+
+void kmeter_init(jack_mixer_kmeter_t kmeter, int sr, int fsize, float hold, float fall) {
+  km->_z1 = 0;
+  km->_z2 = 0;
+  km->_rms = 0;
+  km->_dpk = 0;
+  km->_cnt = 0;
+  km->_flag = false;
+
+  float t;
+  km->_omega = 9.72f / sr;
+  t = (float) fsize / sr;
+  km->_hold = (int)(hold / t + 0.5f);
+  km->_fall = powf(10.0f, -0.05f * fall * t);
+}
+
+void kmeter_process(jack_mixer_kmeter_t kmeter, jack_default_audio_sample_t *p, int start, int end) {
+  int i;
+  jack_default_audio_sample_t s, t, z1, z2;
+
+  if (km->_flag) {
+    km->_rms = 0;
+    km->_flag = 0;
+  }
+
+  z1 = km->_z1;
+  z2 = km->_z2;
+
+  t = 0;
+
+  for (i = start; i < end; i++) {
+    s = p[i];
+    s *= s;
+    if (t < s) t = s;
+    z1 += km->_omega * (s - z1);
+    z2 += km->_omega * (z1 - z2);
+  }
+  t = sqrtf(t);
+
+  km->_z1 = z1 + 1e-20f;
+  km->_z2 = z2 + 1e-20f;
+
+  s = sqrtf(2 * z2);
+  if (s > km->_rms) km->_rms = s;
+
+  if (t > km->_dpk) {
+    km->_dpk = t;
+    km->_cnt = km->_hold;
+  } else if (km->_cnt) {
+    km->_cnt--;
+  } else {
+    km->_dpk *= km->_fall;
+    km->_dpk += 1e-10f;
   }
 }
 

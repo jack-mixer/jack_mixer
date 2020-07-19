@@ -26,11 +26,13 @@ log = logging.getLogger(__name__)
 
 class Mark:
     '''Encapsulates scale linear function edge and coefficients for scale = a * dB + b formula'''
-    def __init__(self, db, scale):
+    def __init__(self, db, scale, text = None):
         self.db = db
         self.scale = scale
-        self.text = "%.0f" % math.fabs(db)
-
+        if text == None:
+            self.text = "%.0f" % math.fabs(db)
+        else:
+            self.text = text
 
 class Base:
     '''Scale abstraction, various scale implementation derive from this class'''
@@ -40,10 +42,10 @@ class Base:
         self.description = description
         self.scale = jack_mixer_c.Scale()
 
-    def add_threshold(self, db, scale, is_mark):
+    def add_threshold(self, db, scale, is_mark, text = None):
         self.scale.add_threshold(db, scale)
         if is_mark:
-            self.marks.append(Mark(db, scale))
+            self.marks.append(Mark(db, scale, text))
 
     def calculate_coefficients(self):
         self.scale.calculate_coefficients()
@@ -140,6 +142,39 @@ class Linear30dB(Base):
         self.calculate_coefficients()
         self.scale_marks()
 
+class K20(Base):
+    '''K20 scale'''
+    def __init__(self):
+        Base.__init__(self, "K20", "K20 scale")
+        self.add_threshold(-65, 1.e-10, True, "")
+        self.add_threshold(-60, 0.001, True, "-40")
+        self.add_threshold(-55, 0.001778, True, "")
+        self.add_threshold(-50, 0.003162, True, "-30")
+        self.add_threshold(-45, 0.00562, True, "")
+        self.add_threshold(-40, 0.01, True, "-20")
+        self.add_threshold(-35, 0.01778, True, "")
+        self.add_threshold(-30, 0.03162, True, "-10")
+        self.add_threshold(-26, 0.05, True, "-6")
+        self.add_threshold(-23, 0.0708, True, "-3")
+        self.add_threshold(-20, 0.1, True, "0")
+        self.add_threshold(-17, 0.1413, True, "3")
+        self.add_threshold(-14, 0.1995, True, "6")
+        self.add_threshold(-10, 0.3162, True, "10")
+        self.add_threshold(-5, 0.562, True, "15")
+        self.add_threshold(0, 1.0, True, "20")
+        self.calculate_coefficients()
+        self.scale_marks()
+
+    def mapk20(self, v):
+        if v < 0.001: return (24000 * v)
+        v = math.log10(v) + 3
+        if v < 2.0: return (24.3 + v * (100 + v * 16))
+        if v > 3.0: v = 3.0
+        return (v * 161.7 - 35.1)
+
+    def add_threshold(self, db, scale, is_mark, text):
+        v = self.mapk20(scale) / 450
+        Base.add_threshold(self, db, v, is_mark, text)
 
 def scale_test1(scale):
     for i in range(-97 * 2, 1, 1):

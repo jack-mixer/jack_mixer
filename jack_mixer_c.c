@@ -303,6 +303,28 @@ Channel_get_meter(ChannelObject *self, void *closure)
 }
 
 static PyObject*
+Channel_get_kmeter(ChannelObject *self, void *closure)
+{
+	PyObject *result;
+	double peak_left, peak_right, rms_left, rms_right;
+
+	if (channel_is_stereo(self->channel)) {
+		result = PyTuple_New(4);
+		channel_stereo_kmeter_read(self->channel, &peak_left, &peak_right, &rms_left, &rms_right);
+		PyTuple_SetItem(result, 0, PyFloat_FromDouble(peak_left));
+		PyTuple_SetItem(result, 1, PyFloat_FromDouble(peak_right));
+		PyTuple_SetItem(result, 2, PyFloat_FromDouble(rms_left));
+		PyTuple_SetItem(result, 3, PyFloat_FromDouble(rms_right));
+	} else {
+		result = PyTuple_New(2);
+		channel_mono_kmeter_read(self->channel, &peak_left, &rms_left);
+		PyTuple_SetItem(result, 0, PyFloat_FromDouble(peak_left));
+		PyTuple_SetItem(result, 1, PyFloat_FromDouble(rms_left));
+	}
+	return result;
+}
+
+static PyObject*
 Channel_get_abspeak(ChannelObject *self, void *closure)
 {
 	return PyFloat_FromDouble(channel_abspeak_read(self->channel));
@@ -513,6 +535,9 @@ static PyGetSetDef Channel_getseters[] = {
 	{"meter",
 		(getter)Channel_get_meter, NULL,
 		"meter", NULL},
+	{"kmeter",
+		(getter)Channel_get_kmeter, NULL,
+		"kmeter", NULL},
 	{"abspeak",
 		(getter)Channel_get_abspeak, (setter)Channel_set_abspeak,
 		"balance", NULL},

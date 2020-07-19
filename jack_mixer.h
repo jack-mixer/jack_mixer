@@ -24,10 +24,12 @@
 #define JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
 
 #include <stdbool.h>
+#include <jack/jack.h>
 
 #include "scale.h"
 
 typedef void * jack_mixer_t;
+typedef void * jack_mixer_kmeter_t;
 typedef void * jack_mixer_channel_t;
 typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_threshold_t;
@@ -60,7 +62,6 @@ set_last_midi_channel(
   jack_mixer_t mixer,
   int new_channel);
 
-
 int
 get_midi_behavior_mode(
   jack_mixer_t mixer);
@@ -75,6 +76,18 @@ add_channel(
   jack_mixer_t mixer,
   const char * channel_name,
   bool stereo);
+
+void kmeter_init(jack_mixer_kmeter_t km,
+  int sr,
+  int fsize,
+  float hold,
+  float fall);
+
+void kmeter_process(
+  jack_mixer_kmeter_t km,
+  jack_default_audio_sample_t *p,
+  int start,
+  int end);
 
 const char *
 channel_get_name(
@@ -92,6 +105,25 @@ void
 channel_mono_meter_read(
   jack_mixer_channel_t channel,
   double * mono_ptr);
+
+
+/* returned values are in dBFS */
+void
+channel_stereo_kmeter_read(
+  jack_mixer_channel_t channel,
+  double * left_ptr,
+  double * right_ptr,
+  double * left_rms_ptr,
+  double * right_rms_ptr);
+
+/* returned value is in dBFS */
+void
+channel_mono_kmeter_read(
+  jack_mixer_channel_t channel,
+  double * mono_ptr,
+  double * mono_rms_ptr);
+
+
 
 bool
 channel_is_stereo(

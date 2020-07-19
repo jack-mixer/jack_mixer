@@ -53,7 +53,7 @@ log = logging.getLogger("jack_mixer")
 class JackMixer(SerializedObject):
 
     # scales suitable as meter scales
-    meter_scales = [scale.IEC268(), scale.Linear70dB(), scale.IEC268Minimalistic()]
+    meter_scales = [scale.K20(), scale.IEC268(), scale.Linear70dB(), scale.IEC268Minimalistic()]
 
     # scales suitable as volume slider scales
     slider_scales = [scale.Linear30dB(), scale.Linear70dB()]
@@ -94,7 +94,7 @@ class JackMixer(SerializedObject):
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
         self.save = False
 
-        GLib.timeout_add(80, self.read_meters)
+        GLib.timeout_add(20, self.read_meters)
         if with_nsm:
             GLib.timeout_add(200, self.nsm_react)
         GLib.timeout_add(50, self.midi_events_check)

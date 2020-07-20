@@ -119,6 +119,11 @@ class MeterWidget(Gtk.DrawingArea):
                 gradient.add_color_stop_rgb(0.38, 1, 1, 0)
                 gradient.add_color_stop_rgb(0.5, 0, 1, 0)
                 gradient.add_color_stop_rgb(1, 0, 0, 1)
+            elif self.scale.scale_id == "K14":
+                gradient.add_color_stop_rgb(0, 1, 0, 0)
+                gradient.add_color_stop_rgb(1-self.scale.db_to_scale(-14), 1, 1, 0)
+                gradient.add_color_stop_rgb(1-self.scale.db_to_scale(-24), 0, 1, 0)
+                gradient.add_color_stop_rgb(1, 0, 0, 1)
             else:
                 gradient.add_color_stop_rgb(0, 1, 0, 0)
                 gradient.add_color_stop_rgb(0.2, 1, 1, 0)

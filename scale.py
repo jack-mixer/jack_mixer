@@ -146,24 +146,29 @@ class K20(Base):
     '''K20 scale'''
     def __init__(self):
         Base.__init__(self, "K20", "K20 scale")
-        self.add_threshold(-65, 1.e-10, True, "")
-        self.add_threshold(-60, 0.001, True, "-40")
-        self.add_threshold(-55, 0.001778, True, "")
-        self.add_threshold(-50, 0.003162, True, "-30")
-        self.add_threshold(-45, 0.00562, True, "")
-        self.add_threshold(-40, 0.01, True, "-20")
-        self.add_threshold(-35, 0.01778, True, "")
-        self.add_threshold(-30, 0.03162, True, "-10")
-        self.add_threshold(-26, 0.05, True, "-6")
-        self.add_threshold(-23, 0.0708, True, "-3")
-        self.add_threshold(-20, 0.1, True, "0")
-        self.add_threshold(-17, 0.1413, True, "3")
-        self.add_threshold(-14, 0.1995, True, "6")
-        self.add_threshold(-10, 0.3162, True, "10")
-        self.add_threshold(-5, 0.562, True, "15")
-        self.add_threshold(0, 1.0, True, "20")
-        self.calculate_coefficients()
-        self.scale_marks()
+        self.add_mark(-200, "")
+        self.add_mark(-60, "-40")
+        self.add_mark(-55, "")
+        self.add_mark(-50, "-30")
+        self.add_mark(-45, "")
+        self.add_mark(-40, "-20")
+        self.add_mark(-35, "")
+        self.add_mark(-30, "-10")
+        self.add_mark(-26, "-6")
+        self.add_mark(-23, "-3")
+        self.add_mark(-20, "0")
+        self.add_mark(-17, "3")
+        self.add_mark(-14, "6")
+        self.add_mark(-10, "10")
+        self.add_mark(-5, "15")
+        self.add_mark(0, "20")
+
+    def db_to_scale(self, db):
+        v = math.pow(10.0, db/20.0)
+        return self.mapk20(v)/450.0
+
+    def add_mark(self, db, text):
+        self.marks.append(Mark(db, self.db_to_scale(db), text))
 
     def mapk20(self, v):
         if v < 0.001: return (24000 * v)
@@ -172,9 +177,40 @@ class K20(Base):
         if v > 3.0: v = 3.0
         return (v * 161.7 - 35.1)
 
-    def add_threshold(self, db, scale, is_mark, text):
-        v = self.mapk20(scale) / 450
-        Base.add_threshold(self, db, v, is_mark, text)
+
+class K14(Base):
+    '''K14 scale'''
+    def __init__(self):
+        Base.__init__(self, "K14", "K14 scale")
+        self.add_mark(-200, "")
+        self.add_mark(-54, "-40")
+        self.add_mark(-35-14, "")
+        self.add_mark(-30-14, "-30")
+        self.add_mark(-25-14, "")
+        self.add_mark(-20-14, "-20")
+        self.add_mark(-15-14, "")
+        self.add_mark(-10-14, "-10")
+        self.add_mark(-6-14, "-6")
+        self.add_mark(-3-14, "-3")
+        self.add_mark(-14, "0")
+        self.add_mark(3-14, "3")
+        self.add_mark(6-14, "6")
+        self.add_mark(10-14, "10")
+        self.add_mark(14-14, "14")
+
+    def db_to_scale(self, db):
+        v = math.pow(10.0, db/20.0)
+        return self.mapk14(v)/448.3
+
+    def add_mark(self, db, text):
+        self.marks.append(Mark(db, self.db_to_scale(db), text))
+
+    def mapk14(self, v):
+        if v < 0.002: return int(12000 * v);
+        v = math.log10(v) + 2.7;
+        if v < 2.0: return int(20.3 + v * (80 + v * 32));
+        if v > 2.7: v = 2.7;
+        return int(v * 200 - 91.7);
 
 def scale_test1(scale):
     for i in range(-97 * 2, 1, 1):

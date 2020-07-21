@@ -409,6 +409,11 @@ class Channel(Gtk.VBox, SerializedObject):
                     channel.monitor_button.handler_unblock_by_func(
                                 channel.on_monitor_button_toggled)
             self.app.set_monitored_channel(self)
+        else:
+            if self.app._monitored_channel.channel.name == self.channel.name:
+                self.monitor_button.handler_block_by_func(self.on_monitor_button_toggled)
+                self.monitor_button.set_active(True)
+                self.monitor_button.handler_unblock_by_func(self.on_monitor_button_toggled)
 
     def set_monitored(self):
         if self.channel:

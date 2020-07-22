@@ -188,6 +188,11 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu = Gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
+        edit_menu.append(Gtk.SeparatorMenuItem())
+        edit_menu.append(self.new_menu_item('Narrow Input Channels', self.on_narrow_input_channels_cb, "<Control>A"))
+        edit_menu.append(self.new_menu_item('Widen Input Channels', self.on_widen_input_channels_cb, "<Control>W"))
+        edit_menu.append(Gtk.SeparatorMenuItem())
+
         edit_menu.append(self.new_menu_item('_Clear', self.on_channels_clear, "<Control>X"))
         edit_menu.append(Gtk.SeparatorMenuItem())
         edit_menu.append(self.new_menu_item('_Preferences', self.on_preferences_cb, "<Control>P"))
@@ -328,6 +333,14 @@ class JackMixer(SerializedObject):
 
     def on_quit_cb(self, *args):
         Gtk.main_quit()
+
+    def on_narrow_input_channels_cb(self, widget):
+        for channel in self.channels:
+            channel.narrow()
+
+    def on_widen_input_channels_cb(self, widget):
+        for channel in self.channels:
+            channel.widen()
 
     preferences_dialog = None
     def on_preferences_cb(self, widget):
@@ -728,7 +741,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             self.window.show_all()
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)
- 
+
     def serialize(self, object_backend):
         width, height = self.window.get_size()
         object_backend.add_property('geometry',

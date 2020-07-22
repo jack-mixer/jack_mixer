@@ -36,7 +36,7 @@ except:
 log = logging.getLogger(__name__)
 button_padding = 1
 css = b"""
-.top_label {min-width: 100px;}
+.top_label {padding: 0px .1em}
 button {padding: 0px}
 """
 css_provider = Gtk.CssProvider()
@@ -429,6 +429,7 @@ class InputChannel(Channel):
 
     def __init__(self, app, name, stereo, value = None):
         Channel.__init__(self, app, name, stereo, value)
+        self.wide = True
 
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
@@ -522,6 +523,19 @@ class InputChannel(Channel):
         self.monitor_button = Gtk.ToggleButton('MON')
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False, 0)
+        if not self.wide:
+            self.narrow()
+
+
+    def narrow(self):
+        for cg in self.get_control_groups():
+            cg.narrow()
+        self.wide = False
+
+    def widen(self):
+        for cg in self.get_control_groups():
+            cg.widen()
+        self.wide = True
 
     def on_drag_data_get(self, widget, drag_context, data, info, time):
         channel = widget.get_parent().get_parent()
@@ -550,11 +564,17 @@ class InputChannel(Channel):
                     control_group.update()
 
     def get_control_group(self, channel):
-        for control_group in self.vbox.get_children():
-            if isinstance(control_group, ControlGroup):
-                if control_group.output_channel is channel:
-                    return control_group
+        for control_group in self.get_control_groups:
+            if control_group.output_channel is channel:
+                return control_group
         return None
+
+    def get_control_groups(self):
+        ctlgroups = []
+        for c in self.vbox.get_children():
+            if isinstance(c, ControlGroup):
+                ctlgroups.append(c)
+        return ctlgroups
 
     def unrealize(self):
         Channel.unrealize(self)
@@ -576,6 +596,13 @@ class InputChannel(Channel):
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:
                 self.on_channel_properties()
+            return True
+        elif event.state & Gdk.ModifierType.CONTROL_MASK and event.type == Gdk.EventType.BUTTON_PRESS and event.button == 1:
+            if self.wide:
+                self.narrow()
+            else:
+                self.widen()
+            return True
 
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
@@ -618,6 +645,7 @@ class InputChannel(Channel):
 
     def serialize(self, object_backend):
         object_backend.add_property("name", self.channel_name)
+        object_backend.add_property("wide", "%s" % str(self.wide))
         if self.stereo:
             object_backend.add_property("type", "stereo")
         else:
@@ -627,6 +655,9 @@ class InputChannel(Channel):
     def unserialize_property(self, name, value):
         if name == "name":
             self.channel_name = str(value)
+            return True
+        if name == "wide":
+            self.wide = value == "True"
             return True
         if name == "type":
             if value == "stereo":
@@ -740,13 +771,16 @@ class OutputChannel(Channel):
         # add control groups to the input channels, and initialize them
         # appropriately
         for input_channel in self.app.channels:
-            ctlgroup = input_channel.add_control_group(self)
+            input_channel.ctlgroup = input_channel.add_control_group(self)
             if self._init_muted_channels and input_channel.channel.name in self._init_muted_channels:
-                ctlgroup.mute.set_active(True)
+                input_channel.ctlgroup.mute.set_active(True)
             if self._init_solo_channels and input_channel.channel.name in self._init_solo_channels:
-                ctlgroup.solo.set_active(True)
+                input_channel.ctlgroup.solo.set_active(True)
             if self._init_prefader_channels and input_channel.channel.name in self._init_prefader_channels:
-                ctlgroup.prefader.set_active(True)
+                input_channel.ctlgroup.prefader.set_active(True)
+            if not input_channel.wide:
+                input_channel.ctlgroup.narrow()
+
         self._init_muted_channels = None
         self._init_solo_channels = None
         self._init_prefader_channels = None
@@ -1249,3 +1283,11 @@ class ControlGroup(Gtk.Alignment):
 
     def on_prefader_toggled(self, button):
         self.output_channel.channel.set_in_prefader(self.input_channel.channel, button.get_active())
+
+    def narrow(self):
+        self.hbox.remove(self.label)
+        self.hbox.set_child_packing(self.buttons_box, True, True, button_padding, Gtk.PackType.END)
+
+    def widen(self):
+        self.hbox.pack_start(self.label, False, False, button_padding)
+        self.hbox.set_child_packing(self.buttons_box, False, False, button_padding, Gtk.PackType.END)

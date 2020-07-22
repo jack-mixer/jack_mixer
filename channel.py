@@ -21,6 +21,7 @@ import gi
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
+from gi.repository import Pango
 
 import abspeak
 import meter
@@ -36,8 +37,22 @@ except:
 log = logging.getLogger(__name__)
 button_padding = 1
 css = b"""
-.top_label {padding: 0px .1em}
-button {padding: 0px}
+.top_label {
+    padding: 0px .1em;
+    min-height: 1.5rem;
+}
+
+.wide {
+    font-size: medium
+}
+
+.narrow {
+    font-size: smaller
+}
+
+button {
+    padding: 0px
+}
 """
 css_provider = Gtk.CssProvider()
 css_provider.load_from_data(css)
@@ -78,6 +93,7 @@ class Channel(Gtk.VBox, SerializedObject):
         Gtk.VBox.__init__(self)
         self.app = app
         self.mixer = app.mixer
+        self.channel = None
         self.gui_factory = app.gui_factory
         self._channel_name = name
         self.stereo = stereo
@@ -86,25 +102,29 @@ class Channel(Gtk.VBox, SerializedObject):
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
         self.balance_adjustment = slider.BalanceAdjustment()
+        self.post_fader_output_channel = None
         self.future_out_mute = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
         self.future_solo_midi_cc = None
         self.css_name = "css_name_%d" % Channel.num_instances
+        self.label_name = None
+        self.wide = True
+        self.label_chars_wide = 12
+        self.label_chars_narrow = 8
         Channel.num_instances += 1
 
     def get_channel_name(self):
         return self._channel_name
 
-    label_name = None
-    channel = None
-    post_fader_output_channel = None
     def set_channel_name(self, name):
         self.app.on_channel_rename(self._channel_name, name);
         self._channel_name = name
         if self.label_name:
             self.label_name.set_text(name)
+            if len(name) > (self.label_chars_wide if self.wide else self.label_chars_narrow):
+                self.label_name.set_tooltip_text(name)
         if self.channel:
             self.channel.name = name
         if self.post_fader_output_channel:
@@ -116,35 +136,43 @@ class Channel(Gtk.VBox, SerializedObject):
         if self.future_out_mute != None:
             self.channel.out_mute = self.future_out_mute
 
-        self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
-        self.slider_adjustment.connect("volume-changed-from-midi", self.on_volume_changed_from_midi)
-        self.balance_adjustment.connect("balance-changed", self.on_balance_changed)
+        # Widgets
+        # Channel strip label
+        self.vbox = Gtk.VBox()
+        self.pack_start(self.vbox, False, True, 0)
+        self.label_name = Gtk.Label()
+        self.label_name.get_style_context().add_class('top_label')
+        self.label_name.set_text(self.channel_name)
+        self.label_name.set_max_width_chars(self.label_chars_wide if self.wide else
+                                            self.label_chars_narrow)
+        self.label_name.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+        self.label_name_event_box = Gtk.EventBox()
+        self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
+        self.label_name_event_box.add(self.label_name)
 
+        # Volume fader
         self.slider = None
         self.create_slider_widget()
 
-        if self.stereo:
-            self.meter = meter.StereoMeterWidget(self.meter_scale)
-        else:
-            self.meter = meter.MonoMeterWidget(self.meter_scale)
-        self.on_vumeter_color_changed(self.gui_factory)
-
-        self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
-
-        self.gui_factory.connect("default-meter-scale-changed", self.on_default_meter_scale_changed)
-        self.gui_factory.connect("default-slider-scale-changed", self.on_default_slider_scale_changed)
-        self.gui_factory.connect('vumeter-color-changed', self.on_vumeter_color_changed)
-        self.gui_factory.connect('vumeter-color-scheme-changed', self.on_vumeter_color_changed)
-        self.gui_factory.connect('use-custom-widgets-changed', self.on_custom_widgets_changed)
-
-        self.abspeak = abspeak.AbspeakWidget()
-        self.abspeak.connect("reset", self.on_abspeak_reset)
-        self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
-
+        # Volume entry
         self.volume_digits = Gtk.Entry()
         self.volume_digits.set_property('xalign', 0.5)
         self.volume_digits.connect("key-press-event", self.on_volume_digits_key_pressed)
         self.volume_digits.connect("focus-out-event", self.on_volume_digits_focus_out)
+
+        # Peak level label
+        self.abspeak = abspeak.AbspeakWidget()
+        self.abspeak.connect("reset", self.on_abspeak_reset)
+        self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
+
+        # Level meter
+        if self.stereo:
+            self.meter = meter.StereoMeterWidget(self.meter_scale)
+        else:
+            self.meter = meter.MonoMeterWidget(self.meter_scale)
+
+        self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
+        self.on_vumeter_color_changed(self.gui_factory)
 
         if self.initial_value != None:
             if self.initial_value == True:
@@ -152,12 +180,45 @@ class Channel(Gtk.VBox, SerializedObject):
             else:
                 self.slider_adjustment.set_value_db(0)
 
+        self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
+        self.slider_adjustment.connect("volume-changed-from-midi", self.on_volume_changed_from_midi)
+        self.balance_adjustment.connect("balance-changed", self.on_balance_changed)
+
+        self.gui_factory.connect("default-meter-scale-changed", self.on_default_meter_scale_changed)
+        self.gui_factory.connect("default-slider-scale-changed", self.on_default_slider_scale_changed)
+        self.gui_factory.connect('vumeter-color-changed', self.on_vumeter_color_changed)
+        self.gui_factory.connect('vumeter-color-scheme-changed', self.on_vumeter_color_changed)
+        self.gui_factory.connect('use-custom-widgets-changed', self.on_custom_widgets_changed)
+
         self.connect("key-press-event", self.on_key_pressed)
         self.connect("scroll-event", self.on_scroll)
 
     def unrealize(self):
         log.debug('Unrealizing channel "%s".', self.channel_name)
         pass
+
+    def narrow(self):
+        self.wide = False
+        ctx = self.label_name.get_style_context()
+        ctx.remove_class('wide')
+        ctx.add_class('narrow')
+        label = self.label_name.get_label()
+        self.label_name.set_max_width_chars(self.label_chars_narrow)
+
+        if len(label) > self.label_chars_narrow:
+            self.label_name.set_tooltip_text(label)
+
+    def widen(self):
+        self.wide = True
+        self.label_name.set_tooltip_text(None)
+        ctx = self.label_name.get_style_context()
+        ctx.remove_class('narrow')
+        ctx.add_class('wide')
+        label = self.label_name.get_label()
+        self.label_name.set_max_width_chars(self.label_chars_wide)
+
+        if len(label) > self.label_chars_wide:
+            self.label_name.set_tooltip_text(label)
 
     def balance_preferred_width(self):
         return (20, 20)
@@ -189,6 +250,20 @@ class Channel(Gtk.VBox, SerializedObject):
         if self.monitor_button:
             self.reorder_child(self.monitor_button, -1)
         self.balance.show()
+
+    def on_label_mouse(self, widget, event):
+        if event.type == Gdk.EventType._2BUTTON_PRESS:
+            if event.button == 1:
+                self.on_channel_properties()
+            return True
+        elif (event.state & Gdk.ModifierType.CONTROL_MASK and
+              event.type == Gdk.EventType.BUTTON_PRESS and
+              event.button == 1):
+            if self.wide:
+                self.narrow()
+            else:
+                self.widen()
+            return True
 
     def on_balance_button_press_event(self, widget, event):
         if event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
@@ -358,6 +433,7 @@ class Channel(Gtk.VBox, SerializedObject):
     def serialize(self, object_backend):
         object_backend.add_property("volume", "%f" % self.slider_adjustment.get_value_db())
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
+        object_backend.add_property("wide", "%s" % str(self.wide))
 
         if hasattr(self.channel, 'out_mute'):
             object_backend.add_property('out_mute', str(self.channel.out_mute))
@@ -393,6 +469,9 @@ class Channel(Gtk.VBox, SerializedObject):
         if name == 'solo_midi_cc':
             self.future_solo_midi_cc = int(value)
             return True
+        if name == "wide":
+            self.wide = value == "True"
+            return True
         return False
 
     def on_midi_event_received(self, *args):
@@ -427,16 +506,14 @@ class Channel(Gtk.VBox, SerializedObject):
 class InputChannel(Channel):
     post_fader_output_channel = None
 
-    def __init__(self, app, name, stereo, value = None):
-        Channel.__init__(self, app, name, stereo, value)
-        self.wide = True
-
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
 
         if self.channel == None:
             raise Exception("Cannot create a channel")
-        Channel.realize(self)
+
+        super().realize()
+
         if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc != None:
@@ -452,17 +529,6 @@ class InputChannel(Channel):
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
-
-        # vbox child at upper part
-        self.vbox = Gtk.VBox()
-        self.pack_start(self.vbox, False, True, 0)
-        self.label_name = Gtk.Label()
-        self.label_name.get_style_context().add_class('top_label')
-        self.label_name.set_text(self.channel_name)
-        self.label_name.set_width_chars(0)
-        self.label_name_event_box = Gtk.EventBox()
-        self.label_name_event_box.connect("button-press-event", self.on_label_mouse)
-        self.label_name_event_box.add(self.label_name)
 
         entries = [Gtk.TargetEntry.new("INPUT_CHANNEL", Gtk.TargetFlags.SAME_APP, 0)]
         self.label_name_event_box.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, entries,
@@ -523,19 +589,19 @@ class InputChannel(Channel):
         self.monitor_button = Gtk.ToggleButton('MON')
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False, 0)
+
         if not self.wide:
             self.narrow()
 
-
     def narrow(self):
+        super().narrow()
         for cg in self.get_control_groups():
             cg.narrow()
-        self.wide = False
 
     def widen(self):
+        super().widen()
         for cg in self.get_control_groups():
             cg.widen()
-        self.wide = True
 
     def on_drag_data_get(self, widget, drag_context, data, info, time):
         channel = widget.get_parent().get_parent()
@@ -577,7 +643,7 @@ class InputChannel(Channel):
         return ctlgroups
 
     def unrealize(self):
-        Channel.unrealize(self)
+        super().unrealize()
         if self.post_fader_output_channel:
             self.post_fader_output_channel.remove()
             self.post_fader_output_channel = None
@@ -592,18 +658,6 @@ class InputChannel(Channel):
         self.channel_properties_dialog.show()
         self.channel_properties_dialog.present()
 
-    def on_label_mouse(self, widget, event):
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
-            if event.button == 1:
-                self.on_channel_properties()
-            return True
-        elif event.state & Gdk.ModifierType.CONTROL_MASK and event.type == Gdk.EventType.BUTTON_PRESS and event.button == 1:
-            if self.wide:
-                self.narrow()
-            else:
-                self.widen()
-            return True
-
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
 
@@ -614,7 +668,7 @@ class InputChannel(Channel):
         if hasattr(self, 'channel') and self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
             self.solo.set_active(self.channel.solo)
-            Channel.on_midi_event_received(self)
+            super().on_midi_event_received()
 
     def on_solo_button_pressed(self, button, event, *args):
         if event.button == 3:
@@ -645,19 +699,15 @@ class InputChannel(Channel):
 
     def serialize(self, object_backend):
         object_backend.add_property("name", self.channel_name)
-        object_backend.add_property("wide", "%s" % str(self.wide))
         if self.stereo:
             object_backend.add_property("type", "stereo")
         else:
             object_backend.add_property("type", "mono")
-        Channel.serialize(self, object_backend)
+        super().serialize(object_backend)
 
     def unserialize_property(self, name, value):
         if name == "name":
             self.channel_name = str(value)
-            return True
-        if name == "wide":
-            self.wide = value == "True"
             return True
         if name == "type":
             if value == "stereo":
@@ -666,7 +716,7 @@ class InputChannel(Channel):
             if value == "mono":
                 self.stereo = False
                 return True
-        return Channel.unserialize_property(self, name, value)
+        return super().unserialize_property(name, value)
 
 GObject.signal_new("input-channel-order-changed", InputChannel,
                 GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
@@ -679,8 +729,7 @@ class OutputChannel(Channel):
     _init_solo_channels = None
     _init_prefader_channels = None
 
-    def __init__(self, app, name, stereo, value = None):
-        Channel.__init__(self, app, name, stereo, value)
+    channel_properties_dialog = None
 
     def get_display_solo_buttons(self):
         return self._display_solo_buttons
@@ -695,9 +744,12 @@ class OutputChannel(Channel):
 
     def realize(self):
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
+
         if self.channel == None:
             raise Exception("Cannot create a channel")
-        Channel.realize(self)
+
+        super().realize()
+
         if self.future_volume_midi_cc != None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc != None:
@@ -708,17 +760,6 @@ class OutputChannel(Channel):
 
         self.on_volume_changed(self.slider_adjustment)
         self.on_balance_changed(self.balance_adjustment)
-
-        # vbox child at upper part
-        self.vbox = Gtk.VBox()
-        self.pack_start(self.vbox, False, True, 0)
-        self.label_name = Gtk.Label()
-        self.label_name.get_style_context().add_class('top_label')
-        self.label_name.set_text(self.channel_name)
-        self.label_name.set_width_chars(0)
-        self.label_name_event_box = Gtk.EventBox()
-        self.label_name_event_box.connect('button-press-event', self.on_label_mouse)
-        self.label_name_event_box.add(self.label_name)
 
         entries = [Gtk.TargetEntry.new("OUTPUT_CHANNEL", Gtk.TargetFlags.SAME_APP, 0)]
         self.label_name_event_box.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, entries,
@@ -785,7 +826,8 @@ class OutputChannel(Channel):
         self._init_solo_channels = None
         self._init_prefader_channels = None
 
-    channel_properties_dialog = None
+        if not self.wide:
+            self.narrow()
 
     def on_drag_data_get(self, widget, drag_context, data, info, time):
         channel = widget.get_parent().get_parent()
@@ -803,25 +845,20 @@ class OutputChannel(Channel):
         self.channel_properties_dialog.show()
         self.channel_properties_dialog.present()
 
-    def on_label_mouse(self, widget, event):
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
-            if event.button == 1:
-                self.on_channel_properties()
-
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
 
     def midi_events_check(self):
         if self.channel != None and self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
-            Channel.on_midi_event_received(self)
+            super().on_midi_event_received()
 
     def unrealize(self):
         # remove control groups from input channels
         for input_channel in self.app.channels:
             input_channel.remove_control_group(self)
         # then remove itself
-        Channel.unrealize(self)
+        super().unrealize()
         self.channel.remove()
         self.channel = None
 
@@ -854,7 +891,7 @@ class OutputChannel(Channel):
         if prefader_in_channels:
             object_backend.add_property('prefader_channels', '|'.join([x.channel.name for x in prefader_in_channels]))
         object_backend.add_property("color", self.color.to_string())
-        Channel.serialize(self, object_backend)
+        super().serialize(object_backend)
 
     def unserialize_property(self, name, value):
         if name == "name":
@@ -885,7 +922,7 @@ class OutputChannel(Channel):
             c.parse(value)
             self.color = c
             return True
-        return Channel.unserialize_property(self, name, value)
+        return super().unserialize_property(name, value)
 
 class ChannelPropertiesDialog(Gtk.Dialog):
     channel = None

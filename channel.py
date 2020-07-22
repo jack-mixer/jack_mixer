@@ -771,15 +771,15 @@ class OutputChannel(Channel):
         # add control groups to the input channels, and initialize them
         # appropriately
         for input_channel in self.app.channels:
-            input_channel.ctlgroup = input_channel.add_control_group(self)
+            ctlgroup = input_channel.add_control_group(self)
             if self._init_muted_channels and input_channel.channel.name in self._init_muted_channels:
-                input_channel.ctlgroup.mute.set_active(True)
+                ctlgroup.mute.set_active(True)
             if self._init_solo_channels and input_channel.channel.name in self._init_solo_channels:
-                input_channel.ctlgroup.solo.set_active(True)
+                ctlgroup.solo.set_active(True)
             if self._init_prefader_channels and input_channel.channel.name in self._init_prefader_channels:
-                input_channel.ctlgroup.prefader.set_active(True)
+                ctlgroup.prefader.set_active(True)
             if not input_channel.wide:
-                input_channel.ctlgroup.narrow()
+                ctlgroup.narrow()
 
         self._init_muted_channels = None
         self._init_solo_channels = None

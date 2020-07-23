@@ -1272,10 +1272,13 @@ class ControlGroup(Gtk.Alignment):
         hbox_context = self.hbox.get_style_context()
         hbox_context.add_class('control_group')
 
-        self.label = Gtk.Label(output_channel.channel.name)
+        name = output_channel.channel.name
+        self.label = Gtk.Label(name)
         self.label.set_name("label")
         self.label.set_max_width_chars(self.input_channel.label_chars_narrow)
         self.label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+        if len(name) > self.input_channel.label_chars_narrow:
+            self.label.set_tooltip_text(name)
         self.hbox.pack_start(self.label, False, False, button_padding)
         self.hbox.pack_end(self.buttons_box, False, False, button_padding)
         mute = Gtk.ToggleButton()
@@ -1309,7 +1312,11 @@ class ControlGroup(Gtk.Alignment):
             if self.solo in self.buttons_box.get_children():
                 self.buttons_box.remove(self.solo)
 
-        self.label.set_text(self.output_channel.channel.name)
+        name = self.output_channel.channel.name
+        self.label.set_text(name)
+        if len(name) > self.input_channel.label_chars_narrow:
+            self.label.set_tooltip_text(name)
+
         set_background_color(self.vbox, self.output_channel.css_name, self.output_channel.color.to_string())
 
     def on_mute_toggled(self, button):

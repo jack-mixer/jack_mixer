@@ -1274,6 +1274,8 @@ class ControlGroup(Gtk.Alignment):
 
         self.label = Gtk.Label(output_channel.channel.name)
         self.label.set_name("label")
+        self.label.set_max_width_chars(self.input_channel.label_chars_narrow)
+        self.label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
         self.hbox.pack_start(self.label, False, False, button_padding)
         self.hbox.pack_end(self.buttons_box, False, False, button_padding)
         mute = Gtk.ToggleButton()

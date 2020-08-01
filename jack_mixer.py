@@ -79,7 +79,6 @@ class JackMixer(SerializedObject):
                                        )
             self.nsm_client.announceGuiVisibility(self.visible)
         else:
-
             self.visible = True
             self.create_mixer(client_name, with_nsm = False)
 
@@ -159,7 +158,10 @@ class JackMixer(SerializedObject):
                                                       "<Shift><Control>S"))
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
-        self.mixer_menu.append(self.new_menu_item('_Quit', self.on_quit_cb, "<Control>Q"))
+        if with_nsm:
+            self.mixer_menu.append(self.new_menu_item('_Hide', self.nsm_hide_cb, "<Control>W"))
+        else:
+            self.mixer_menu.append(self.new_menu_item('_Quit', self.on_quit_cb, "<Control>Q"))
 
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
@@ -226,14 +228,13 @@ class JackMixer(SerializedObject):
         self.paned.pack1(self.scrolled_window, True, False)
         self.paned.pack2(self.scrolled_output, True, False)
         self.window.connect("destroy", Gtk.main_quit)
-
         self.window.connect('delete-event', self.on_delete_event)
 
     def nsm_react(self):
         self.nsm_client.reactToMessage()
         return True
 
-    def nsm_hide_cb(self):
+    def nsm_hide_cb(self, *args):
         self.window.hide()
         self.visible = False
         self.nsm_client.announceGuiVisibility(False)
@@ -270,6 +271,10 @@ class JackMixer(SerializedObject):
         self.mixer.midi_behavior_mode = value
 
     def on_delete_event(self, widget, event):
+        if self.nsm_client:
+            self.nsm_hide_cb()
+            return True
+
         return False
 
     def sighandler(self, signum, frame):

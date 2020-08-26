@@ -61,12 +61,29 @@ screen = Gdk.Screen.get_default()
 context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 
-def set_background_color(widget, name, color_string):
+def get_text_color(background_color):
+    """Calculates the luminance of the given color (GdkRGBA)
+       and returns an appropriate text color."""
+    # luminance coefficients taken from section C-9 from
+    # http://www.faqs.org/faqs/graphics/colorspace-faq/
+    brightess = background_color.red * 0.212671 + \
+            background_color.green * 0.715160 + \
+            background_color.blue * 0.072169
+
+    if brightess > 0.5:
+        return 'black'
+    else:
+        return 'white'
+
+
+def set_background_color(widget, name, color):
+    color_string = color.to_string()
     css = """
     .%s {
-        background-color: %s
+        background-color: %s;
+        color: %s;
     }
-""" % (name, color_string)
+""" % (name, color_string, get_text_color(color))
 
     css_provider = Gtk.CssProvider()
     css_provider.load_from_data(css.encode('utf-8'))
@@ -501,7 +518,7 @@ class Channel(Gtk.VBox, SerializedObject):
 
     def set_color(self, color):
         self.color = color
-        set_background_color(self.label_name_event_box, self.css_name, self.color.to_string())
+        set_background_color(self.label_name_event_box, self.css_name, self.color)
 
 class InputChannel(Channel):
     post_fader_output_channel = None
@@ -770,8 +787,7 @@ class OutputChannel(Channel):
 
         if not hasattr(self, 'color'):
             self.color = random_color()
-        set_background_color(self.label_name_event_box, self.css_name,
-               self.color.to_string())
+        set_background_color(self.label_name_event_box, self.css_name, self.color)
         self.vbox.pack_start(self.label_name_event_box, True, True, 0)
         frame = Gtk.Frame()
         frame.set_shadow_type(Gtk.ShadowType.IN)
@@ -1245,8 +1261,7 @@ class ControlGroup(Gtk.Alignment):
         self.add(self.vbox)
         self.buttons_box = Gtk.Box(False, button_padding)
 
-        set_background_color(self.vbox, output_channel.css_name,
-                output_channel.color.to_string())
+        set_background_color(self.vbox, output_channel.css_name, output_channel.color)
 
         self.vbox.pack_start(self.hbox, True, True, button_padding)
         css = b"""
@@ -1317,7 +1332,7 @@ class ControlGroup(Gtk.Alignment):
         if len(name) > self.input_channel.label_chars_narrow:
             self.label.set_tooltip_text(name)
 
-        set_background_color(self.vbox, self.output_channel.css_name, self.output_channel.color.to_string())
+        set_background_color(self.vbox, self.output_channel.css_name, self.output_channel.color)
 
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())

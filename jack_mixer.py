@@ -189,8 +189,8 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
         edit_menu.append(Gtk.SeparatorMenuItem())
-        edit_menu.append(self.new_menu_item('Narrow Input Channels', self.on_narrow_input_channels_cb, "<Control>A"))
-        edit_menu.append(self.new_menu_item('Widen Input Channels', self.on_widen_input_channels_cb, "<Control>W"))
+        edit_menu.append(self.new_menu_item('Shrink Input Channels', self.on_narrow_input_channels_cb, "<Control>minus"))
+        edit_menu.append(self.new_menu_item('Expand Input Channels', self.on_widen_input_channels_cb, "<Control>plus"))
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         edit_menu.append(self.new_menu_item('_Clear', self.on_channels_clear, "<Control>X"))
@@ -225,7 +225,6 @@ class JackMixer(SerializedObject):
         self.hbox_top.pack_start(self.paned, True, True, 0)
         self.paned.pack1(self.scrolled_window, True, False)
         self.paned.pack2(self.scrolled_output, True, False)
-
         self.window.connect("destroy", Gtk.main_quit)
 
         self.window.connect('delete-event', self.on_delete_event)

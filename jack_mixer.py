@@ -275,16 +275,16 @@ class JackMixer(SerializedObject):
             self.nsm_hide_cb()
             return True
 
-        return False
+        return self.on_quit_cb()
 
     def sighandler(self, signum, frame):
         log.debug("Signal %d received.", signum)
         if signum == signal.SIGUSR1:
             self.save = True
         elif signum == signal.SIGTERM:
-            Gtk.main_quit()
+            self.on_quit_cb()
         elif signum == signal.SIGINT:
-            Gtk.main_quit()
+            self.on_quit_cb()
         else:
             log.warning("Unknown signal %d received.", signum)
 
@@ -336,6 +336,23 @@ class JackMixer(SerializedObject):
         dlg.destroy()
 
     def on_quit_cb(self, *args):
+        if not self.nsm_client and self.gui_factory.get_confirm_quit():
+            dlg = Gtk.MessageDialog(parent=self.window,
+                                    message_type=Gtk.MessageType.QUESTION,
+                                    buttons=Gtk.ButtonsType.NONE)
+            dlg.set_markup("<b>Quit application?</b>")
+            dlg.format_secondary_markup("All jack_mixer ports will be closed and connections lost,"
+                                        "\nstopping all sound going through jack_mixer.\n\n"
+                                        "Are you sure?")
+            dlg.add_buttons(
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_QUIT, Gtk.ResponseType.OK
+            )
+            response = dlg.run()
+            dlg.destroy()
+            if response != Gtk.ResponseType.OK:
+                return True
+
         Gtk.main_quit()
 
     def on_narrow_input_channels_cb(self, widget):

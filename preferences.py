@@ -47,6 +47,13 @@ class PreferencesDialog(Gtk.Dialog):
         self.vbox.add(vbox)
 
         interface_vbox = Gtk.VBox()
+        self.confirm_quit_checkbutton = Gtk.CheckButton('Confirm quit')
+        self.confirm_quit_checkbutton.set_tooltip_text("Always ask for confirmation before "
+                                                       "quitting the application")
+        self.confirm_quit_checkbutton.set_active(self.app.gui_factory.get_confirm_quit())
+        self.confirm_quit_checkbutton.connect('toggled', self.on_confirm_quit_toggled)
+        interface_vbox.pack_start(self.confirm_quit_checkbutton, True, True, 0)
+
         self.custom_widgets_checkbutton = Gtk.CheckButton('Use custom widgets')
         self.custom_widgets_checkbutton.set_active(
                         self.app.gui_factory.get_use_custom_widgets())
@@ -177,6 +184,9 @@ class PreferencesDialog(Gtk.Dialog):
 
         self.custom_color_box.set_sensitive(
                         self.vumeter_color_checkbutton.get_active() == True)
+
+    def on_confirm_quit_toggled(self, *args):
+        self.app.gui_factory.set_confirm_quit(self.confirm_quit_checkbutton.get_active())
 
     def on_custom_widget_toggled(self, *args):
         self.app.gui_factory.set_use_custom_widgets(

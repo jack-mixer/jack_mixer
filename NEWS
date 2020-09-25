@@ -1,3 +1,22 @@
+===========
+Development
+===========
+
+ * Added K20 and K14 scales.
+ * When running under NSM, closing the mein window only hides UI and the "Quit"
+   menu entry is replaced with a "Hide" entry.
+ * Added a global option to always ask for confirmation when quitting
+   jack_mixer.
+ * Allow drag'n'drop to change channel positions.
+ * Added ability to shrink/expand width of input channels.
+ * Added maximum width for control group labels. Labels are ellipsized if too
+   long and a tooltip with the full name is added.
+ * The font color of control group labels automatically adapts to their
+   background color for better contrast and readability.
+ * Fixed some issues with channel moitoring.
+
+With contributions from Daniel Sheeler and Christopher Arndt.
+
 ==========
 Version 13
 ==========

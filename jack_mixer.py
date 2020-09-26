@@ -46,6 +46,8 @@ from nsmclient import NSMClient
 from serialization_xml import XmlSerialization
 from serialization import SerializedObject, Serializator
 from preferences import PreferencesDialog
+from version import __version__
+
 
 # restore Python modules lookup path
 sys.path = old_path
@@ -731,8 +733,9 @@ class JackMixer(SerializedObject):
     def on_about(self, *args):
         about = Gtk.AboutDialog()
         about.set_name('jack_mixer')
+        about.set_program_name('jack_mixer')
         about.set_copyright('Copyright © 2006-2020\nNedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler')
-        about.set_license('''\
+        about.set_license("""\
 jack_mixer is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
 Free Software Foundation; either version 2 of the License, or (at your
@@ -745,7 +748,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License along
 with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
-Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
+Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         about.set_authors([
             'Nedko Arnaudov <nedko@arnaudov.name>',
             'Christopher Arndt <chris@chrisarndt.de>',
@@ -758,6 +761,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA''')
             'Athanasios Silis <athanasios.silis@gmail.com>',
         ])
         about.set_logo_icon_name('jack_mixer')
+        about.set_version(__version__)
         about.set_website('https://rdio.space/jackmixer/')
 
         about.run()

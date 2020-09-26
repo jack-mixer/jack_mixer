@@ -53,12 +53,21 @@ log = logging.getLogger("jack_mixer")
 class JackMixer(SerializedObject):
 
     # scales suitable as meter scales
-    meter_scales = [scale.K20(), scale.K14(), scale.IEC268(), scale.Linear70dB(), scale.IEC268Minimalistic()]
+    meter_scales = [
+        scale.K20(),
+        scale.K14(),
+        scale.IEC268(),
+        scale.Linear70dB(),
+        scale.IEC268Minimalistic()
+    ]
 
     # scales suitable as volume slider scales
-    slider_scales = [scale.Linear30dB(), scale.Linear70dB()]
+    slider_scales = [
+        scale.Linear30dB(),
+        scale.Linear70dB()
+    ]
 
-    # name of settngs file that is currently open
+    # name of settings file that is currently open
     current_filename = None
 
     _init_solo_channels = None
@@ -68,35 +77,37 @@ class JackMixer(SerializedObject):
         self.nsm_client = None
 
         if os.environ.get('NSM_URL'):
-            self.nsm_client = NSMClient(prettyName = "jack_mixer",
-                                        saveCallback = self.nsm_save_cb,
-                                        openOrNewCallback = self.nsm_open_cb,
-                                        supportsSaveStatus = False,
-                                        hideGUICallback = self.nsm_hide_cb,
-                                        showGUICallback = self.nsm_show_cb,
-                                        exitProgramCallback = self.nsm_exit_cb,
-                                        loggingLevel = "error",
-                                       )
+            self.nsm_client = NSMClient(
+                prettyName="jack_mixer",
+                saveCallback=self.nsm_save_cb,
+                openOrNewCallback=self.nsm_open_cb,
+                supportsSaveStatus=False,
+                hideGUICallback=self.nsm_hide_cb,
+                showGUICallback=self.nsm_show_cb,
+                exitProgramCallback=self.nsm_exit_cb,
+                loggingLevel="error",
+            )
             self.nsm_client.announceGuiVisibility(self.visible)
         else:
             self.visible = True
-            self.create_mixer(client_name, with_nsm = False)
+            self.create_mixer(client_name, with_nsm=False)
 
-    def create_mixer(self, client_name, with_nsm = True):
+    def create_mixer(self, client_name, with_nsm=True):
         self.mixer = jack_mixer_c.Mixer(client_name)
-        self.create_ui(with_nsm)
         if not self.mixer:
-            sys.exit(1)
+            raise RuntimeError("Failed to create Mixer instance.")
 
+        self.create_ui(with_nsm)
         self.window.set_title(client_name)
 
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
         self.save = False
 
         GLib.timeout_add(33, self.read_meters)
+        GLib.timeout_add(50, self.midi_events_check)
+
         if with_nsm:
             GLib.timeout_add(200, self.nsm_react)
-        GLib.timeout_add(50, self.midi_events_check)
 
     def new_menu_item(self, title, callback=None, accel=None, enabled=True):
         menuitem = Gtk.MenuItem.new_with_mnemonic(title)
@@ -248,7 +259,7 @@ class JackMixer(SerializedObject):
         self.nsm_client.announceGuiVisibility(True)
 
     def nsm_open_cb(self, path, session_name, client_name):
-        self.create_mixer(client_name, with_nsm = True)
+        self.create_mixer(client_name, with_nsm=True)
         self.current_filename = path + '.xml'
         if os.path.isfile(self.current_filename):
             f = open(self.current_filename, 'r')

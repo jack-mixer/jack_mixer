@@ -983,17 +983,19 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label='Name'), 0, 1, 0, 1)
+        name_label = Gtk.Label.new_with_mnemonic('_Name')
+        table.attach(name_label, 0, 1, 0, 1)
         self.entry_name = Gtk.Entry()
         self.entry_name.set_activates_default(True)
         self.entry_name.connect('changed', self.on_entry_name_changed)
+        name_label.set_mnemonic_widget(self.entry_name)
         table.attach(self.entry_name, 1, 2, 0, 1)
 
         table.attach(Gtk.Label(label='Mode'), 0, 1, 1, 2)
         self.mode_hbox = Gtk.HBox()
         table.attach(self.mode_hbox, 1, 2, 1, 2)
-        self.mono = Gtk.RadioButton(label='Mono')
-        self.stereo = Gtk.RadioButton(label='Stereo', group=self.mono)
+        self.mono = Gtk.RadioButton.new_with_mnemonic(None, '_Mono')
+        self.stereo = Gtk.RadioButton.new_with_mnemonic_from_widget(self.mono, '_Stereo')
         self.mode_hbox.pack_start(self.mono, True, True, 0)
         self.mode_hbox.pack_start(self.stereo, True, True, 0)
 
@@ -1003,27 +1005,33 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         table.set_col_spacings(5)
 
         cc_tooltip = "{} MIDI Control Change number (0-127, set to -1 to assign next free CC #)"
-        table.attach(Gtk.Label(label='Volume'), 0, 1, 0, 1)
+        volume_label = Gtk.Label.new_with_mnemonic('_Volume')
+        table.attach(volume_label, 0, 1, 0, 1)
         self.entry_volume_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_volume_cc.set_tooltip_text(cc_tooltip.format("Volume"))
+        volume_label.set_mnemonic_widget(self.entry_volume_cc)
         table.attach(self.entry_volume_cc, 1, 2, 0, 1)
         self.button_sense_midi_volume = Gtk.Button('Learn')
         self.button_sense_midi_volume.connect('clicked',
                         self.on_sense_midi_volume_clicked)
         table.attach(self.button_sense_midi_volume, 2, 3, 0, 1)
 
-        table.attach(Gtk.Label(label='Balance'), 0, 1, 1, 2)
+        balance_label = Gtk.Label.new_with_mnemonic('_Balance')
+        table.attach(balance_label, 0, 1, 1, 2)
         self.entry_balance_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_balance_cc.set_tooltip_text(cc_tooltip.format("Balance"))
+        balance_label.set_mnemonic_widget(self.entry_balance_cc)
         table.attach(self.entry_balance_cc, 1, 2, 1, 2)
         self.button_sense_midi_balance = Gtk.Button('Learn')
         self.button_sense_midi_balance.connect('clicked',
                         self.on_sense_midi_balance_clicked)
         table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
 
-        table.attach(Gtk.Label(label='Mute'), 0, 1, 2, 3)
+        mute_label = Gtk.Label.new_with_mnemonic('M_ute')
+        table.attach(mute_label, 0, 1, 2, 3)
         self.entry_mute_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_mute_cc.set_tooltip_text(cc_tooltip.format("Mute"))
+        mute_label.set_mnemonic_widget(self.entry_mute_cc)
         table.attach(self.entry_mute_cc, 1, 2, 2, 3)
         self.button_sense_midi_mute = Gtk.Button('Learn')
         self.button_sense_midi_mute.connect('clicked',
@@ -1032,9 +1040,11 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
         if (isinstance(self, NewChannelDialog) or (self.channel and
             isinstance(self.channel, InputChannel))):
-            table.attach(Gtk.Label(label='Solo'), 0, 1, 3, 4)
+            solo_label = Gtk.Label.new_with_mnemonic('S_olo')
+            table.attach(solo_label, 0, 1, 3, 4)
             self.entry_solo_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
             self.entry_solo_cc.set_tooltip_text(cc_tooltip.format("Solo"))
+            solo_label.set_mnemonic_widget(self.entry_solo_cc)
             table.attach(self.entry_solo_cc, 1, 2, 3, 4)
             self.button_sense_midi_solo = Gtk.Button('Learn')
             self.button_sense_midi_solo.connect('clicked',
@@ -1137,8 +1147,8 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.properties_table.attach(Gtk.Label(label='Value'), 0, 1, 2, 3)
         self.value_hbox = Gtk.HBox()
         self.properties_table.attach(self.value_hbox, 1, 2, 2, 3)
-        self.minus_inf = Gtk.RadioButton(label='-Inf')
-        self.zero_dB = Gtk.RadioButton(label='0dB', group=self.minus_inf)
+        self.minus_inf = Gtk.RadioButton.new_with_mnemonic(None, '-_Inf')
+        self.zero_dB = Gtk.RadioButton.new_with_mnemonic_from_widget(self.minus_inf, '_0dB')
         self.value_hbox.pack_start(self.minus_inf, True, True, 0)
         self.value_hbox.pack_start(self.zero_dB, True, True, 0)
 
@@ -1150,31 +1160,34 @@ class NewInputChannelDialog(NewChannelDialog):
         self.mixer = app.mixer
         self.app = app
         self.create_ui()
-        self.fill_ui()
-
-        self.stereo.set_active(True) # default to stereo
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_ADD, Gtk.ResponseType.OK)
         self.ok_button.set_sensitive(False)
         self.set_default_response(Gtk.ResponseType.OK);
 
-    def fill_ui(self):
+    def fill_ui(self, **values):
+        self.entry_name.set_text(values.get('name', ''))
+        # don't set MIDI CCs to previously used values, because they
+        # would overwrite existing mappings, if accepted.
         self.entry_volume_cc.set_value(-1)
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)
         self.entry_solo_cc.set_value(-1)
+        self.stereo.set_active(values.get('stereo', True))
+        self.minus_inf.set_active(values.get('value', False))
+        self.entry_name.grab_focus()
 
     def get_result(self):
-        log.debug('minus_inf active?: %s', self.zero_dB.get_active())
-        return {'name': self.entry_name.get_text(),
-                'stereo': self.stereo.get_active(),
-                'volume_cc': int(self.entry_volume_cc.get_value()),
-                'balance_cc': int(self.entry_balance_cc.get_value()),
-                'mute_cc': int(self.entry_mute_cc.get_value()),
-                'solo_cc': int(self.entry_solo_cc.get_value()),
-                'value': self.minus_inf.get_active()
-               }
+        return {
+            'name': self.entry_name.get_text(),
+            'stereo': self.stereo.get_active(),
+            'volume_cc': int(self.entry_volume_cc.get_value()),
+            'balance_cc': int(self.entry_balance_cc.get_value()),
+            'mute_cc': int(self.entry_mute_cc.get_value()),
+            'solo_cc': int(self.entry_solo_cc.get_value()),
+            'value': self.minus_inf.get_active()
+        }
 
 
 class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
@@ -1182,16 +1195,18 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         ChannelPropertiesDialog.create_ui(self)
 
         table = self.properties_table
-        table.attach(Gtk.Label(label='Color'), 0, 1, 4, 5)
+        color_label = Gtk.Label.new_with_mnemonic('_Color')
+        table.attach(color_label, 0, 1, 4, 5)
         self.color_chooser_button = Gtk.ColorButton()
         self.color_chooser_button.set_use_alpha(True)
         self.color_chooser_button.set_rgba(Gdk.RGBA(0, 0, 0, 0))
+        color_label.set_mnemonic_widget(self.color_chooser_button)
         table.attach(self.color_chooser_button, 1, 2, 4, 5)
 
         vbox = Gtk.VBox()
         self.vbox.pack_start(self.create_frame('Input Channels', vbox), True, True, 0)
 
-        self.display_solo_buttons = Gtk.CheckButton('Display solo buttons')
+        self.display_solo_buttons = Gtk.CheckButton.new_with_mnemonic('_Display solo buttons')
         vbox.pack_start(self.display_solo_buttons, True, True, 0)
 
         self.vbox.show_all()
@@ -1218,34 +1233,41 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         OutputChannelPropertiesDialog.create_ui(self)
         self.add_initial_value_radio()
         self.vbox.show_all()
-        self.fill_ui()
         self.set_default_size(365, -1)
 
         # TODO: disable mode for output channels as mono output channels may
         # not be correctly handled yet.
         self.mode_hbox.set_sensitive(False)
-        self.stereo.set_active(True) # default to stereo
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_ADD, Gtk.ResponseType.OK)
         self.ok_button.set_sensitive(False)
         self.set_default_response(Gtk.ResponseType.OK);
 
-    def fill_ui(self):
+    def fill_ui(self, **values):
+        self.entry_name.set_text(values.get('name', ''))
+        # don't set MIDI CCs to previously used values, because they
+        # would overwrite existing mappings, if accepted.
         self.entry_volume_cc.set_value(-1)
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)
+        self.stereo.set_active(values.get('stereo', True))
+        self.minus_inf.set_active(values.get('value', False))
+        self.color_chooser_button.set_rgba(values.get('color', Gdk.RGBA(0, 0, 0, 0)))
+        self.display_solo_buttons.set_active(values.get('display_solo_buttons', False))
+        self.entry_name.grab_focus()
 
     def get_result(self):
-        return {'name': self.entry_name.get_text(),
-                'stereo': self.stereo.get_active(),
-                'volume_cc': int(self.entry_volume_cc.get_value()),
-                'balance_cc': int(self.entry_balance_cc.get_value()),
-                'mute_cc': int(self.entry_mute_cc.get_value()),
-                'display_solo_buttons': self.display_solo_buttons.get_active(),
-                'color': self.color_chooser_button.get_rgba(),
-                'value': self.minus_inf.get_active()
-                }
+        return {
+            'name': self.entry_name.get_text(),
+            'stereo': self.stereo.get_active(),
+            'volume_cc': int(self.entry_volume_cc.get_value()),
+            'balance_cc': int(self.entry_balance_cc.get_value()),
+            'mute_cc': int(self.entry_mute_cc.get_value()),
+            'display_solo_buttons': self.display_solo_buttons.get_active(),
+            'color': self.color_chooser_button.get_rgba(),
+            'value': self.minus_inf.get_active()
+        }
 
 
 class ControlGroup(Gtk.Alignment):

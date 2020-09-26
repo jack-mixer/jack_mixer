@@ -21,6 +21,7 @@
 
 import logging
 import os
+import re
 import signal
 import sys
 from argparse import ArgumentParser
@@ -49,6 +50,18 @@ from preferences import PreferencesDialog
 # restore Python modules lookup path
 sys.path = old_path
 log = logging.getLogger("jack_mixer")
+
+
+def add_number_suffix(s):
+    def inc(match):
+        return str(int(match.group(0)) + 1)
+
+    new_s = re.sub('(\d+)\s*$', inc, s)
+    if new_s == s:
+        new_s = s + ' 1'
+
+    return new_s
+
 
 class JackMixer(SerializedObject):
 
@@ -381,8 +394,25 @@ class JackMixer(SerializedObject):
         self.preferences_dialog.show()
         self.preferences_dialog.present()
 
-    def on_add_input_channel(self, widget):
-        dialog = NewInputChannelDialog(app=self)
+    def on_add_channel(self, inout="input", default_name="Input"):
+        dialog = getattr(self, '_add_{}_dialog'.format(inout), None)
+        values = getattr(self, '_add_{}_values'.format(inout), {})
+
+        if dialog == None:
+            cls = NewInputChannelDialog if inout == 'input' else NewOutputChannelDialog
+            dialog = cls(app=self)
+            setattr(self, '_add_{}_dialog'.format(inout), dialog)
+
+        names = {ch.channel_name
+                 for ch in (self.channels if inout == 'input' else self.output_channels)}
+        values.setdefault('name', default_name)
+        while True:
+            if values['name'] in names:
+                values['name'] = add_number_suffix(values['name'])
+            else:
+                break
+
+        dialog.fill_ui(**values)
         dialog.set_transient_for(self.window)
         dialog.show()
         ret = dialog.run()
@@ -390,22 +420,17 @@ class JackMixer(SerializedObject):
 
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
-            channel = self.add_channel(**result)
+            setattr(self, '_add_{}_values'.format(inout), result)
+            method = getattr(self, 'add_channel' if inout == 'input' else 'add_output_channel')
+            channel = method(**result)
             if self.visible or self.nsm_client == None:
                 self.window.show_all()
+
+    def on_add_input_channel(self, widget):
+        return self.on_add_channel("input", "Input")
 
     def on_add_output_channel(self, widget):
-        dialog = NewOutputChannelDialog(app=self)
-        dialog.set_transient_for(self.window)
-        dialog.show()
-        ret = dialog.run()
-        dialog.hide()
-
-        if ret == Gtk.ResponseType.OK:
-            result = dialog.get_result()
-            channel = self.add_output_channel(**result)
-            if self.visible or self.nsm_client == None:
-                self.window.show_all()
+        return self.on_add_channel("output", "Output")
 
     def on_edit_input_channel(self, widget, channel):
         log.debug('Editing input channel "%s".', channel.channel_name)

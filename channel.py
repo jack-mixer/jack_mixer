@@ -1063,7 +1063,8 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             self.stereo.set_active(True)
         else:
             self.mono.set_active(True)
-        self.mode_hbox.set_sensitive(False)
+        self.mono.set_sensitive(False)
+        self.stereo.set_sensitive(False)
         self.entry_volume_cc.set_value(self.channel.channel.volume_midi_cc)
         self.entry_balance_cc.set_value(self.channel.channel.balance_midi_cc)
         self.entry_mute_cc.set_value(self.channel.channel.mute_midi_cc)

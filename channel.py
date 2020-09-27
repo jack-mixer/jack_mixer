@@ -960,96 +960,100 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.connect('response', self.on_response_cb)
         self.connect('delete-event', self.on_response_cb)
 
-    def create_frame(self, label, child):
-        frame = Gtk.Frame()
-        frame.set_label('')
-        frame.set_border_width(3)
-        #frame.set_shadow_type(Gtk.ShadowType.NONE)
+    def create_frame(self, label, child, padding=8):
+        # need to pass an empty label, otherwise no label widget is created
+        frame = Gtk.Frame(label='')
         frame.get_label_widget().set_markup('<b>%s</b>' % label)
+        frame.set_border_width(3)
+        frame.set_shadow_type(Gtk.ShadowType.NONE)
 
-        alignment = Gtk.Alignment.new(0, 0, 1, 1)
-        alignment.set_padding(0, 0, 12, 0)
+        alignment = Gtk.Alignment.new(0.5, 0, 1, 1)
+        alignment.set_padding(padding, padding, padding, padding)
         frame.add(alignment)
         alignment.add(child)
 
         return frame
 
     def create_ui(self):
-        vbox = Gtk.VBox()
-        self.vbox.add(vbox)
+        vbox = self.get_content_area()
 
-        self.properties_table = table = Gtk.Table(4, 3, False)
-        vbox.pack_start(self.create_frame('Properties', table), True, True, 0)
-        table.set_row_spacings(5)
-        table.set_col_spacings(5)
+        self.properties_grid = grid = Gtk.Grid()
+        vbox.pack_start(self.create_frame('Properties', grid), True, True, 0)
+        grid.set_row_spacing(8)
+        grid.set_column_spacing(8)
+        grid.set_column_homogeneous(True)
 
         name_label = Gtk.Label.new_with_mnemonic('_Name')
-        table.attach(name_label, 0, 1, 0, 1)
+        name_label.set_halign(Gtk.Align.START)
+        grid.attach(name_label, 0, 0, 1, 1)
         self.entry_name = Gtk.Entry()
         self.entry_name.set_activates_default(True)
         self.entry_name.connect('changed', self.on_entry_name_changed)
         name_label.set_mnemonic_widget(self.entry_name)
-        table.attach(self.entry_name, 1, 2, 0, 1)
+        grid.attach(self.entry_name, 1, 0, 2, 1)
 
-        table.attach(Gtk.Label(label='Mode'), 0, 1, 1, 2)
-        self.mode_hbox = Gtk.HBox()
-        table.attach(self.mode_hbox, 1, 2, 1, 2)
+        grid.attach(Gtk.Label(label='Mode', halign=Gtk.Align.START), 0, 1, 1, 1)
         self.mono = Gtk.RadioButton.new_with_mnemonic(None, '_Mono')
         self.stereo = Gtk.RadioButton.new_with_mnemonic_from_widget(self.mono, '_Stereo')
-        self.mode_hbox.pack_start(self.mono, True, True, 0)
-        self.mode_hbox.pack_start(self.stereo, True, True, 0)
+        grid.attach(self.mono, 1, 1, 1, 1)
+        grid.attach(self.stereo, 2, 1, 1, 1)
 
-        table = Gtk.Table(2, 3, False)
-        vbox.pack_start(self.create_frame('MIDI Control Changes', table), True, True, 0)
-        table.set_row_spacings(5)
-        table.set_col_spacings(5)
+        grid = Gtk.Grid()
+        vbox.pack_start(self.create_frame('MIDI Control Changes', grid), True, True, 0)
+        grid.set_row_spacing(8)
+        grid.set_column_spacing(8)
+        grid.set_column_homogeneous(True)
 
         cc_tooltip = "{} MIDI Control Change number (0-127, set to -1 to assign next free CC #)"
         volume_label = Gtk.Label.new_with_mnemonic('_Volume')
-        table.attach(volume_label, 0, 1, 0, 1)
+        volume_label.set_halign(Gtk.Align.START)
+        grid.attach(volume_label, 0, 0, 1, 1)
         self.entry_volume_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_volume_cc.set_tooltip_text(cc_tooltip.format("Volume"))
         volume_label.set_mnemonic_widget(self.entry_volume_cc)
-        table.attach(self.entry_volume_cc, 1, 2, 0, 1)
+        grid.attach(self.entry_volume_cc, 1, 0, 1, 1)
         self.button_sense_midi_volume = Gtk.Button('Learn')
         self.button_sense_midi_volume.connect('clicked',
                         self.on_sense_midi_volume_clicked)
-        table.attach(self.button_sense_midi_volume, 2, 3, 0, 1)
+        grid.attach(self.button_sense_midi_volume, 2, 0, 1, 1)
 
         balance_label = Gtk.Label.new_with_mnemonic('_Balance')
-        table.attach(balance_label, 0, 1, 1, 2)
+        balance_label.set_halign(Gtk.Align.START)
+        grid.attach(balance_label, 0, 1, 1, 1)
         self.entry_balance_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_balance_cc.set_tooltip_text(cc_tooltip.format("Balance"))
         balance_label.set_mnemonic_widget(self.entry_balance_cc)
-        table.attach(self.entry_balance_cc, 1, 2, 1, 2)
+        grid.attach(self.entry_balance_cc, 1, 1, 1, 1)
         self.button_sense_midi_balance = Gtk.Button('Learn')
         self.button_sense_midi_balance.connect('clicked',
                         self.on_sense_midi_balance_clicked)
-        table.attach(self.button_sense_midi_balance, 2, 3, 1, 2)
+        grid.attach(self.button_sense_midi_balance, 2, 1, 1, 1)
 
         mute_label = Gtk.Label.new_with_mnemonic('M_ute')
-        table.attach(mute_label, 0, 1, 2, 3)
+        mute_label.set_halign(Gtk.Align.START)
+        grid.attach(mute_label, 0, 2, 1, 1)
         self.entry_mute_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_mute_cc.set_tooltip_text(cc_tooltip.format("Mute"))
         mute_label.set_mnemonic_widget(self.entry_mute_cc)
-        table.attach(self.entry_mute_cc, 1, 2, 2, 3)
+        grid.attach(self.entry_mute_cc, 1, 2, 1, 1)
         self.button_sense_midi_mute = Gtk.Button('Learn')
         self.button_sense_midi_mute.connect('clicked',
                         self.on_sense_midi_mute_clicked)
-        table.attach(self.button_sense_midi_mute, 2, 3, 2, 3)
+        grid.attach(self.button_sense_midi_mute, 2, 2, 1, 1)
 
         if (isinstance(self, NewChannelDialog) or (self.channel and
             isinstance(self.channel, InputChannel))):
             solo_label = Gtk.Label.new_with_mnemonic('S_olo')
-            table.attach(solo_label, 0, 1, 3, 4)
+            solo_label.set_halign(Gtk.Align.START)
+            grid.attach(solo_label, 0, 3, 1, 1)
             self.entry_solo_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
             self.entry_solo_cc.set_tooltip_text(cc_tooltip.format("Solo"))
             solo_label.set_mnemonic_widget(self.entry_solo_cc)
-            table.attach(self.entry_solo_cc, 1, 2, 3, 4)
+            grid.attach(self.entry_solo_cc, 1, 3, 1, 1)
             self.button_sense_midi_solo = Gtk.Button('Learn')
             self.button_sense_midi_solo.connect('clicked',
                             self.on_sense_midi_solo_clicked)
-            table.attach(self.button_sense_midi_solo, 2, 3, 3, 4)
+            grid.attach(self.button_sense_midi_solo, 2, 3, 1, 1)
 
         self.vbox.show_all()
 
@@ -1144,13 +1148,12 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.vbox.show_all()
 
     def add_initial_value_radio(self):
-        self.properties_table.attach(Gtk.Label(label='Value'), 0, 1, 2, 3)
-        self.value_hbox = Gtk.HBox()
-        self.properties_table.attach(self.value_hbox, 1, 2, 2, 3)
+        grid = self.properties_grid
+        grid.attach(Gtk.Label(label='Value', halign=Gtk.Align.START), 0, 2, 1, 1)
         self.minus_inf = Gtk.RadioButton.new_with_mnemonic(None, '-_Inf')
         self.zero_dB = Gtk.RadioButton.new_with_mnemonic_from_widget(self.minus_inf, '_0dB')
-        self.value_hbox.pack_start(self.minus_inf, True, True, 0)
-        self.value_hbox.pack_start(self.zero_dB, True, True, 0)
+        grid.attach(self.minus_inf, 1, 2, 1, 1)
+        grid.attach(self.zero_dB, 2, 2, 1, 1)
 
 
 class NewInputChannelDialog(NewChannelDialog):
@@ -1194,16 +1197,17 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
     def create_ui(self):
         ChannelPropertiesDialog.create_ui(self)
 
-        table = self.properties_table
+        grid = self.properties_grid
         color_label = Gtk.Label.new_with_mnemonic('_Color')
-        table.attach(color_label, 0, 1, 4, 5)
+        color_label.set_halign(Gtk.Align.START)
+        grid.attach(color_label, 0, 3, 1, 1)
         self.color_chooser_button = Gtk.ColorButton()
         self.color_chooser_button.set_use_alpha(True)
         self.color_chooser_button.set_rgba(Gdk.RGBA(0, 0, 0, 0))
         color_label.set_mnemonic_widget(self.color_chooser_button)
-        table.attach(self.color_chooser_button, 1, 2, 4, 5)
+        grid.attach(self.color_chooser_button, 1, 3, 2, 1)
 
-        vbox = Gtk.VBox()
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.vbox.pack_start(self.create_frame('Input Channels', vbox), True, True, 0)
 
         self.display_solo_buttons = Gtk.CheckButton.new_with_mnemonic('_Display solo buttons')
@@ -1237,7 +1241,8 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
 
         # TODO: disable mode for output channels as mono output channels may
         # not be correctly handled yet.
-        self.mode_hbox.set_sensitive(False)
+        self.mono.set_sensitive(False)
+        self.stereo.set_sensitive(False)
 
         self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.ok_button = self.add_button(Gtk.STOCK_ADD, Gtk.ResponseType.OK)

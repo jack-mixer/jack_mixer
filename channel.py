@@ -647,7 +647,7 @@ class InputChannel(Channel):
                     control_group.update()
 
     def get_control_group(self, channel):
-        for control_group in self.get_control_groups:
+        for control_group in self.get_control_groups():
             if control_group.output_channel is channel:
                 return control_group
         return None

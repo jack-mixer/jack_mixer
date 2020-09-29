@@ -112,17 +112,19 @@ class GtkSlider(Gtk.Scale):
         self.connect("scroll-event", self.scroll_event)
 
     def button_press_event(self, widget, event):
-        if not event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
-            self.button_down = True
-            self.button_down_y = event.y
-            self.button_down_value = self.adjustment.get_value()
-            return True
-        if not event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
-            self.adjustment.set_value(0)
-            return True
-        if event.state & Gdk.ModifierType.CONTROL_MASK and event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
-            self.adjustment.set_value(self.adjustment.scale.db_to_scale(1))
-            return True
+        if event.button == 1:
+            if event.state & Gdk.ModifierType.CONTROL_MASK:
+                if event.type == Gdk.EventType.BUTTON_PRESS:
+                    self.adjustment.set_value_db(0)
+                    return True
+            elif event.type == Gdk.EventType.BUTTON_PRESS:
+                self.button_down = True
+                self.button_down_y = event.y
+                self.button_down_value = self.adjustment.get_value()
+                return True
+            elif event.type == Gdk.EventType._2BUTTON_PRESS:
+                self.adjustment.set_value(0)
+                return True
         return False
 
     def button_release_event(self, widget, event):

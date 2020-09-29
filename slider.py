@@ -95,9 +95,9 @@ class BalanceAdjustment(Gtk.Adjustment):
 GObject.signal_new("balance-changed", BalanceAdjustment,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 
-class GtkSlider(Gtk.VScale):
+class GtkSlider(Gtk.Scale):
     def __init__(self, adjustment):
-        Gtk.VScale.__init__(self)#, adjustment)
+        Gtk.Scale.__init__(self, orientation=Gtk.Orientation.VERTICAL)
         self.adjustment = adjustment
         self.set_adjustment(adjustment)
         self.set_draw_value(False)

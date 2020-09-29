@@ -28,11 +28,6 @@ import meter
 import slider
 from serialization import SerializedObject
 
-try:
-    import phat
-except:
-    phat = None
-
 
 log = logging.getLogger(__name__)
 button_padding = 1
@@ -237,35 +232,13 @@ class Channel(Gtk.VBox, SerializedObject):
         if len(label) > self.label_chars_wide:
             self.label_name.set_tooltip_text(label)
 
-    def balance_preferred_width(self):
-        return (20, 20)
-
-    def _preferred_height(self):
-        return (0, 100)
-
     def create_balance_widget(self):
-        if self.gui_factory.use_custom_widgets and phat:
-            self.balance = phat.HFanSlider()
-            self.balance.set_default_value(0)
-            self.balance.set_adjustment(self.balance_adjustment)
-        else:
-            self.balance = Gtk.Scale()
-            self.balance.get_preferred_width = self.balance_preferred_width
-            self.balance.get_preferred_height = self._preferred_height
-            self.balance.set_orientation(Gtk.Orientation.HORIZONTAL)
-            self.balance.set_adjustment(self.balance_adjustment)
-            self.balance.set_has_origin(False)
-            self.balance.set_draw_value(False)
-            self.balance.button_down = False
-            self.balance.connect('button-press-event', self.on_balance_button_press_event)
-            self.balance.connect('button-release-event', self.on_balance_button_release_event)
-            self.balance.connect("motion-notify-event", self.on_balance_motion_notify_event)
-            self.balance.connect("scroll-event", self.on_balance_scroll_event)
-
-
+        self.balance = slider.BalanceSlider(self.balance_adjustment, (20, 20), (0, 100))
         self.pack_start(self.balance, False, True, 0)
+
         if self.monitor_button:
             self.reorder_child(self.monitor_button, -1)
+
         self.balance.show()
 
     def on_label_mouse(self, widget, event):
@@ -282,63 +255,21 @@ class Channel(Gtk.VBox, SerializedObject):
                 self.widen()
             return True
 
-    def on_balance_button_press_event(self, widget, event):
-        if event.button == 1 and event.type == Gdk.EventType.BUTTON_PRESS:
-            self.balance.button_down = True
-            self.balance.button_down_x = event.x
-            self.balance.button_down_value = self.balance.get_value()
-            return True
-        if event.button == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
-            self.balance_adjustment.set_balance(0)
-            return True
-        return False
-
-    def on_balance_button_release_event(self, widget, event):
-        self.balance.button_down = False
-        return False
-
-    def on_balance_motion_notify_event(self, widget, event):
-        slider_length = widget.get_allocation().width - widget.get_style_context().get_property('min-width', Gtk.StateFlags.NORMAL)
-        if self.balance.button_down:
-            delta_x = (event.x - self.balance.button_down_x) / slider_length
-            x = self.balance.button_down_value + 2 * delta_x
-            if x >= 1:
-                x = 1
-            elif x <= -1:
-                x = -1
-            self.balance_adjustment.set_balance(x)
-            return True
-
-    def on_balance_scroll_event(self, widget, event):
-        bal = self.balance
-        delta = bal.get_adjustment().get_step_increment()
-        value = bal.get_value()
-        if event.direction == Gdk.ScrollDirection.UP:
-            x = value - delta
-        elif event.direction == Gdk.ScrollDirection.DOWN:
-            x = value + delta
-        elif event.direction == Gdk.ScrollDirection.SMOOTH:
-            x = value - event.delta_y * delta
-
-        if x >= 1:
-            x = 1
-        elif x <= -1:
-            x = -1
-        bal.set_value(x)
-        return True
-
     def create_slider_widget(self):
         parent = None
         if self.slider:
             parent = self.slider.get_parent()
             self.slider.destroy()
+
         if self.gui_factory.use_custom_widgets:
             self.slider = slider.CustomSliderWidget(self.slider_adjustment)
         else:
-            self.slider = slider.GtkSlider(self.slider_adjustment)
+            self.slider = slider.VolumeSlider(self.slider_adjustment)
+
         if parent:
             parent.pack_start(self.slider, True, True, 0)
             parent.reorder_child(self.slider, 0)
+
         self.slider.show()
 
     def on_default_meter_scale_changed(self, gui_factory, scale):

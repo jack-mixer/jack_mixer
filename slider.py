@@ -99,7 +99,7 @@ GObject.signal_new("balance-changed", BalanceAdjustment,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 
 
-class GtkSlider(Gtk.Scale):
+class VolumeSlider(Gtk.Scale):
     def __init__(self, adjustment):
         Gtk.Scale.__init__(self, orientation=Gtk.Orientation.VERTICAL)
         self.adjustment = adjustment
@@ -168,6 +168,74 @@ class GtkSlider(Gtk.Scale):
             y = 0
 
         self.adjustment.set_value(y)
+        return True
+
+
+class BalanceSlider(Gtk.Scale):
+    def __init__(self, adjustment, preferred_width, preferred_height):
+        Gtk.Scale.__init__(self, orientation=Gtk.Orientation.HORIZONTAL)
+        self.adjustment = adjustment
+        self.set_adjustment(adjustment)
+        self.set_has_origin(False)
+        self.set_draw_value(False)
+        self._preferred_width = preferred_width
+        self._preferred_height = preferred_height
+        self._button_down = False
+
+        self.connect('button-press-event', self.on_button_press_event)
+        self.connect('button-release-event', self.on_button_release_event)
+        self.connect("motion-notify-event", self.on_motion_notify_event)
+        self.connect("scroll-event", self.on_scroll_event)
+
+    def get_preferred_width(self):
+        return self._preferred_width
+
+    def get_preferred_height(self):
+        return self._preferred_height
+
+    def on_button_press_event(self, widget, event):
+        if event.button == 1:
+            if event.type == Gdk.EventType.BUTTON_PRESS:
+                self._button_down = True
+                self._button_down_x = event.x
+                self._button_down_value = self.get_value()
+                return True
+            elif event.type == Gdk.EventType._2BUTTON_PRESS:
+                self.adjustment.set_balance(0)
+                return True
+
+        return False
+
+    def on_button_release_event(self, widget, event):
+        self._button_down = False
+        return False
+
+    def on_motion_notify_event(self, widget, event):
+        slider_length = (
+            widget.get_allocation().width -
+            widget.get_style_context().get_property('min-width', Gtk.StateFlags.NORMAL)
+        )
+
+        if self._button_down:
+            delta_x = (event.x - self._button_down_x) / slider_length
+            x = self._button_down_value + 2 * delta_x
+            self.adjustment.set_balance(min(1, max(x, -1)))
+            return True
+
+        return False
+
+    def on_scroll_event(self, widget, event):
+        delta = self.get_adjustment().get_step_increment()
+        value = self.get_value()
+
+        if event.direction == Gdk.ScrollDirection.UP:
+            x = value - delta
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            x = value + delta
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            x = value - event.delta_y * delta
+
+        self.set_value(min(1, max(x, -1)))
         return True
 
 

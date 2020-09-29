@@ -69,11 +69,13 @@ class AdjustmentdBFS(Gtk.Adjustment):
         self.set_value(self.scale.db_to_scale(self.db))
         self.disable_value_notify = False
 
+
 GObject.signal_new("volume-changed", AdjustmentdBFS,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 
 GObject.signal_new("volume-changed-from-midi", AdjustmentdBFS,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+
 
 class BalanceAdjustment(Gtk.Adjustment):
     def __init__(self):
@@ -92,8 +94,10 @@ class BalanceAdjustment(Gtk.Adjustment):
         if not self.disable_value_notify:
             self.emit("balance-changed")
 
+
 GObject.signal_new("balance-changed", BalanceAdjustment,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+
 
 class GtkSlider(Gtk.Scale):
     def __init__(self, adjustment):
@@ -125,6 +129,7 @@ class GtkSlider(Gtk.Scale):
             elif event.type == Gdk.EventType._2BUTTON_PRESS:
                 self.adjustment.set_value(0)
                 return True
+
         return False
 
     def button_release_event(self, widget, event):
@@ -132,7 +137,10 @@ class GtkSlider(Gtk.Scale):
         return False
 
     def motion_notify_event(self, widget, event):
-        slider_length = widget.get_allocation().height - widget.get_style_context().get_property('min-height', Gtk.StateFlags.NORMAL)
+        slider_length = (
+            widget.get_allocation().height -
+            widget.get_style_context().get_property('min-height', Gtk.StateFlags.NORMAL)
+        )
         if self.button_down:
             delta_y = (self.button_down_y - event.y) / slider_length
             y = self.button_down_value + delta_y
@@ -140,6 +148,7 @@ class GtkSlider(Gtk.Scale):
                 y = 1
             elif y <= 0:
                 y = 0
+
             self.adjustment.set_value(y)
             return True
 
@@ -157,13 +166,14 @@ class GtkSlider(Gtk.Scale):
             y = 1
         elif y <= 0:
             y = 0
+
         self.adjustment.set_value(y)
         return True
+
 
 class CustomSliderWidget(Gtk.DrawingArea):
     def __init__(self, adjustment):
         Gtk.DrawingArea.__init__(self)
-
         self.adjustment = adjustment
 
         self.connect("draw", self.on_expose)
@@ -173,7 +183,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self.connect("motion-notify-event", self.on_mouse)
         self.connect("scroll-event", self.on_scroll)
         self.set_events(Gdk.EventMask.BUTTON1_MOTION_MASK |
-                Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
+                        Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
 
     def on_scroll(self, widget, event):
         delta = self.adjustment.step_increment
@@ -194,7 +204,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
             log.debug("Mouse button %u pressed %ux%u", event.button, event.x, event.y)
             if event.button == 1:
                 if event.y >= self.slider_rail_up and event.y < self.slider_rail_up + self.slider_rail_height:
-                    self.adjustment.set_value(1 - float(event.y - self.slider_rail_up)/float(self.slider_rail_height))
+                    self.adjustment.set_value(1 - float(event.y - self.slider_rail_up) / float(self.slider_rail_height))
         elif event.type == Gdk.EventType.MOTION_NOTIFY:
             log.debug("Mouse motion %ux%u", event.x, event.y)
             if event.y < self.slider_rail_up:
@@ -203,7 +213,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
                 y = self.slider_rail_up + self.slider_rail_height
             else:
                 y = event.y
-            self.adjustment.set_value(1 - float(y - self.slider_rail_up)/float(self.slider_rail_height))
+            self.adjustment.set_value(1 - float(y - self.slider_rail_up) / float(self.slider_rail_height))
 
         return False
 
@@ -211,9 +221,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self.invalidate_all()
 
     def on_expose(self, widget, cairo_ctx):
-
         self.draw(cairo_ctx)
-
         return False
 
     def get_preferred_width(self, widget):
@@ -226,7 +234,6 @@ class CustomSliderWidget(Gtk.DrawingArea):
         minimal_height = natural_heigt = requisition.height
         return (minimal_height, natural_height)
 
-
     def on_size_allocate(self, widget, allocation):
         self.width = float(allocation.width)
         self.height = float(allocation.height)
@@ -234,7 +241,6 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
     def on_size_request(self, widget, requisition):
         requisition.width = 20
-        return
 
     def invalidate_all(self):
         if hasattr(self, 'width') and hasattr(self, 'height'):

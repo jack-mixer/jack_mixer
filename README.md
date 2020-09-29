@@ -53,8 +53,13 @@ If you have trouble getting jack_mixer working, find a bug or you miss some
 feature, please [create an issue] on GitHub or contact the maintainer by email.
 
 jack_mixer was initially written and supported by Nedko Arnaudov, it is now
-maintained by Frédéric Peters. You can reach Frédéric at fpeters (a.t) 0d (dot)
-be, and Nedko at nedko (a.t) arnaudov (dot) name.
+maintained by Frédéric Péters. You can reach Frédéric at fpeters (a.t) 0d (dot)
+be, and Nedko at nedko (a.t) arnaudov (dot) name. Most recently, the primary
+developers are Daniel Sheeler at dsheeler (a.t) pobox (dot) com and Christopher
+Arndt at chris (a.t) chrisarndt (dot) de, and you can also usually find these
+folks in #jack_mixer or #lad on FreeNode (as fpeters, nedko, dsheeler and
+strogon14).
+
 
 ## Acknowledgements
 

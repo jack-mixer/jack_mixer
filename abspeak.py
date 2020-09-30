@@ -15,13 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from gi.repository import Gtk
-from gi.repository import Gdk
-from gi.repository import Pango
-from gi.repository import GObject
 import math
 
-css = b"""
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
+
+
+CSS = b"""
 .over_zero {
     background-color: #cc4c00;
 }
@@ -31,22 +32,22 @@ css = b"""
 }
 """
 css_provider = Gtk.CssProvider()
-css_provider.load_from_data(css)
+css_provider.load_from_data(CSS)
 context = Gtk.StyleContext()
 screen = Gdk.Screen.get_default()
 context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
+
 class AbspeakWidget(Gtk.EventBox):
     def __init__(self):
-        GObject.GObject.__init__(self)
+        super().__init__()
         self.label = Gtk.Label()
-        #attrs = Pango.AttrList()
-        #font_attr =  Pango.AttrFamily("monospace")
-        #attrs.insert(font_attr)
-        #self.label.set_attributes(attrs)
         self.add(self.label)
         self.connect("button-press-event", self.on_mouse)
         self.peak = -math.inf
+
+    def get_style_context(self):
+        return self.label.get_style_context()
 
     def on_mouse(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS:
@@ -54,29 +55,35 @@ class AbspeakWidget(Gtk.EventBox):
                 context = self.get_style_context()
                 context.remove_class('over_zero')
                 context.remove_class('is_nan')
+
             if event.button == 1 or event.button == 3:
                 self.emit("reset")
             elif event.button == 2:
                 adjust = -self.peak
+
                 if abs(adjust) < 30:    # we better don't adjust more than +- 30 dB
                     self.emit("volume-adjust", adjust)
 
     def set_peak(self, peak):
         self.peak = peak
+        context = self.get_style_context()
+
         if math.isnan(peak):
-            self.get_style_context().add_class('is_nan')
+            context.remove_class('over_zero')
+            context.add_class('is_nan')
             self.label.set_text("NaN")
         else:
             text = "%+.1f" % peak
+            context.remove_class('is_nan')
 
             if peak > 0:
-                self.get_style_context().add_class('over_zero')
-            else:
-                pass
+                context.add_class('over_zero')
 
             self.label.set_text(text)
+
 
 GObject.signal_new("reset", AbspeakWidget,
                    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
 GObject.signal_new("volume-adjust", AbspeakWidget,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [GObject.TYPE_FLOAT])
+                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None,
+                   [GObject.TYPE_FLOAT])

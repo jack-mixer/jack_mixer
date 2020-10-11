@@ -277,12 +277,13 @@ class JackMixer(SerializedObject):
         self.create_mixer(client_name, with_nsm=True)
         self.current_filename = path + '.xml'
         if os.path.isfile(self.current_filename):
-            f = open(self.current_filename, 'r')
-            self.load_from_xml(f, from_nsm=True)
-            f.close()
-        else:
-            f = open(self.current_filename, 'w')
-            f.close()
+            try:
+                with open(self.current_filename, 'r') as fp:
+                    self.load_from_xml(fp, from_nsm=True)
+            except Exception as exc:
+                # Re-raise with more meaningful error message
+                raise IOError("Error loading settings file '{}': {}".format(
+                              self.current_filename, exc))
 
     def nsm_save_cb(self, path, session_name, client_name):
         self.current_filename = path + '.xml'
@@ -333,14 +334,12 @@ class JackMixer(SerializedObject):
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             try:
-                f = open(filename, 'r')
-                self.load_from_xml(f)
-            except Exception as e:
-                error_dialog(self.window, "Failed loading settings (%s)", e)
+                with open(filename, 'r') as fp:
+                    self.load_from_xml(fp)
+            except Exception as exc:
+                error_dialog(self.window, "Error loading settings file '%s': %s", filename, exc)
             else:
                 self.current_filename = filename
-            finally:
-                f.close()
         dlg.destroy()
 
     def on_save_cb(self, *args):
@@ -894,20 +893,19 @@ def main():
     try:
         mixer = JackMixer(args.client_name)
     except Exception as e:
-        error_dialog(None, "Mixer creation failed (%s).", e)
+        error_dialog(None, "Mixer creation failed:\n\n%s", e)
         sys.exit(1)
 
     if not mixer.nsm_client and args.config:
-        f = open(args.config)
-        mixer.current_filename = args.config
-
         try:
-            mixer.load_from_xml(f)
-        except Exception as e:
-            error_dialog(mixer.window, "Failed loading settings (%s).", e)
+            with open(args.config) as fp:
+                mixer.load_from_xml(fp)
+        except Exception as exc:
+            error_dialog(mixer.window, "Error loading settings file '%s': %s", args.config, exc)
+        else:
+            mixer.current_filename = args.config
 
         mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)), 300)
-        f.close()
 
     mixer.main()
 

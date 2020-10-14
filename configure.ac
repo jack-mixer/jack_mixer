@@ -20,7 +20,7 @@
 #
 
 AC_PREREQ(2.61)
-AC_INIT(jack_mixer, 13)
+AC_INIT(jack_mixer, 14)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11 foreign no-define tar-ustar no-dist-gzip dist-xz])

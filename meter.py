@@ -20,7 +20,6 @@ import logging
 import cairo
 from gi.repository import Gtk
 from gi.repository import Gdk
-from gi.repository import GObject
 
 
 log = logging.getLogger(__name__)
@@ -28,26 +27,30 @@ log = logging.getLogger(__name__)
 
 class MeterWidget(Gtk.DrawingArea):
     def __init__(self, scale):
-        GObject.GObject.__init__(self)
-
+        log.debug("Creating MeterWidget for scale %s", scale)
+        super().__init__()
         self.scale = scale
-
-        self.connect("draw", self.draw)
-        self.connect("size-allocate", self.on_size_allocate)
-
         self.color_bg = Gdk.Color(0,0,0)
         self.color_value = None
         self.color_mark = Gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
         self.width = 0
         self.height = 0
         self.cache_surface = None
+        self.min_width = 15
+        self.preferred_width = 25
+        self.preferred_height = 200
 
-    def get_preferred_width(self):
-        log.debug('get_preferred_width called')
-        return 2
+        self.widen()
 
-    def get_preferred_height(self):
-        return 200
+        self.connect("draw", self.draw)
+        self.connect("size-allocate", self.on_size_allocate)
+
+    def narrow(self):
+        return self.widen(False)
+
+    def widen(self, flag=True):
+        self.set_size_request(self.preferred_width if flag else self.min_width,
+                              self.preferred_height)
 
     def set_color(self, color):
         self.color_value = color
@@ -56,7 +59,6 @@ class MeterWidget(Gtk.DrawingArea):
 
     def on_expose(self, widget, event):
         cairo_ctx = widget.window.cairo_create()
-
         # set a clip region for the expose event
         cairo_ctx.rectangle(event.area.x, event.area.y, event.area.width, event.area.height)
         cairo_ctx.clip()
@@ -70,11 +72,6 @@ class MeterWidget(Gtk.DrawingArea):
         self.height = float(allocation.height)
         self.font_size = 10
         self.cache_surface = None
-
-    def on_size_request(self, widget, requisition):
-        log.debug("size-request, %u x %u", requisition.width, requisition.height)
-        requisition.width = 20
-        return
 
     def invalidate_all(self):
         self.queue_draw_area(0, 0, int(self.width), int(self.height))
@@ -96,6 +93,7 @@ class MeterWidget(Gtk.DrawingArea):
             cache_cairo_ctx.select_font_face("Fixed")
             cache_cairo_ctx.set_font_size(self.font_size)
             glyph_width = self.font_size * 3 / 5 # avarage glyph ratio
+
             for mark in self.scale.get_marks():
                 mark_position = int(self.height * (1 - mark.scale))
                 cache_cairo_ctx.move_to(0, mark_position)
@@ -104,6 +102,7 @@ class MeterWidget(Gtk.DrawingArea):
                 x_correction = self.width / 2 - glyph_width * len(mark.text) / 2
                 cache_cairo_ctx.move_to(x_correction, mark_position - 2)
                 cache_cairo_ctx.show_text(mark.text)
+
         cairo_ctx.set_source_surface(self.cache_surface, 0, 0)
         cairo_ctx.paint()
 
@@ -114,6 +113,7 @@ class MeterWidget(Gtk.DrawingArea):
         else:
             height = self.height
             gradient = cairo.LinearGradient(1, 1, width-1, height-1)
+
             if self.scale.scale_id == "K20":
                 gradient.add_color_stop_rgb(0, 1, 0, 0)
                 gradient.add_color_stop_rgb(0.38, 1, 1, 0)
@@ -128,7 +128,9 @@ class MeterWidget(Gtk.DrawingArea):
                 gradient.add_color_stop_rgb(0, 1, 0, 0)
                 gradient.add_color_stop_rgb(0.2, 1, 1, 0)
                 gradient.add_color_stop_rgb(1, 0, 1, 0)
+
             cairo_ctx.set_source(gradient)
+
         cairo_ctx.rectangle(x, self.height * (1 - value), width, self.height * value)
         cairo_ctx.fill()
 
@@ -145,7 +147,7 @@ class MeterWidget(Gtk.DrawingArea):
 
 class MonoMeterWidget(MeterWidget):
     def __init__(self, scale):
-        MeterWidget.__init__(self, scale)
+        super().__init__(scale)
         self.value = 0.0
         self.pk = 0.0
         self.raw_value = 0.0
@@ -159,19 +161,21 @@ class MonoMeterWidget(MeterWidget):
     def set_values(self, pk, value):
         if value == self.raw_value and pk == self.raw_pk:
             return
+
         self.raw_value = value
         self.raw_pk = pk
         old_value = self.value
         old_pk = self.pk
         self.value = self.scale.db_to_scale(value)
         self.pk = self.scale.db_to_scale(pk)
+
         if (abs(old_value-self.value) * self.height) > 0.01 or (abs(old_pk-self.pk) * self.height) > 0.01:
             self.invalidate_all()
 
 
 class StereoMeterWidget(MeterWidget):
     def __init__(self, scale):
-        MeterWidget.__init__(self, scale)
+        super().__init__(scale)
         self.pk_left = 0.0
         self.pk_right = 0.0
 
@@ -191,10 +195,10 @@ class StereoMeterWidget(MeterWidget):
         self.draw_peak(cairo_ctx, self.pk_left, self.width/5.0, self.width/5.0)
         self.draw_peak(cairo_ctx, self.pk_right, self.width/5.0 * 3.0, self.width/5.0)
 
-
     def set_values(self, pk_l, pk_r, left, right):
         if left == self.raw_left and right == self.raw_right and pk_l == self.raw_left_pk and pk_r == self.raw_right_pk:
             return
+
         self.raw_left = left
         self.raw_right = right
         self.raw_left_pk = pk_l

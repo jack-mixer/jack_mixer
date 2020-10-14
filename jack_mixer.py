@@ -217,8 +217,8 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
         edit_menu.append(Gtk.SeparatorMenuItem())
-        edit_menu.append(self.new_menu_item('Shrink Input Channels', self.on_narrow_input_channels_cb, "<Control>minus"))
-        edit_menu.append(self.new_menu_item('Expand Input Channels', self.on_widen_input_channels_cb, "<Control>plus"))
+        edit_menu.append(self.new_menu_item('Shrink Channels', self.on_shrink_channels_cb, "<Control>minus"))
+        edit_menu.append(self.new_menu_item('Expand Channels', self.on_expand_channels_cb, "<Control>plus"))
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         edit_menu.append(self.new_menu_item('_Clear', self.on_channels_clear, "<Control>X"))
@@ -380,12 +380,12 @@ class JackMixer(SerializedObject):
 
         Gtk.main_quit()
 
-    def on_narrow_input_channels_cb(self, widget):
-        for channel in self.channels:
+    def on_shrink_channels_cb(self, widget):
+        for channel in self.channels + self.output_channels:
             channel.narrow()
 
-    def on_widen_input_channels_cb(self, widget):
-        for channel in self.channels:
+    def on_expand_channels_cb(self, widget):
+        for channel in self.channels + self.output_channels:
             channel.widen()
 
     preferences_dialog = None
@@ -799,6 +799,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         width, height = self.window.get_size()
         if self.visible or not from_nsm:
             self.window.show_all()
+
+        if self.output_channels:
+            self.output_channels[-1].volume_digits.select_region(0,0)
+            self.output_channels[-1].slider.grab_focus()
+        elif self.channels:
+            self.channels[-1].volume_digits.select_region(0,0)
+            self.channels[-1].volume_digits.grab_focus()
+
         self.paned.set_position(self.paned_position/self.width*width)
         self.window.resize(self.width, self.height)
 

@@ -178,14 +178,20 @@ class BalanceSlider(Gtk.Scale):
         self.set_adjustment(adjustment)
         self.set_has_origin(False)
         self.set_draw_value(False)
+        self.set_property("has-tooltip", True)
         self._preferred_width = preferred_width
         self._preferred_height = preferred_height
         self._button_down = False
 
-        self.connect('button-press-event', self.on_button_press_event)
-        self.connect('button-release-event', self.on_button_release_event)
+        self.add_mark(-1.0, Gtk.PositionType.TOP)
+        self.add_mark(0.0, Gtk.PositionType.TOP)
+        self.add_mark(1.0, Gtk.PositionType.TOP)
+
+        self.connect("button-press-event", self.on_button_press_event)
+        self.connect("button-release-event", self.on_button_release_event)
         self.connect("motion-notify-event", self.on_motion_notify_event)
         self.connect("scroll-event", self.on_scroll_event)
+        self.connect("query-tooltip", self.on_query_tooltip)
 
     def get_preferred_width(self):
         return self._preferred_width
@@ -223,6 +229,15 @@ class BalanceSlider(Gtk.Scale):
             return True
 
         return False
+
+    def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip, *args):
+        val = int(self.adjustment.get_value() * 50)
+        if val == 0:
+            tooltip.set_text("Center")
+        else:
+            tooltip.set_text("Left: %s / Right: %d" % (50 - val, val + 50))
+
+        return True
 
     def on_scroll_event(self, widget, event):
         delta = self.get_adjustment().get_step_increment()

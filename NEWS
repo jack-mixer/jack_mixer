@@ -1,21 +1,35 @@
 ===========
-Development
+Version 14
 ===========
 
- * Added K20 and K14 scales.
- * When running under NSM, closing the mein window only hides UI and the "Quit"
+ * Changes to channel fader/meter layout and features:
+   * Added K20 and K14 scales.
+   * Added tick marks for left/center/right on balance slider and add tooltip
+     displaying left/right value.
+   * Added maximum width for control group labels. Labels are ellipsized if too
+     long and a tooltip with the full name is added.
+ * Channel add/property dialogs usability improvements:
+   * Remember last used settings for new input/outut channel dialogs (MIDI CCs
+     are always initialized with -1 by default, so they can be auto-assigned).
+   * Channel name is pre-filled in with "Input" or "output" and an
+     auto-incremented number suffix.
+   * Add mnemonics for all input/output channel dialog fields.
+ * When running under NSM, closing the main window only hides UI and the "Quit"
    menu entry is replaced with a "Hide" entry.
  * Added a global option to always ask for confirmation when quitting
    jack_mixer.
  * Allow drag'n'drop to change channel positions.
- * Added ability to shrink/expand width of input channels.
- * Added maximum width for control group labels. Labels are ellipsized if too
-   long and a tooltip with the full name is added.
+ * Added ability to shrink/expand width of input and output channels.
  * The font color of control group labels automatically adapts to their
    background color for better contrast and readability.
- * Fixed some issues with channel moitoring.
+ * Fixed: Ctrl-click on volume fader sets it to 0.0 dbFS, not 1.0.
+ * Fixed: some issues with channel monitoring.
+ * Fixed: don't create empty project file on new NSM session.
+ * Fixed: on project load, give input focus to fader of last added channel and
+   deselect volume entry widget so keyboard input doesn't accidentally change
+   the value.
 
-With contributions from Daniel Sheeler and Christopher Arndt.
+With contributions from Christopher Arndt, Daniel Sheeler and Frédéric Péters.
 
 ==========
 Version 13

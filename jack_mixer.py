@@ -281,25 +281,10 @@ class JackMixer(SerializedObject):
             channel = InputChannel(self, name, stereo, value)
             self.add_channel_precreated(channel)
         except Exception:
-            error_dialog(self.window, "Channel creation failed.")
+            error_dialog(self.window, "Input channel creation failed.")
             return
-        if volume_cc != -1:
-            channel.channel.volume_midi_cc = volume_cc
-        else:
-            channel.channel.autoset_volume_midi_cc()
-        if balance_cc != -1:
-            channel.channel.balance_midi_cc = balance_cc
-        else:
-            channel.channel.autoset_balance_midi_cc()
-        if mute_cc != -1:
-            channel.channel.mute_midi_cc = mute_cc
-        else:
-            channel.channel.autoset_mute_midi_cc()
-        if solo_cc != -1:
-            channel.channel.solo_midi_cc = solo_cc
-        else:
-            channel.channel.autoset_solo_midi_cc()
 
+        channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc, solo_cc)
         return channel
 
     def add_channel_precreated(self, channel):
@@ -332,29 +317,17 @@ class JackMixer(SerializedObject):
         channel.connect('input-channel-order-changed', self.on_input_channel_order_changed)
 
     def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc,
-            display_solo_buttons, color, value):
+                           display_solo_buttons, color, value):
         try:
             channel = OutputChannel(self, name, stereo, value)
             channel.display_solo_buttons = display_solo_buttons
             channel.color = color
             self.add_output_channel_precreated(channel)
         except Exception:
-            error_dialog(self.window, "Channel creation failed")
+            error_dialog(self.window, "Output channel creation failed")
             return
 
-        if volume_cc != -1:
-            channel.channel.volume_midi_cc = volume_cc
-        else:
-            channel.channel.autoset_volume_midi_cc()
-        if balance_cc != -1:
-            channel.channel.balance_midi_cc = balance_cc
-        else:
-            channel.channel.autoset_balance_midi_cc()
-        if mute_cc != -1:
-            channel.channel.mute_midi_cc = mute_cc
-        else:
-            channel.channel.autoset_mute_midi_cc()
-
+        channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc)
         return channel
 
     def add_output_channel_precreated(self, channel):

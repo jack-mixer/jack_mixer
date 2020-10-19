@@ -422,6 +422,48 @@ class Channel(Gtk.VBox, SerializedObject):
                 self.monitor_button.set_active(True)
                 self.monitor_button.handler_unblock_by_func(self.on_monitor_button_toggled)
 
+    def assign_midi_ccs(self, volume_cc, balance_cc, mute_cc, solo_cc=None):
+        try:
+            if volume_cc != -1:
+                self.channel.volume_midi_cc = volume_cc
+            else:
+                volume_cc = self.channel.autoset_volume_midi_cc()
+
+            log.debug("Channel '%s' volume assigned to CC #%s.", self.channel.name, volume_cc)
+        except Exception as exc:
+            log.error("Channel '%s' volume CC assignment failed: %s", self.channel.name, exc)
+
+        try:
+            if balance_cc != -1:
+                self.channel.balance_midi_cc = balance_cc
+            else:
+                balance_cc = self.channel.autoset_balance_midi_cc()
+
+            log.debug("Channel '%s' balance assigned to CC #%s.", self.channel.name, balance_cc)
+        except Exception as exc:
+            log.error("Channel '%s' balance CC assignment failed: %s", self.channel.name, exc)
+
+        try:
+            if mute_cc != -1:
+                self.channel.mute_midi_cc = mute_cc
+            else:
+                mute_cc = self.channel.autoset_mute_midi_cc()
+
+            log.debug("Channel '%s' mute assigned to CC #%s.", self.channel.name, mute_cc)
+        except Exception as exc:
+            log.error("Channel '%s' mute CC assignment failed: %s", self.channel.name, exc)
+
+        if solo_cc is not None:
+            try:
+                if solo_cc != -1:
+                    self.channel.solo_midi_cc = solo_cc
+                else:
+                    solo_cc = self.channel.autoset_solo_midi_cc()
+
+                log.debug("Channel '%s' solo assigned to CC #%s.", self.channel.name, solo_cc)
+            except Exception as exc:
+                log.error("Channel '%s' solo CC assignment failed: %s", self.channel.name, exc)
+
     # ---------------------------------------------------------------------------------------------
     # Channel operations
 

@@ -4,7 +4,7 @@
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
-# Copyright (C) 2009 Frederic Peters <fpeters@0d.be>
+# Copyright (C) 2009-2020 Frederic Peters <fpeters@0d.be> et al.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,14 +82,13 @@ class JackMixer(SerializedObject):
         scale.Linear70dB()
     ]
 
-    # name of settings file that is currently open
-    current_filename = None
-
-    _init_solo_channels = None
-
     def __init__(self, client_name='jack_mixer'):
         self.visible = False
         self.nsm_client = None
+        # name of settings file that is currently open
+        self.current_filename = None
+        self._monitored_channel = None
+        self._init_solo_channels = None
 
         if os.environ.get('NSM_URL'):
             self.nsm_client = NSMClient(
@@ -123,6 +122,19 @@ class JackMixer(SerializedObject):
 
         if with_nsm:
             GLib.timeout_add(200, self.nsm_react)
+
+    def cleanup(self):
+        log.debug("Cleaning jack_mixer.")
+        if not self.mixer:
+            return
+
+        for channel in self.channels:
+            channel.unrealize()
+
+        self.mixer.destroy()
+
+    # ---------------------------------------------------------------------------------------------
+    # UI creation and (de-)initialization
 
     def new_menu_item(self, title, callback=None, accel=None, enabled=True):
         menuitem = Gtk.MenuItem.new_with_mnemonic(title)
@@ -217,12 +229,16 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
         edit_menu.append(Gtk.SeparatorMenuItem())
-        edit_menu.append(self.new_menu_item('Shrink Channels', self.on_shrink_channels_cb, "<Control>minus"))
-        edit_menu.append(self.new_menu_item('Expand Channels', self.on_expand_channels_cb, "<Control>plus"))
+        edit_menu.append(self.new_menu_item('Shrink Channels', self.on_shrink_channels_cb,
+                                            "<Control>minus"))
+        edit_menu.append(self.new_menu_item('Expand Channels', self.on_expand_channels_cb,
+                                            "<Control>plus"))
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         edit_menu.append(self.new_menu_item('_Clear', self.on_channels_clear, "<Control>X"))
         edit_menu.append(Gtk.SeparatorMenuItem())
+
+        self.preferences_dialog = None
         edit_menu.append(self.new_menu_item('_Preferences', self.on_preferences_cb, "<Control>P"))
 
         help_menu = Gtk.Menu()
@@ -253,8 +269,119 @@ class JackMixer(SerializedObject):
         self.hbox_top.pack_start(self.paned, True, True, 0)
         self.paned.pack1(self.scrolled_window, True, False)
         self.paned.pack2(self.scrolled_output, True, False)
+
         self.window.connect("destroy", Gtk.main_quit)
         self.window.connect('delete-event', self.on_delete_event)
+
+    # ---------------------------------------------------------------------------------------------
+    # Channel creation
+
+    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, value):
+        try:
+            channel = InputChannel(self, name, stereo, value)
+            self.add_channel_precreated(channel)
+        except Exception:
+            error_dialog(self.window, "Channel creation failed.")
+            return
+        if volume_cc != -1:
+            channel.channel.volume_midi_cc = volume_cc
+        else:
+            channel.channel.autoset_volume_midi_cc()
+        if balance_cc != -1:
+            channel.channel.balance_midi_cc = balance_cc
+        else:
+            channel.channel.autoset_balance_midi_cc()
+        if mute_cc != -1:
+            channel.channel.mute_midi_cc = mute_cc
+        else:
+            channel.channel.autoset_mute_midi_cc()
+        if solo_cc != -1:
+            channel.channel.solo_midi_cc = solo_cc
+        else:
+            channel.channel.autoset_solo_midi_cc()
+
+        return channel
+
+    def add_channel_precreated(self, channel):
+        frame = Gtk.Frame()
+        frame.add(channel)
+        self.hbox_inputs.pack_start(frame, False, True, 0)
+        channel.realize()
+
+        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
+        self.channel_edit_input_menu.append(channel_edit_menu_item)
+        channel_edit_menu_item.connect("activate", self.on_edit_input_channel, channel)
+        self.channel_edit_input_menu_item.set_sensitive(True)
+
+        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
+        self.channel_remove_input_menu.append(channel_remove_menu_item)
+        channel_remove_menu_item.connect("activate", self.on_remove_input_channel, channel)
+        self.channel_remove_input_menu_item.set_sensitive(True)
+
+        self.channels.append(channel)
+
+        for outputchannel in self.output_channels:
+            channel.add_control_group(outputchannel)
+
+        # create post fader output channel matching the input channel
+        channel.post_fader_output_channel = self.mixer.add_output_channel(
+                        channel.channel.name + ' Out', channel.channel.is_stereo, True)
+        channel.post_fader_output_channel.volume = 0
+        channel.post_fader_output_channel.set_solo(channel.channel, True)
+
+        channel.connect('input-channel-order-changed', self.on_input_channel_order_changed)
+
+    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc,
+            display_solo_buttons, color, value):
+        try:
+            channel = OutputChannel(self, name, stereo, value)
+            channel.display_solo_buttons = display_solo_buttons
+            channel.color = color
+            self.add_output_channel_precreated(channel)
+        except Exception:
+            error_dialog(self.window, "Channel creation failed")
+            return
+
+        if volume_cc != -1:
+            channel.channel.volume_midi_cc = volume_cc
+        else:
+            channel.channel.autoset_volume_midi_cc()
+        if balance_cc != -1:
+            channel.channel.balance_midi_cc = balance_cc
+        else:
+            channel.channel.autoset_balance_midi_cc()
+        if mute_cc != -1:
+            channel.channel.mute_midi_cc = mute_cc
+        else:
+            channel.channel.autoset_mute_midi_cc()
+
+        return channel
+
+    def add_output_channel_precreated(self, channel):
+        frame = Gtk.Frame()
+        frame.add(channel)
+        self.hbox_outputs.pack_end(frame, False, True, 0)
+        self.hbox_outputs.reorder_child(frame, 0)
+        channel.realize()
+
+        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
+        self.channel_edit_output_menu.append(channel_edit_menu_item)
+        channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
+        self.channel_edit_output_menu_item.set_sensitive(True)
+
+        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
+        self.channel_remove_output_menu.append(channel_remove_menu_item)
+        channel_remove_menu_item.connect("activate", self.on_remove_output_channel, channel)
+        self.channel_remove_output_menu_item.set_sensitive(True)
+
+        self.output_channels.append(channel)
+        channel.connect('output-channel-order-changed', self.on_output_channel_order_changed)
+
+    # ---------------------------------------------------------------------------------------------
+    # Signal/event handlers
+
+    # ---------------------------------------------------------------------------------------------
+    # NSM
 
     def nsm_react(self):
         self.nsm_client.reactToMessage()
@@ -294,15 +421,8 @@ class JackMixer(SerializedObject):
     def nsm_exit_cb(self, path, session_name, client_name):
         Gtk.main_quit()
 
-    def on_midi_behavior_mode_changed(self, gui_factory, value):
-        self.mixer.midi_behavior_mode = value
-
-    def on_delete_event(self, widget, event):
-        if self.nsm_client:
-            self.nsm_hide_cb()
-            return True
-
-        return self.on_quit_cb()
+    # ---------------------------------------------------------------------------------------------
+    # POSIX signals
 
     def sighandler(self, signum, frame):
         log.debug("Signal %d received.", signum)
@@ -315,15 +435,52 @@ class JackMixer(SerializedObject):
         else:
             log.warning("Unknown signal %d received.", signum)
 
-    def cleanup(self):
-        log.debug("Cleaning jack_mixer.")
-        if not self.mixer:
-            return
+    # ---------------------------------------------------------------------------------------------
+    # GTK signals
 
-        for channel in self.channels:
-            channel.unrealize()
+    def on_about(self, *args):
+        about = Gtk.AboutDialog()
+        about.set_name('jack_mixer')
+        about.set_program_name('jack_mixer')
+        about.set_copyright('Copyright © 2006-2020\n'
+                            'Nedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler')
+        about.set_license("""\
+jack_mixer is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
 
-        self.mixer.destroy()
+jack_mixer is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
+Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
+        about.set_authors([
+            'Nedko Arnaudov <nedko@arnaudov.name>',
+            'Christopher Arndt <chris@chrisarndt.de>',
+            'Arnout Engelen <arnouten@bzzt.net>',
+            'John Hedges <john@drystone.co.uk>',
+            'Olivier Humbert <trebmuh@tuxfamily.org>',
+            'Sarah Mischke <sarah@spooky-online.de>',
+            'Frédéric Péters <fpeters@0d.be>',
+            'Daniel Sheeler <dsheeler@pobox.com>',
+            'Athanasios Silis <athanasios.silis@gmail.com>',
+        ])
+        about.set_logo_icon_name('jack_mixer')
+        about.set_version(__version__)
+        about.set_website('https://rdio.space/jackmixer/')
+        about.run()
+        about.destroy()
+
+    def on_delete_event(self, widget, event):
+        if self.nsm_client:
+            self.nsm_hide_cb()
+            return True
+
+        return self.on_quit_cb()
 
     def on_open_cb(self, *args):
         dlg = Gtk.FileChooserDialog(title='Open', parent=self.window,
@@ -388,7 +545,9 @@ class JackMixer(SerializedObject):
         for channel in self.channels + self.output_channels:
             channel.widen()
 
-    preferences_dialog = None
+    def on_midi_behavior_mode_changed(self, gui_factory, value):
+        self.mixer.midi_behavior_mode = value
+
     def on_preferences_cb(self, widget):
         if not self.preferences_dialog:
             self.preferences_dialog = PreferencesDialog(self)
@@ -437,24 +596,28 @@ class JackMixer(SerializedObject):
         log.debug('Editing input channel "%s".', channel.channel_name)
         channel.on_channel_properties()
 
-    def remove_channel_edit_input_menuitem_by_label(self, widget, label):
-        if (widget.get_label() == label):
-            self.channel_edit_input_menu.remove(widget)
-
     def on_remove_input_channel(self, widget, channel):
         log.debug('Removing input channel "%s".', channel.channel_name)
+
+        def remove_channel_edit_input_menuitem_by_label(widget, label):
+            if widget.get_label() == label:
+                self.channel_edit_input_menu.remove(widget)
+
         self.channel_remove_input_menu.remove(widget)
         self.channel_edit_input_menu.foreach(
-            self.remove_channel_edit_input_menuitem_by_label,
-            channel.channel_name);
+            remove_channel_edit_input_menuitem_by_label,
+            channel.channel_name)
+
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
+
         for i in range(len(self.channels)):
             if self.channels[i] is channel:
                 channel.unrealize()
                 del self.channels[i]
                 self.hbox_inputs.remove(channel.get_parent())
                 break
+
         if not self.channels:
             self.channel_edit_input_menu_item.set_sensitive(False)
             self.channel_remove_input_menu_item.set_sensitive(False)
@@ -463,43 +626,89 @@ class JackMixer(SerializedObject):
         log.debug('Editing output channel "%s".', channel.channel_name)
         channel.on_channel_properties()
 
-    def remove_channel_edit_output_menuitem_by_label(self, widget, label):
-        if (widget.get_label() == label):
-            self.channel_edit_output_menu.remove(widget)
-
     def on_remove_output_channel(self, widget, channel):
         log.debug('Removing output channel "%s".', channel.channel_name)
+
+        def remove_channel_edit_output_menuitem_by_label(widget, label):
+            if widget.get_label() == label:
+                self.channel_edit_output_menu.remove(widget)
+
         self.channel_remove_output_menu.remove(widget)
         self.channel_edit_output_menu.foreach(
-            self.remove_channel_edit_output_menuitem_by_label,
+            remove_channel_edit_output_menuitem_by_label,
             channel.channel_name);
+
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
+
         for i in range(len(self.channels)):
             if self.output_channels[i] is channel:
                 channel.unrealize()
                 del self.output_channels[i]
                 self.hbox_outputs.remove(channel.get_parent())
                 break
+
         if not self.output_channels:
             self.channel_edit_output_menu_item.set_sensitive(False)
             self.channel_remove_output_menu_item.set_sensitive(False)
 
-    def rename_channels(self, container, parameters):
-        if (container.get_label() == parameters['oldname']):
-            container.set_label(parameters['newname'])
-
     def on_channel_rename(self, oldname, newname):
-        rename_parameters = { 'oldname' : oldname, 'newname' : newname }
-        self.channel_edit_input_menu.foreach(self.rename_channels,
-            rename_parameters)
-        self.channel_edit_output_menu.foreach(self.rename_channels,
-            rename_parameters)
-        self.channel_remove_input_menu.foreach(self.rename_channels,
-            rename_parameters)
-        self.channel_remove_output_menu.foreach(self.rename_channels,
-            rename_parameters)
+        def rename_channels(container, parameters):
+            if container.get_label() == parameters['oldname']:
+                container.set_label(parameters['newname'])
+
+        rename_parameters = {'oldname': oldname, 'newname': newname}
+        self.channel_edit_input_menu.foreach(rename_channels, rename_parameters)
+        self.channel_edit_output_menu.foreach(rename_channels, rename_parameters)
+        self.channel_remove_input_menu.foreach(rename_channels, rename_parameters)
+        self.channel_remove_output_menu.foreach(rename_channels, rename_parameters)
         log.debug('Renaming channel from "%s" to "%s".', oldname, newname)
+
+    def on_input_channel_order_changed(self, widget, source_name, dest_name):
+        self.channels.clear()
+
+        channel_box = self.hbox_inputs
+        frames = channel_box.get_children()
+
+        for f in frames:
+            c = f.get_child()
+            if source_name == c._channel_name:
+                source_frame = f
+                break
+
+        for f in frames:
+            c = f.get_child()
+            if (dest_name == c._channel_name):
+                pos = frames.index(f)
+                channel_box.reorder_child(source_frame, pos)
+                break
+
+        for frame in self.hbox_inputs.get_children():
+            c = frame.get_child()
+            self.channels.append(c)
+
+    def on_output_channel_order_changed(self, widget, source_name, dest_name):
+        self.output_channels.clear()
+        channel_box = self.hbox_outputs
+
+        frames = channel_box.get_children()
+
+        for f in frames:
+            c = f.get_child()
+            if source_name == c._channel_name:
+                 source_frame = f
+                 break
+
+        for f in frames:
+            c = f.get_child()
+            if (dest_name == c._channel_name):
+                pos = len(frames) - 1 - frames.index(f)
+                channel_box.reorder_child(source_frame, pos)
+                break
+
+        for frame in self.hbox_outputs.get_children():
+            c = frame.get_child()
+            self.output_channels.append(c)
 
     def on_channels_clear(self, widget):
         dlg = Gtk.MessageDialog(parent = self.window,
@@ -530,84 +739,6 @@ class JackMixer(SerializedObject):
             self.channel_remove_output_menu_item.set_sensitive(False)
         dlg.destroy()
 
-    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, value):
-        try:
-            channel = InputChannel(self, name, stereo, value)
-            self.add_channel_precreated(channel)
-        except Exception:
-            error_dialog(self.window, "Channel creation failed.")
-            return
-        if volume_cc != -1:
-            channel.channel.volume_midi_cc = volume_cc
-        else:
-            channel.channel.autoset_volume_midi_cc()
-        if balance_cc != -1:
-            channel.channel.balance_midi_cc = balance_cc
-        else:
-            channel.channel.autoset_balance_midi_cc()
-        if mute_cc != -1:
-            channel.channel.mute_midi_cc = mute_cc
-        else:
-            channel.channel.autoset_mute_midi_cc()
-        if solo_cc != -1:
-            channel.channel.solo_midi_cc = solo_cc
-        else:
-            channel.channel.autoset_solo_midi_cc()
-
-        return channel
-
-    def add_channel_precreated(self, channel):
-        frame = Gtk.Frame()
-        frame.add(channel)
-        self.hbox_inputs.pack_start(frame, False, True, 0)
-        channel.realize()
-
-        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
-        self.channel_edit_input_menu.append(channel_edit_menu_item)
-        channel_edit_menu_item.connect("activate", self.on_edit_input_channel, channel)
-        self.channel_edit_input_menu_item.set_sensitive(True)
-
-        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
-        self.channel_remove_input_menu.append(channel_remove_menu_item)
-        channel_remove_menu_item.connect("activate", self.on_remove_input_channel, channel)
-        self.channel_remove_input_menu_item.set_sensitive(True)
-
-        self.channels.append(channel)
-
-        for outputchannel in self.output_channels:
-            channel.add_control_group(outputchannel)
-
-        # create post fader output channel matching the input channel
-        channel.post_fader_output_channel = self.mixer.add_output_channel(
-                        channel.channel.name + ' Out', channel.channel.is_stereo, True)
-        channel.post_fader_output_channel.volume = 0
-        channel.post_fader_output_channel.set_solo(channel.channel, True)
-
-        channel.connect('input-channel-order-changed', self.on_input_channel_order_changed)
-
-    def on_input_channel_order_changed(self, widget, source_name, dest_name):
-        self.channels.clear()
-
-        channel_box = self.hbox_inputs
-        frames = channel_box.get_children()
-
-        for f in frames:
-            c = f.get_child()
-            if source_name == c._channel_name:
-                source_frame = f
-                break
-
-        for f in frames:
-            c = f.get_child()
-            if (dest_name == c._channel_name):
-                pos = frames.index(f)
-                channel_box.reorder_child(source_frame, pos)
-                break
-
-        for frame in self.hbox_inputs.get_children():
-            c = frame.get_child()
-            self.channels.append(c)
-
     def read_meters(self):
         for channel in self.channels:
             channel.read_meter()
@@ -620,76 +751,6 @@ class JackMixer(SerializedObject):
             channel.midi_events_check()
         return True
 
-    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc,
-            display_solo_buttons, color, value):
-        try:
-            channel = OutputChannel(self, name, stereo, value)
-            channel.display_solo_buttons = display_solo_buttons
-            channel.color = color
-            self.add_output_channel_precreated(channel)
-        except Exception:
-            error_dialog(self.window, "Channel creation failed")
-            return
-
-        if volume_cc != -1:
-            channel.channel.volume_midi_cc = volume_cc
-        else:
-            channel.channel.autoset_volume_midi_cc()
-        if balance_cc != -1:
-            channel.channel.balance_midi_cc = balance_cc
-        else:
-            channel.channel.autoset_balance_midi_cc()
-        if mute_cc != -1:
-            channel.channel.mute_midi_cc = mute_cc
-        else:
-            channel.channel.autoset_mute_midi_cc()
-
-        return channel
-
-    def add_output_channel_precreated(self, channel):
-        frame = Gtk.Frame()
-        frame.add(channel)
-        self.hbox_outputs.pack_end(frame, False, True, 0)
-        self.hbox_outputs.reorder_child(frame, 0)
-        channel.realize()
-
-        channel_edit_menu_item = Gtk.MenuItem(label=channel.channel_name)
-        self.channel_edit_output_menu.append(channel_edit_menu_item)
-        channel_edit_menu_item.connect("activate", self.on_edit_output_channel, channel)
-        self.channel_edit_output_menu_item.set_sensitive(True)
-
-        channel_remove_menu_item = Gtk.MenuItem(label=channel.channel_name)
-        self.channel_remove_output_menu.append(channel_remove_menu_item)
-        channel_remove_menu_item.connect("activate", self.on_remove_output_channel, channel)
-        self.channel_remove_output_menu_item.set_sensitive(True)
-
-        self.output_channels.append(channel)
-        channel.connect('output-channel-order-changed', self.on_output_channel_order_changed)
-
-    def on_output_channel_order_changed(self, widget, source_name, dest_name):
-        self.output_channels.clear()
-        channel_box = self.hbox_outputs
-
-        frames = channel_box.get_children()
-
-        for f in frames:
-            c = f.get_child()
-            if source_name == c._channel_name:
-                 source_frame = f
-                 break
-
-        for f in frames:
-            c = f.get_child()
-            if (dest_name == c._channel_name):
-                pos = len(frames) - 1 - frames.index(f)
-                channel_box.reorder_child(source_frame, pos)
-                break
-
-        for frame in self.hbox_outputs.get_children():
-            c = frame.get_child()
-            self.output_channels.append(c)
-
-    _monitored_channel = None
     def get_monitored_channel(self):
         return self._monitored_channel
 
@@ -729,42 +790,8 @@ class JackMixer(SerializedObject):
                 return input_channel
         return None
 
-    def on_about(self, *args):
-        about = Gtk.AboutDialog()
-        about.set_name('jack_mixer')
-        about.set_program_name('jack_mixer')
-        about.set_copyright('Copyright © 2006-2020\nNedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler')
-        about.set_license("""\
-jack_mixer is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2 of the License, or (at your
-option) any later version.
-
-jack_mixer is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
-Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
-        about.set_authors([
-            'Nedko Arnaudov <nedko@arnaudov.name>',
-            'Christopher Arndt <chris@chrisarndt.de>',
-            'Arnout Engelen <arnouten@bzzt.net>',
-            'John Hedges <john@drystone.co.uk>',
-            'Olivier Humbert <trebmuh@tuxfamily.org>',
-            'Sarah Mischke <sarah@spooky-online.de>',
-            'Frédéric Péters <fpeters@0d.be>',
-            'Daniel Sheeler <dsheeler@pobox.com>',
-            'Athanasios Silis <athanasios.silis@gmail.com>',
-        ])
-        about.set_logo_icon_name('jack_mixer')
-        about.set_version(__version__)
-        about.set_website('https://rdio.space/jackmixer/')
-
-        about.run()
-        about.destroy()
+    # ---------------------------------------------------------------------------------------------
+    # Mixer settings (de-)serialization and file handling
 
     def save_to_xml(self, file):
         log.debug("Saving to XML...")
@@ -821,7 +848,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
             if input_channel.channel.solo:
                 solo_channels.append(input_channel)
         if solo_channels:
-            object_backend.add_property('solo_channels', '|'.join([x.channel.name for x in solo_channels]))
+            object_backend.add_property('solo_channels',
+                                        '|'.join([x.channel.name for x in solo_channels]))
         object_backend.add_property('visible', '%s' % str(self.visible))
 
     def unserialize_property(self, name, value):
@@ -863,6 +891,9 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
     def serialization_name(self):
         return "jack_mixer"
 
+    # ---------------------------------------------------------------------------------------------
+    # Main program loop
+
     def main(self):
         if not self.mixer:
             return
@@ -880,6 +911,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
         Gtk.main()
 
+
 def error_dialog(parent, msg, *args):
     log.exception(msg, *args)
     err = Gtk.MessageDialog(parent=parent, modal=True, destroy_with_parent=True,
@@ -887,12 +919,25 @@ def error_dialog(parent, msg, *args):
     err.run()
     err.destroy()
 
+
 def main():
     parser = ArgumentParser()
-    parser.add_argument('-c', '--config', metavar="FILE", help='load mixer project configuration from FILE')
-    parser.add_argument('-d', '--debug', action="store_true", help='enable debug logging messages')
-    parser.add_argument('client_name', metavar='NAME', nargs='?', default='jack_mixer',
-                        help='set JACK client name')
+    parser.add_argument(
+        '-c',
+        '--config',
+        metavar="FILE",
+        help='load mixer project configuration from FILE')
+    parser.add_argument(
+        '-d',
+        '--debug',
+        action="store_true",
+        help='enable debug logging messages')
+    parser.add_argument(
+        'client_name',
+        metavar='NAME',
+        nargs='?',
+        default='jack_mixer',
+        help='set JACK client name')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
@@ -918,6 +963,7 @@ def main():
     mixer.main()
 
     mixer.cleanup()
+
 
 if __name__ == "__main__":
     main()

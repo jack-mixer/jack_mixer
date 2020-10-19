@@ -200,19 +200,19 @@ void channel_set_midi_cc_volume_picked_up(jack_mixer_channel_t channel,
 void channel_set_midi_cc_balance_picked_up(jack_mixer_channel_t channel,
   bool status);
 
-void
+int
 channel_autoset_volume_midi_cc(
   jack_mixer_channel_t channel);
 
-void
+int
 channel_autoset_balance_midi_cc(
   jack_mixer_channel_t channel);
 
-void
+int
 channel_autoset_mute_midi_cc(
   jack_mixer_channel_t channel);
 
-void
+int
 channel_autoset_solo_midi_cc(
   jack_mixer_channel_t channel);
 

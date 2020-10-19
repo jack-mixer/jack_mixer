@@ -290,15 +290,19 @@ channel_get_balance_midi_cc(
 static void
 channel_unset_midi_cc_map(
   jack_mixer_channel_t channel,
-  int new_cc) {
+  int new_cc)
+{
   if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index == new_cc) {
     channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index = -1;
-  } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index == new_cc) {
-  channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index = -1;
-  } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index == new_cc) {
-  channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index = -1;
-  } else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_solo_index == new_cc) {
-  channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_solo_index = -1;
+  }
+  else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index == new_cc) {
+    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index = -1;
+  }
+  else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index == new_cc) {
+    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index = -1;
+  }
+  else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_solo_index == new_cc) {
+    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_solo_index = -1;
   }
 }
 
@@ -411,7 +415,7 @@ channel_set_solo_midi_cc(
   return 0;
 }
 
-void
+int
 channel_autoset_volume_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -426,12 +430,13 @@ channel_autoset_volume_midi_cc(
 
       LOG_DEBUG("New channel \"%s\" volume mapped to CC#%i", channel_ptr->name, i);
 
-      break;
+      return i;
     }
   }
+  return -1;
 }
 
-void
+int
 channel_autoset_balance_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -446,12 +451,13 @@ channel_autoset_balance_midi_cc(
 
       LOG_DEBUG("New channel \"%s\" balance mapped to CC#%i", channel_ptr->name, i);
 
-      break;
+      return i;
     }
   }
+  return -1;
 }
 
-void
+int
 channel_autoset_mute_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -466,12 +472,13 @@ channel_autoset_mute_midi_cc(
 
       LOG_DEBUG("New channel \"%s\" mute mapped to CC#%i", channel_ptr->name, i);
 
-      break;
+      return i;
     }
   }
+  return -1;
 }
 
-void
+int
 channel_autoset_solo_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -486,9 +493,10 @@ channel_autoset_solo_midi_cc(
 
       LOG_DEBUG("New channel \"%s\" solo mapped to CC#%i", channel_ptr->name, i);
 
-      break;
+      return i;
     }
   }
+  return -1;
 }
 
 void
@@ -1316,14 +1324,18 @@ process(
       {
         continue;
       }
+
       midi_out_buffer = jack_midi_event_reserve(midi_buffer, i, 3);
+
       if (midi_out_buffer == NULL)
       {
         continue;
       }
+
       midi_out_buffer[0] = 0xB0; /* control change */
       midi_out_buffer[1] = cc_channel_index;
-      midi_out_buffer[2] = (unsigned char)(127*scale_db_to_scale(channel_ptr->midi_scale, value_to_db(channel_ptr->volume_new)));
+      midi_out_buffer[2] = (unsigned char)(127 * scale_db_to_scale(channel_ptr->midi_scale,
+                                           value_to_db(channel_ptr->volume_new)));
 
       LOG_DEBUG(
         "%u: CC#%u <- %u",

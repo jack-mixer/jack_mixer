@@ -920,7 +920,6 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 
     def fill_and_show(self):
         self.fill_ui()
-        self.show()
         self.present()
 
     def add_buttons(self):
@@ -1101,6 +1100,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                         setattr(self.channel.channel, '{}_midi_cc'.format(control), value)
 
         self.hide()
+        return True
 
     def on_entry_name_changed(self, entry):
         sensitive = False
@@ -1196,7 +1196,7 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
             for inputchannel in self.app.channels:
                 inputchannel.update_control_group(self.channel)
 
-        super().on_response_cb(dlg, response_id, *args)
+        return super().on_response_cb(dlg, response_id, *args)
 
 
 class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):

@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
+from random import random
 
 import gi
 from gi.repository import Gtk
@@ -103,9 +104,7 @@ def set_background_color(widget, name, color):
 
 
 def random_color():
-    from random import uniform, seed
-    seed()
-    return Gdk.RGBA(uniform(0, 1), uniform(0, 1), uniform(0, 1), 1)
+    return Gdk.RGBA(random(), random(), random(), 1)
 
 
 class Channel(Gtk.Box, SerializedObject):
@@ -1172,7 +1171,6 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         grid.attach(color_label, 0, 3, 1, 1)
         self.color_chooser_button = Gtk.ColorButton()
         self.color_chooser_button.set_use_alpha(True)
-        self.color_chooser_button.set_rgba(Gdk.RGBA(0, 0, 0, 0))
         color_label.set_mnemonic_widget(self.color_chooser_button)
         grid.attach(self.color_chooser_button, 1, 3, 2, 1)
 
@@ -1218,7 +1216,8 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         self.entry_mute_cc.set_value(-1)
         self.stereo.set_active(values.get('stereo', True))
         self.minus_inf.set_active(values.get('value', False))
-        self.color_chooser_button.set_rgba(values.get('color', Gdk.RGBA(0, 0, 0, 0)))
+        # choose a new random color for each new output channel
+        self.color_chooser_button.set_rgba(random_color())
         self.display_solo_buttons.set_active(values.get('display_solo_buttons', False))
         self.entry_name.grab_focus()
 

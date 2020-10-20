@@ -586,37 +586,61 @@ Channel_remove(ChannelObject *self, PyObject *args)
 static PyObject*
 Channel_autoset_volume_midi_cc(ChannelObject *self, PyObject *args)
 {
+	unsigned int result;
 	if (! PyArg_ParseTuple(args, "")) return NULL;
-	channel_autoset_volume_midi_cc(self->channel);
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	result = channel_autoset_volume_midi_cc(self->channel);
+
+	if (result < 0) {
+		PyErr_SetString(PyExc_RuntimeError, "No free CC for channel volume.");
+	}
+
+	return PyLong_FromLong(result);
 }
 
 static PyObject*
 Channel_autoset_balance_midi_cc(ChannelObject *self, PyObject *args)
 {
+	unsigned int result;
 	if (! PyArg_ParseTuple(args, "")) return NULL;
-	channel_autoset_balance_midi_cc(self->channel);
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	result = channel_autoset_balance_midi_cc(self->channel);
+
+	if (result < 0) {
+		PyErr_SetString(PyExc_RuntimeError, "No free CC for channel balance.");
+	}
+
+	return PyLong_FromLong(result);
 }
 
 static PyObject*
 Channel_autoset_mute_midi_cc(ChannelObject *self, PyObject *args)
 {
+	unsigned int result;
 	if (! PyArg_ParseTuple(args, "")) return NULL;
-	channel_autoset_mute_midi_cc(self->channel);
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	result = channel_autoset_mute_midi_cc(self->channel);
+
+	if (result < 0) {
+		PyErr_SetString(PyExc_RuntimeError, "No free CC for channel mute.");
+	}
+
+	return PyLong_FromLong(result);
 }
 
 static PyObject*
 Channel_autoset_solo_midi_cc(ChannelObject *self, PyObject *args)
 {
+	unsigned int result;
 	if (! PyArg_ParseTuple(args, "")) return NULL;
-	channel_autoset_solo_midi_cc(self->channel);
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	result = channel_autoset_solo_midi_cc(self->channel);
+
+	if (result < 0) {
+		PyErr_SetString(PyExc_RuntimeError, "No free CC channel solo.");
+	}
+
+	return PyLong_FromLong(result);
 }
 
 static PyMethodDef channel_methods[] = {
@@ -1000,7 +1024,7 @@ Mixer_set_midi_behavior_mode(MixerObject *self, PyObject *value, void *closure)
 {
 	int mode;
 	unsigned int result;
-	
+
 	mode = PyLong_AsLong(value);
 	result = set_midi_behavior_mode(self->mixer, mode);
 	if (result == 0) {
@@ -1146,10 +1170,10 @@ PyMODINIT_FUNC PyInit_jack_mixer_c(void)
 		return NULL;
 	if (PyType_Ready(&ScaleType) < 0)
 		return NULL;
-		
+
 	m = PyModule_Create(&moduledef);
 	//m = Py_InitModule3("jack_mixer_c", jack_mixer_methods, "module doc");
-	
+
 	Py_INCREF(&MixerType);
 	PyModule_AddObject(m, "Mixer", (PyObject*)&MixerType);
 	Py_INCREF(&ChannelType);
@@ -1158,7 +1182,7 @@ PyMODINIT_FUNC PyInit_jack_mixer_c(void)
 	PyModule_AddObject(m, "OutputChannel", (PyObject*)&OutputChannelType);
 	Py_INCREF(&ScaleType);
 	PyModule_AddObject(m, "Scale", (PyObject*)&ScaleType);
-	
+
 	return m;
 }
 

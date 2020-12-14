@@ -45,7 +45,7 @@ usage()
 
 	printf("Usage:\n");
 	printf("\tjack_mix_box [ -n|--name <jack client name> ] [ -s|--stereo ] [ -p|--pickup ] [ -v|--volume <initial vol> ] MIDI_CC_1 MIDI_CC_2 ...\n");
-	printf("\tsend SIGUSR1 to the process to have the current columes reported per input channel\n\n");
+	printf("\tsend SIGUSR1 to the process to have the current volumes reported per input channel\n\n");
 }
 
 void

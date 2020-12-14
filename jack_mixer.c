@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <math.h>
 #include <jack/jack.h>
 #if defined(HAVE_JACK_MIDI)
@@ -43,17 +44,6 @@
 
 #include "jack_compat.h"
 
-#define VOLUME_TRANSITION_SECONDS 0.01
-
-#define PEAK_FRAMES_CHUNK 4800
-
-// we don't know how much to allocate, but we don't want to wait with
-// allocating until we're in the process() callback, so we just take a
-// fairly big chunk: 4 periods per buffer, 4096 samples per period.
-// (not sure if the '*4' is needed)
-#define MAX_BLOCK_SIZE (4 * 4096)
-
-#define FLOAT_EXISTS(x) (!((x) - (x)))
 struct kmeter {
   float          _z1;          // filter state
   float          _z2;          // filter state
@@ -67,8 +57,7 @@ struct kmeter {
   float   _omega;       // ballistics filter constant.
 };
 
-struct channel
-{
+struct channel {
   struct jack_mixer * mixer_ptr;
   char * name;
   bool stereo;
@@ -105,22 +94,22 @@ struct channel
   jack_default_audio_sample_t * prefader_frames_left;
   jack_default_audio_sample_t * prefader_frames_right;
 
-  bool NaN_detected;
-
-  int midi_cc_volume_index;
-  int midi_cc_balance_index;
-  int midi_cc_mute_index;
-  int midi_cc_solo_index;
-  bool midi_cc_volume_picked_up;
-  bool midi_cc_balance_picked_up;
-
   jack_default_audio_sample_t * left_buffer_ptr;
   jack_default_audio_sample_t * right_buffer_ptr;
 
+  bool NaN_detected;
+
+  int8_t midi_cc_volume_index;
+  int8_t midi_cc_balance_index;
+  int8_t midi_cc_mute_index;
+  int8_t midi_cc_solo_index;
+  bool midi_cc_volume_picked_up;
+  bool midi_cc_balance_picked_up;
+
   bool midi_in_got_events;
+  int midi_out_has_events;
   void (*midi_change_callback) (void*);
   void *midi_change_callback_data;
-  int midi_out_has_events;
 
   jack_mixer_scale_t midi_scale;
 };
@@ -135,8 +124,7 @@ struct output_channel {
   bool prefader;
 };
 
-struct jack_mixer
-{
+struct jack_mixer {
   pthread_mutex_t mutex;
   jack_client_t * jack_client;
   GSList *input_channels_list;
@@ -145,13 +133,14 @@ struct jack_mixer
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
-  int last_midi_channel;
+  int8_t last_midi_cc;
   enum midi_behavior_mode midi_behavior;
 
   struct channel* midi_cc_map[128];
 };
 
-static jack_mixer_output_channel_t create_output_channel(
+static jack_mixer_output_channel_t
+create_output_channel(
   jack_mixer_t mixer,
   const char * channel_name,
   bool stereo,
@@ -162,6 +151,10 @@ update_channel_buffers(
   struct channel * channel_ptr,
   jack_nframes_t nframes);
 
+static void
+unset_midi_cc_mapping(
+  struct jack_mixer * mixer,
+  int8_t cc);
 
 float
 value_to_db(
@@ -179,26 +172,36 @@ float
 db_to_value(
   float db)
 {
-  return powf(10.0, db/20.0);
+  return powf(10.0, db / 20.0);
 }
 
-double interpolate(double start, double end, int step, int steps) {
+double
+interpolate(
+  double start,
+  double end,
+  int step,
+  int steps)
+{
   double ret;
   double frac = 0.01;
   LOG_DEBUG("%f -> %f, %d", start, end, step);
   if (start <= 0) {
     if (step <= frac * steps) {
       ret = frac * end * step / steps;
-    } else {
+    }
+    else {
       ret = db_to_value(value_to_db(frac * end) + (value_to_db(end) - value_to_db(frac * end)) * step / steps);;
     }
-  } else if (end <= 0) {
-      if (step >= (1 - frac) * steps) {
-        ret = frac * start - frac * start * step / steps;
-      } else {
-        ret = db_to_value(value_to_db(start) + (value_to_db(frac * start) - value_to_db(start)) * step / steps);
-      }
-    } else {
+  }
+  else if (end <= 0) {
+    if (step >= (1 - frac) * steps) {
+      ret = frac * start - frac * start * step / steps;
+    }
+    else {
+      ret = db_to_value(value_to_db(start) + (value_to_db(frac * start) - value_to_db(start)) * step / steps);
+    }
+  }
+  else {
     ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
   }
   LOG_DEBUG("interpolate: %f", ret);
@@ -280,43 +283,56 @@ channel_is_stereo(
   return channel_ptr->stereo;
 }
 
-int
+int8_t
 channel_get_balance_midi_cc(
   jack_mixer_channel_t channel)
 {
   return channel_ptr->midi_cc_balance_index;
 }
 
+/*
+ * Remove assignment for given MIDI CC
+ *
+ * This is an internal (static) function
+ */
 static void
-channel_unset_midi_cc_map(
-  jack_mixer_channel_t channel,
-  int new_cc)
+unset_midi_cc_mapping(
+  struct jack_mixer * mixer,
+  int8_t cc)
 {
-  if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index == new_cc) {
-    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_volume_index = -1;
+  struct channel *channel = mixer->midi_cc_map[cc];
+  if (!channel) {
+    return;
   }
-  else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index == new_cc) {
-    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_balance_index = -1;
+
+  if (channel->midi_cc_volume_index == cc) {
+    channel->midi_cc_volume_index = -1;
   }
-  else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index == new_cc) {
-    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_mute_index = -1;
+  else if (channel->midi_cc_balance_index == cc) {
+    channel->midi_cc_balance_index = -1;
   }
-  else if (channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_solo_index == new_cc) {
-    channel_ptr->mixer_ptr->midi_cc_map[new_cc]->midi_cc_solo_index = -1;
+  else if (channel->midi_cc_mute_index == cc) {
+    channel->midi_cc_mute_index = -1;
   }
+  else if (channel->midi_cc_solo_index == cc) {
+    channel->midi_cc_solo_index = -1;
+  }
+
+  mixer->midi_cc_map[cc] = NULL;
 }
 
 unsigned int
 channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
-  int new_cc)
+  int8_t new_cc)
 {
   if (new_cc < 0 || new_cc > 127) {
     return 2; /* error: outside limit CC */
   }
-  if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
-    channel_unset_midi_cc_map(channel, new_cc);
-  }
+
+  // remove previous assignment for this CC
+  unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
+  // remove previous balance CC mapped to this channel (if any)
   if (channel_ptr->midi_cc_balance_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
   }
@@ -325,7 +341,7 @@ channel_set_balance_midi_cc(
   return 0;
 }
 
-int
+int8_t
 channel_get_volume_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -334,14 +350,16 @@ channel_get_volume_midi_cc(
 
 unsigned int
 channel_set_volume_midi_cc(
-  jack_mixer_channel_t channel, int new_cc)
+  jack_mixer_channel_t channel,
+  int8_t new_cc)
 {
   if (new_cc< 0 || new_cc > 127) {
     return 2; /* error: outside limit CC */
   }
-  if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
-    channel_unset_midi_cc_map(channel, new_cc);
-  }
+
+  // remove previous assignment for this CC
+  unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
+  // remove previous volume CC mapped to this channel (if any)
   if (channel_ptr->midi_cc_volume_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_volume_index] = NULL;
   }
@@ -350,7 +368,7 @@ channel_set_volume_midi_cc(
   return 0;
 }
 
-int
+int8_t
 channel_get_mute_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -360,15 +378,15 @@ channel_get_mute_midi_cc(
 unsigned int
 channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
-  int new_cc)
+  int8_t new_cc)
 {
   if (new_cc < 0 || new_cc > 127) {
     return 2; /* error: outside limit CC */
   }
-  if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
-     channel_unset_midi_cc_map(channel, new_cc);
-  }
 
+  // remove previous assignment for this CC
+  unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
+  // remove previous mute CC mapped to this channel (if any)
   if (channel_ptr->midi_cc_mute_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] = NULL;
   }
@@ -377,20 +395,26 @@ channel_set_mute_midi_cc(
   return 0;
 }
 
-int
+int8_t
 channel_get_solo_midi_cc(
   jack_mixer_channel_t channel)
 {
   return channel_ptr->midi_cc_solo_index;
 }
 
-void channel_set_midi_cc_volume_picked_up(jack_mixer_channel_t channel, bool status)
+void
+channel_set_midi_cc_volume_picked_up(
+  jack_mixer_channel_t channel,
+  bool status)
 {
   LOG_DEBUG("Setting channel %s volume picked up to %d", channel_ptr->name, status);
   channel_ptr->midi_cc_volume_picked_up = status;
 }
 
-void channel_set_midi_cc_balance_picked_up(jack_mixer_channel_t channel, bool status)
+void
+channel_set_midi_cc_balance_picked_up(
+  jack_mixer_channel_t channel,
+  bool status)
 {
   LOG_DEBUG("Setting channel %s balance picked up to %d", channel_ptr->name, status);
   channel_ptr->midi_cc_balance_picked_up = status;
@@ -399,14 +423,15 @@ void channel_set_midi_cc_balance_picked_up(jack_mixer_channel_t channel, bool st
 unsigned int
 channel_set_solo_midi_cc(
   jack_mixer_channel_t channel,
-  int new_cc)
+  int8_t new_cc)
 {
   if (new_cc < 0 || new_cc > 127) {
     return 2; /* error: outside limit CC */
   }
-  if (channel_ptr->mixer_ptr->midi_cc_map[new_cc] != NULL) {
-    channel_unset_midi_cc_map(channel, new_cc);
-  }
+
+  // remove previous assignment for this CC
+  unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
+  // remove previous solo CC mapped to this channel (if any)
   if (channel_ptr->midi_cc_solo_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] = NULL;
   }
@@ -423,7 +448,7 @@ channel_autoset_volume_midi_cc(
 
   for (int i = 11 ; i < 128 ; i++)
   {
-    if (mixer_ptr->midi_cc_map[i] == NULL)
+    if (!mixer_ptr->midi_cc_map[i])
     {
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_volume_index = i;
@@ -444,7 +469,7 @@ channel_autoset_balance_midi_cc(
 
   for (int i = 11; i < 128 ; i++)
   {
-    if (mixer_ptr->midi_cc_map[i] == NULL)
+    if (!mixer_ptr->midi_cc_map[i])
     {
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_balance_index = i;
@@ -465,7 +490,7 @@ channel_autoset_mute_midi_cc(
 
   for (int i = 11; i < 128 ; i++)
   {
-    if (mixer_ptr->midi_cc_map[i] == NULL)
+    if (!mixer_ptr->midi_cc_map[i])
     {
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_mute_index = i;
@@ -486,7 +511,7 @@ channel_autoset_solo_midi_cc(
 
   for (int i = 11; i < 128 ; i++)
   {
-    if (mixer_ptr->midi_cc_map[i] == NULL)
+    if (!mixer_ptr->midi_cc_map[i])
     {
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_solo_index = i;
@@ -607,15 +632,21 @@ channel_volume_write(
   double volume)
 {
   assert(channel_ptr);
+  double value = db_to_value(volume);
   /*If changing volume and find we're in the middle of a previous transition,
    *then set current volume to place in transition to avoid a jump.*/
   if (channel_ptr->volume_new != channel_ptr->volume) {
-    channel_ptr->volume = interpolate(channel_ptr->volume, channel_ptr->volume_new, channel_ptr->volume_idx,
-     channel_ptr->num_volume_transition_steps);
+    channel_ptr->volume = interpolate(channel_ptr->volume,
+                                      channel_ptr->volume_new,
+                                      channel_ptr->volume_idx,
+                                      channel_ptr->num_volume_transition_steps);
   }
   channel_ptr->volume_idx = 0;
-  channel_ptr->volume_new = db_to_value(volume);
-  channel_ptr->midi_out_has_events |= CHANNEL_VOLUME;
+  if (channel_ptr->volume_new != value) {
+    channel_ptr->midi_out_has_events |= CHANNEL_VOLUME;
+  }
+  channel_ptr->volume_new = value;
+  LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, value);
 }
 
 double
@@ -627,7 +658,8 @@ channel_volume_read(
 }
 
 void
-channels_volumes_read(jack_mixer_t mixer_ptr)
+channels_volumes_read(
+  jack_mixer_t mixer_ptr)
 {
     GSList *node_ptr;
     struct channel *pChannel;
@@ -653,8 +685,11 @@ channel_balance_write(
       channel_ptr->num_volume_transition_steps;
   }
   channel_ptr->balance_idx = 0;
+  if (channel_ptr->balance_new != balance) {
+    channel_ptr->midi_out_has_events |= CHANNEL_BALANCE;
+  }
   channel_ptr->balance_new = balance;
-  channel_ptr->midi_out_has_events |= CHANNEL_BALANCE;
+  LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, balance);
 }
 
 double
@@ -692,16 +727,22 @@ void
 channel_out_mute(
   jack_mixer_channel_t channel)
 {
-  channel_ptr->out_mute = true;
-  channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
+  if (!channel_ptr->out_mute) {
+    channel_ptr->out_mute = true;
+    channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
+    LOG_DEBUG("\"%s\" muted", channel_ptr->name);
+  }
 }
 
 void
 channel_out_unmute(
   jack_mixer_channel_t channel)
 {
-  channel_ptr->out_mute = false;
-  channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
+  if (channel_ptr->out_mute) {
+    channel_ptr->out_mute = false;
+    channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
+    LOG_DEBUG("\"%s\" un-muted", channel_ptr->name);
+  }
 }
 
 bool
@@ -719,6 +760,7 @@ channel_solo(
     return;
   channel_ptr->mixer_ptr->soloed_channels = g_slist_prepend(channel_ptr->mixer_ptr->soloed_channels, channel);
   channel_ptr->midi_out_has_events |= CHANNEL_SOLO;
+  LOG_DEBUG("\"%s\" soloed", channel_ptr->name);
 }
 
 void
@@ -729,6 +771,7 @@ channel_unsolo(
     return;
   channel_ptr->mixer_ptr->soloed_channels = g_slist_remove(channel_ptr->mixer_ptr->soloed_channels, channel);
   channel_ptr->midi_out_has_events |= CHANNEL_SOLO;
+  LOG_DEBUG("\"%s\" un-soloed", channel_ptr->name);
 }
 
 bool
@@ -810,9 +853,11 @@ mix_one(
       for (i = start ; i < end ; i++)
       {
         if (! output_mix_channel->prefader &&
-         g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL) {
+            g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL)
+        {
           frame_left = channel_ptr->frames_left[i-start];
-        } else {
+        }
+        else {
           frame_left = channel_ptr->prefader_frames_left[i-start];
         }
         if (frame_left == NAN)
@@ -821,9 +866,11 @@ mix_one(
         if (mix_channel->stereo)
         {
           if (! output_mix_channel->prefader &&
-              g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL) {
+              g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL)
+          {
             frame_right = channel_ptr->frames_right[i-start];
-          } else {
+          }
+          else {
             frame_right = channel_ptr->prefader_frames_right[i-start];
           }
           if (frame_right == NAN)
@@ -847,7 +894,7 @@ mix_one(
       float balance_new = mix_channel->balance_new;
       float bal = balance;
       if (volume != volume_new) {
-        vol = interpolate(volume, volume_new,  mix_channel->volume_idx, steps);
+        vol = interpolate(volume, volume_new, mix_channel->volume_idx, steps);
       }
       if (balance != balance_new) {
         bal = mix_channel->balance_idx * (balance_new - balance) / steps + balance;
@@ -859,11 +906,13 @@ mix_one(
         if (bal > 0) {
           vol_l = vol * (1 - bal);
           vol_r = vol;
-        } else {
+        }
+        else {
           vol_l = vol;
           vol_r = vol * (1 + bal);
         }
-      } else {
+      }
+      else {
         vol_l = vol * (1 - bal);
         vol_r = vol * (1 + bal);
       }
@@ -1014,11 +1063,13 @@ calc_channel_frames(
       if (bal > 0) {
         vol_l = vol * (1 - bal);
         vol_r = vol;
-      } else {
+      }
+      else {
         vol_l = vol;
         vol_r = vol * (1 + bal);
       }
-    } else {
+    }
+    else {
       vol_l = vol * (1 - bal);
       vol_r = vol * (1 + bal);
     }
@@ -1145,9 +1196,10 @@ mix(
         if (jack_port_connected(channel_ptr->port_left) == 0 &&
             jack_port_connected(channel_ptr->port_right) == 0)
           continue;
-      } else {
-         if (jack_port_connected(channel_ptr->port_left) == 0)
-           continue;
+      }
+      else {
+        if (jack_port_connected(channel_ptr->port_left) == 0)
+          continue;
       }
     }
 
@@ -1183,8 +1235,9 @@ process(
   jack_midi_event_t in_event;
   unsigned char* midi_out_buffer;
   void * midi_buffer;
-  signed char byte;
-  unsigned int cc_channel_index;
+  double volume, balance;
+  uint8_t cc_channel_index;
+  uint8_t cc_num, cc_val, cur_cc_val;
 #endif
 
   for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
@@ -1218,93 +1271,89 @@ process(
 
     assert(in_event.time < nframes);
 
-    LOG_DEBUG(
-      "%u: CC#%u -> %u",
-      (unsigned int)(in_event.buffer[0]),
-      (unsigned int)in_event.buffer[1],
-      (unsigned int)in_event.buffer[2]);
+    cc_num = (uint8_t)(in_event.buffer[1] & 0x7F);
+    cc_val = (uint8_t)(in_event.buffer[2] & 0x7F);
+    mixer_ptr->last_midi_cc = (int8_t)cc_num;
 
-    mixer_ptr->last_midi_channel = (int)in_event.buffer[1];
-    channel_ptr = mixer_ptr->midi_cc_map[in_event.buffer[1]];
+    LOG_DEBUG("%u: CC#%u -> %u", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
 
-    /* if we have mapping for particular CC and MIDI scale is set for corresponding channel */
-    if (channel_ptr != NULL && channel_ptr->midi_scale != NULL)
+    /* do we have a mapping for particular CC? */
+    channel_ptr = mixer_ptr->midi_cc_map[cc_num];
+    if (channel_ptr)
     {
-      if (channel_ptr->midi_cc_balance_index == (char)in_event.buffer[1])
+      if (channel_ptr->midi_cc_balance_index == cc_num)
       {
-        byte = in_event.buffer[2];
-        if (byte == 0)
-        {
-          byte = 1;
+        if (cc_val < 63) {
+          balance = MAP(cc_val, 0.0, 63.0, -1.0, -0.015625);
         }
-        byte -= 64;
-        int current_midi = (int)63 * channel_ptr->balance + 64;
-        current_midi = current_midi == 1 ? 0 : current_midi;
+        else {
+          balance = MAP(cc_val, 64.0, 127.0, 0.0, 1.0);
+        }
         if (mixer_ptr->midi_behavior == Pick_Up &&
-         !channel_ptr->midi_cc_balance_picked_up) {
-          if (in_event.buffer[2] == current_midi) {
-            channel_set_midi_cc_balance_picked_up(channel_ptr, true);
-          }
+            !channel_ptr->midi_cc_balance_picked_up &&
+            channel_balance_read(channel_ptr) - balance < BALANCE_PICKUP_THRESHOLD)
+        {
+          channel_set_midi_cc_balance_picked_up(channel_ptr, true);
         }
         if ((mixer_ptr->midi_behavior == Pick_Up &&
-         channel_ptr->midi_cc_balance_picked_up) ||
-         mixer_ptr->midi_behavior == Jump_To_Value) {
-          if (channel_ptr->balance != channel_ptr->balance_new) {
-            channel_ptr->balance = channel_ptr->balance + channel_ptr->balance_idx *
-             (channel_ptr->balance_new - channel_ptr->balance) /
-            channel_ptr->num_volume_transition_steps;
-          }
-          channel_ptr->balance_idx = 0;
-          channel_ptr->balance_new = (float)byte / 63;
-          LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, channel_ptr->balance_new);
+            channel_ptr->midi_cc_balance_picked_up) ||
+            mixer_ptr->midi_behavior == Jump_To_Value)
+        {
+          channel_balance_write(channel_ptr, balance);
+
         }
       }
-      else if (channel_ptr->midi_cc_volume_index == in_event.buffer[1])
+      else if (channel_ptr->midi_cc_volume_index == cc_num)
       {
-          int current_midi =  (int)(127 *
-           scale_db_to_scale(channel_ptr->midi_scale,
-           value_to_db(channel_ptr->volume)));
+        // Is a MIDI scale set for corresponding channel?
+        if (channel_ptr->midi_scale) {
+          volume = scale_scale_to_db(channel_ptr->midi_scale,
+                                     (double)cc_val / 127);
           if (mixer_ptr->midi_behavior == Pick_Up &&
-           !channel_ptr->midi_cc_volume_picked_up ) {
-          if (in_event.buffer[2] == current_midi) {
-            channel_set_midi_cc_volume_picked_up(channel_ptr, true);
+              !channel_ptr->midi_cc_volume_picked_up)
+          {
+              // MIDI control in pick-up mode but not picked up yet
+              cur_cc_val = (uint8_t)(127 * scale_db_to_scale(
+                channel_ptr->midi_scale,
+                value_to_db(channel_ptr->volume)));
+              if (cc_val == cur_cc_val)
+              {
+                // Incoming MIDI CC value matches current volume level
+                // --> MIDI control is picked up
+                channel_set_midi_cc_volume_picked_up(channel_ptr, true);
+              }
+          }
+          if ((mixer_ptr->midi_behavior == Pick_Up &&
+              channel_ptr->midi_cc_volume_picked_up) ||
+              mixer_ptr->midi_behavior == Jump_To_Value)
+          {
+            channel_volume_write(channel_ptr, volume);
           }
         }
-        if ((mixer_ptr->midi_behavior == Pick_Up &&
-         channel_ptr->midi_cc_volume_picked_up) ||
-         mixer_ptr->midi_behavior == Jump_To_Value) {
-            if (channel_ptr->volume_new != channel_ptr->volume) {
-              channel_ptr->volume = interpolate(channel_ptr->volume, channel_ptr->volume_new, channel_ptr->volume_idx,
-               channel_ptr->num_volume_transition_steps);
-            }
-            channel_ptr->volume_idx = 0;
-            channel_ptr->volume_new = db_to_value(scale_scale_to_db(channel_ptr->midi_scale,
-             (double)in_event.buffer[2] / 127));
-            LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, channel_ptr->volume_new);
-        }
       }
-      else if (channel_ptr->midi_cc_mute_index == in_event.buffer[1])
+      else if (channel_ptr->midi_cc_mute_index == cc_num)
       {
-        if ((unsigned int)in_event.buffer[2] == 127) {
-          channel_ptr->out_mute = !channel_ptr->out_mute;
+        if (cc_val >= 64) {
+          channel_out_mute(channel_ptr);
         }
-        LOG_DEBUG("\"%s\" out_mute %d", channel_ptr->name, channel_ptr->out_mute);
+        else {
+          channel_out_unmute(channel_ptr);
+        }
+
       }
-      else if (channel_ptr->midi_cc_solo_index == in_event.buffer[1])
+      else if (channel_ptr->midi_cc_solo_index == cc_num)
       {
-        if ((unsigned int)in_event.buffer[2] == 127) {
-          if (channel_is_soloed(channel_ptr)) {
-            channel_unsolo(channel_ptr);
-          } else {
+        if (cc_val >= 64) {
             channel_solo(channel_ptr);
-          }
         }
-        LOG_DEBUG("\"%s\" solo %d", channel_ptr->name, channel_is_soloed(channel_ptr));
+        else {
+            channel_unsolo(channel_ptr);
+        }
       }
       channel_ptr->midi_in_got_events = true;
-      if (channel_ptr->midi_change_callback)
+      if (channel_ptr->midi_change_callback) {
         channel_ptr->midi_change_callback(channel_ptr->midi_change_callback_data);
-
+      }
     }
 
   }
@@ -1317,7 +1366,7 @@ process(
     for (cc_channel_index=0; cc_channel_index<128; cc_channel_index++)
     {
       channel_ptr = mixer_ptr->midi_cc_map[cc_channel_index];
-      if (channel_ptr == NULL || channel_ptr->midi_scale == NULL)
+      if (!channel_ptr)
       {
         continue;
       }
@@ -1325,11 +1374,10 @@ process(
       {
         continue;
       }
-      if (channel_ptr->midi_out_has_events & CHANNEL_VOLUME)
+      if (channel_ptr->midi_out_has_events & CHANNEL_VOLUME && channel_ptr->midi_scale)
       {
           midi_out_buffer = jack_midi_event_reserve(midi_buffer, 0, 3);
-
-          if (midi_out_buffer == NULL)
+          if (!midi_out_buffer)
             continue;
 
           midi_out_buffer[0] = 0xB0; /* control change */
@@ -1346,13 +1394,18 @@ process(
       if (channel_ptr->midi_out_has_events & CHANNEL_BALANCE)
       {
           midi_out_buffer = jack_midi_event_reserve(midi_buffer, 0, 3);
-
-          if (midi_out_buffer == NULL)
+          if (!midi_out_buffer)
             continue;
 
           midi_out_buffer[0] = 0xB0; /* control change */
           midi_out_buffer[1] = channel_ptr->midi_cc_balance_index;
-          midi_out_buffer[2] = (unsigned char)((channel_ptr->balance_new + 1.0) * 0.5 * 127);
+          balance = channel_balance_read(channel_ptr);
+          if (balance < 0.0) {
+            midi_out_buffer[2] = (unsigned char)(MAP(balance, -1.0, -0.015625, 0.0, 63.0) + 0.5);
+          }
+          else {
+            midi_out_buffer[2] = (unsigned char)(MAP(balance, 0.0, 1.0, 64.0, 127.0) + 0.5);
+          }
 
           LOG_DEBUG(
             "%u: CC#%u <- %u",
@@ -1363,8 +1416,7 @@ process(
       if (channel_ptr->midi_out_has_events & CHANNEL_MUTE)
       {
           midi_out_buffer = jack_midi_event_reserve(midi_buffer, 0, 3);
-
-          if (midi_out_buffer == NULL)
+          if (!midi_out_buffer)
             continue;
 
           midi_out_buffer[0] = 0xB0; /* control change */
@@ -1380,8 +1432,7 @@ process(
       if (channel_ptr->midi_out_has_events & CHANNEL_SOLO)
       {
           midi_out_buffer = jack_midi_event_reserve(midi_buffer, 0, 3);
-
-          if (midi_out_buffer == NULL)
+          if (!midi_out_buffer)
             continue;
 
           midi_out_buffer[0] = 0xB0; /* control change */
@@ -1435,7 +1486,7 @@ create(
 
   mixer_ptr->soloed_channels = NULL;
 
-  mixer_ptr->last_midi_channel = -1;
+  mixer_ptr->last_midi_cc = -1;
 
   mixer_ptr->midi_behavior = Jump_To_Value;
 
@@ -1536,18 +1587,18 @@ get_client_name(
   return jack_get_client_name(mixer_ctx_ptr->jack_client);
 }
 
-int
-get_last_midi_channel(
+int8_t
+get_last_midi_cc(
   jack_mixer_t mixer)
 {
-  return mixer_ctx_ptr->last_midi_channel;
+  return mixer_ctx_ptr->last_midi_cc;
 }
 
 unsigned int
-set_last_midi_channel(
+set_last_midi_cc(
   jack_mixer_t mixer,
-  int new_channel) {
-  mixer_ctx_ptr->last_midi_channel = new_channel;
+  int8_t new_cc) {
+  mixer_ctx_ptr->last_midi_cc = new_cc;
   return 0;
 }
 
@@ -1867,7 +1918,14 @@ remove_channels(
 
 #define km ((struct kmeter *) kmeter)
 
-void kmeter_init(jack_mixer_kmeter_t kmeter, int sr, int fsize, float hold, float fall) {
+void
+kmeter_init(
+  jack_mixer_kmeter_t kmeter,
+  int sr,
+  int fsize,
+  float hold,
+  float fall)
+{
   km->_z1 = 0;
   km->_z2 = 0;
   km->_rms = 0;
@@ -1882,7 +1940,13 @@ void kmeter_init(jack_mixer_kmeter_t kmeter, int sr, int fsize, float hold, floa
   km->_fall = powf(10.0f, -0.05f * fall * t);
 }
 
-void kmeter_process(jack_mixer_kmeter_t kmeter, jack_default_audio_sample_t *p, int start, int end) {
+void
+kmeter_process(
+  jack_mixer_kmeter_t kmeter,
+  jack_default_audio_sample_t *p,
+  int start,
+  int end)
+{
   int i;
   jack_default_audio_sample_t s, t, z1, z2;
 
@@ -1914,9 +1978,11 @@ void kmeter_process(jack_mixer_kmeter_t kmeter, jack_default_audio_sample_t *p, 
   if (t > km->_dpk) {
     km->_dpk = t;
     km->_cnt = km->_hold;
-  } else if (km->_cnt) {
+  }
+  else if (km->_cnt) {
     km->_cnt--;
-  } else {
+  }
+  else {
     km->_dpk *= km->_fall;
     km->_dpk += 1e-10f;
   }
@@ -1989,7 +2055,8 @@ output_channel_set_solo(
     if (g_slist_find(output_channel_ptr->soloed_channels, channel) != NULL)
       return;
     output_channel_ptr->soloed_channels = g_slist_prepend(output_channel_ptr->soloed_channels, channel);
-  } else {
+  }
+  else {
     if (g_slist_find(output_channel_ptr->soloed_channels, channel) == NULL)
       return;
     output_channel_ptr->soloed_channels = g_slist_remove(output_channel_ptr->soloed_channels, channel);
@@ -2008,7 +2075,8 @@ output_channel_set_muted(
     if (g_slist_find(output_channel_ptr->muted_channels, channel) != NULL)
       return;
     output_channel_ptr->muted_channels = g_slist_prepend(output_channel_ptr->muted_channels, channel);
-  } else {
+  }
+  else {
     if (g_slist_find(output_channel_ptr->muted_channels, channel) == NULL)
       return;
     output_channel_ptr->muted_channels = g_slist_remove(output_channel_ptr->muted_channels, channel);
@@ -2068,7 +2136,8 @@ output_channel_set_in_prefader(
     if (g_slist_find(output_channel_ptr->prefader_channels, channel) != NULL)
       return;
     output_channel_ptr->prefader_channels = g_slist_prepend(output_channel_ptr->prefader_channels, channel);
-  } else {
+  }
+  else {
     if (g_slist_find(output_channel_ptr->prefader_channels, channel) == NULL)
       return;
     output_channel_ptr->prefader_channels = g_slist_remove(output_channel_ptr->prefader_channels, channel);

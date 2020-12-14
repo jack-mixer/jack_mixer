@@ -423,7 +423,7 @@ Channel_set_balance_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	unsigned int result;
 
 	new_cc = PyLong_AsLong(value);
-	result = channel_set_balance_midi_cc(self->channel, new_cc);
+	result = channel_set_balance_midi_cc(self->channel, (int8_t)new_cc);
 	if (result == 0) {
 		return 0;
 	}
@@ -446,7 +446,7 @@ Channel_set_volume_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	unsigned int result;
 
 	new_cc = PyLong_AsLong(value);
-	result = channel_set_volume_midi_cc(self->channel, new_cc);
+	result = channel_set_volume_midi_cc(self->channel, (int8_t)new_cc);
 	if (result == 0) {
 		return 0;
 	}
@@ -469,7 +469,7 @@ Channel_set_mute_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	unsigned int result;
 
 	new_cc = PyLong_AsLong(value);
-	result = channel_set_mute_midi_cc(self->channel, new_cc);
+	result = channel_set_mute_midi_cc(self->channel, (int8_t)new_cc);
 	if (result == 0) {
 		return 0;
 	}
@@ -492,7 +492,7 @@ Channel_set_solo_midi_cc(ChannelObject *self, PyObject *value, void *closure)
 	unsigned int result;
 
 	new_cc = PyLong_AsLong(value);
-	result = channel_set_solo_midi_cc(self->channel, new_cc);
+	result = channel_set_solo_midi_cc(self->channel, (int8_t)new_cc);
 	if (result == 0) {
 		return 0;
 	}
@@ -994,19 +994,19 @@ Mixer_get_client_name(MixerObject *self, void *closure)
 }
 
 static PyObject*
-Mixer_get_last_midi_channel(MixerObject *self, void *closure)
+Mixer_get_last_midi_cc(MixerObject *self, void *closure)
 {
-	return PyLong_FromLong(get_last_midi_channel(self->mixer));
+	return PyLong_FromLong(get_last_midi_cc(self->mixer));
 }
 
 static int
-Mixer_set_last_midi_channel(MixerObject *self, PyObject *value, void *closure)
+Mixer_set_last_midi_cc(MixerObject *self, PyObject *value, void *closure)
 {
-	int new_channel;
+	int new_cc;
 	unsigned int result;
 
-	new_channel = PyLong_AsLong(value);
-	result = set_last_midi_channel(self->mixer, new_channel);
+	new_cc = PyLong_AsLong(value);
+	result = set_last_midi_cc(self->mixer, (int8_t)new_cc);
 	if (result == 0) {
 		return 0;
 	}
@@ -1038,7 +1038,7 @@ Mixer_set_midi_behavior_mode(MixerObject *self, PyObject *value, void *closure)
 static PyGetSetDef Mixer_getseters[] = {
 	{"channels_count", (getter)Mixer_get_channels_count, NULL,
 		"channels count", NULL},
-	{"last_midi_channel", (getter)Mixer_get_last_midi_channel, (setter)Mixer_set_last_midi_channel,
+	{"last_midi_cc", (getter)Mixer_get_last_midi_cc, (setter)Mixer_set_last_midi_cc,
 		"last midi channel", NULL},
 	{"midi_behavior_mode", (getter)Mixer_get_midi_behavior_mode, (setter)Mixer_set_midi_behavior_mode,
 		"midi behavior mode", NULL},

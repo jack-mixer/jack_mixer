@@ -993,7 +993,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             timeout_label.set_text("This window will close in %d seconds." % window.timeout)
             if window.timeout == 0:
                 window.destroy()
-                entry.set_value(self.mixer.last_midi_channel)
+                entry.set_value(self.mixer.last_midi_cc)
                 return False
             return True
 
@@ -1001,19 +1001,19 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         GObject.timeout_add_seconds(1, close_sense_timeout, window, entry)
 
     def on_sense_midi_volume_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_volume_cc.get_value())
+        self.mixer.last_midi_cc = int(self.entry_volume_cc.get_value())
         self.sense_popup_dialog(self.entry_volume_cc)
 
     def on_sense_midi_balance_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_balance_cc.get_value())
+        self.mixer.last_midi_cc = int(self.entry_balance_cc.get_value())
         self.sense_popup_dialog(self.entry_balance_cc)
 
     def on_sense_midi_mute_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_mute_cc.get_value())
+        self.mixer.last_midi_cc = int(self.entry_mute_cc.get_value())
         self.sense_popup_dialog(self.entry_mute_cc)
 
     def on_sense_midi_solo_clicked(self, *args):
-        self.mixer.last_midi_channel = int(self.entry_solo_cc.get_value())
+        self.mixer.last_midi_cc = int(self.entry_solo_cc.get_value())
         self.sense_popup_dialog(self.entry_solo_cc)
 
     def on_response_cb(self, dlg, response_id, *args):

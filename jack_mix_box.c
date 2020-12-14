@@ -88,14 +88,9 @@ main(int argc, char *argv[])
 		static struct option long_options[] =
 		{
 			{"name",  required_argument, 0, 'n'},
-<<<<<<< HEAD
-			{"help",  required_argument, 0, 'h'},
-			{"stereo",  required_argument, 0, 's'},
-			{"pickup",  required_argument, 0, 'p'},
-=======
 			{"help",  no_argument, 0, 'h'},
+			{"pickup",  required_argument, 0, 'p'},
 			{"stereo",  no_argument, 0, 's'},
->>>>>>> c1974adb62d61b0129557f16d1206f97c3d4994d
 			{"volume",  required_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};

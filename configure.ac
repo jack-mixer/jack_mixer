@@ -71,20 +71,28 @@ then
 fi
 
 # Python checking
-AM_PATH_PYTHON(3.5)
-AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
-#AS_AC_EXPAND(PYTHONDIR, $pythondir)
-#AC_SUBST(PYTHONDIR)
-
+AC_ARG_ENABLE(gui, [AS_HELP_STRING(--disable-gui, [Disable GUI [default=no]])])
 AC_ARG_ENABLE(pymod-checks, [AS_HELP_STRING(--disable-pymod-checks, [Force disable checks for Python modules required at run time])], [ disable_pymod_checks="yes" ], [ disable_pymod_checks="no" ])
-
-if test "$disable_pymod_checks" != "yes"
+if test "$enable_gui" != "no"
 then
-  AM_CHECK_PYMOD(gi,,,[AC_MSG_ERROR(Could not find Pygi)])
-  AM_CHECK_PYMOD(cairo,,,[AC_MSG_ERROR(Could not find Pycairo)])
+  AM_PATH_PYTHON(3.5)
+  AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
+  #AS_AC_EXPAND(PYTHONDIR, $pythondir)
+  #AC_SUBST(PYTHONDIR)
+  enable_gui="yes"
+
+  if test "$disable_pymod_checks" != "yes"
+  then
+    AM_CHECK_PYMOD(gi,,,[AC_MSG_ERROR(Could not find Pygi)])
+    AM_CHECK_PYMOD(cairo,,,[AC_MSG_ERROR(Could not find Pycairo)])
+  else
+    AC_MSG_WARN([Checks for python modules required runtime have been force disabled])
+  fi
 else
-  AC_MSG_WARN([Checks for python modules required runtime have been force disabled])
+  AC_MSG_WARN([GUI has been force disabled. Only jack_mix_box cli application will be built.])
 fi
+
+AM_CONDITIONAL(ENABLE_GUI, [test x$enable_gui != xno])
 
 AC_OUTPUT([
 Makefile
@@ -92,12 +100,14 @@ data/Makefile
 data/art/Makefile
 ])
 
+
 AC_MSG_RESULT([])
 AC_MSG_RESULT([**********************************************************************])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([Prefix:            $prefix])
 AC_MSG_RESULT([Python dir:        $pythondir])
 AC_MSG_RESULT([])
+AC_MSG_RESULT([GUI  support:      $enable_gui])
 AC_MSG_RESULT([MIDI support:      $have_jackmidi])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([**********************************************************************])

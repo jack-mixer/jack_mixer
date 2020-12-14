@@ -17,18 +17,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+jack_mixerdir = $(pkgdatadir)
+
 AM_CFLAGS = $(JACKMIXER_CFLAGS) -D_GNU_SOURCE -Wall -fno-strict-aliasing
 if DEV_VERSION
 AM_CFLAGS +=  -Werror
 endif
 
-SUBDIRS = data
-
-AM_CPPFLAGS = $(PYTHON_INCLUDES)
-
-jack_mixerdir = $(pkgdatadir)
-pkgpyexecdir = $(pythondir)
-pkgpyexec_LTLIBRARIES = jack_mixer_c.la
 
 jack_mixer_c_la_LDFLAGS = -module -avoid-version
 
@@ -37,6 +32,29 @@ jack_mixer_c_la_LIBADD = $(JACKMIXER_LIBS)
 jack_mixer_c_la_SOURCES = \
 	jack_mixer.c jack_mixer.h list.h log.h log.c scale.c scale.h jack_compat.h \
 	jack_mixer_c.c
+
+EXTRA_DIST = COPYING NEWS
+
+bin_PROGRAMS = jack_mix_box
+
+
+jack_mix_box_SOURCES = jack_mix_box.c jack_mixer.c scale.c log.c
+
+jack_mix_box_CFLAGS = $(JACKMIXER_CFLAGS)
+
+jack_mix_box_LDADD = $(JACKMIXER_LIBS) -lm
+
+
+
+
+if ENABLE_GUI
+
+SUBDIRS = data
+
+AM_CPPFLAGS = $(PYTHON_INCLUDES)
+
+pkgpyexecdir = $(pythondir)
+pkgpyexec_LTLIBRARIES = jack_mixer_c.la
 
 dist_jack_mixer_DATA = \
 	abspeak.py \
@@ -52,20 +70,13 @@ dist_jack_mixer_DATA = \
 	version.py
 
 CLEANFILES = *.pyc
-EXTRA_DIST = test.py COPYING jack_mixer.py NEWS
+EXTRA_DIST += test.py jack_mixer.py 
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 
-bin_PROGRAMS = jack_mix_box
 
 jack_mixer_c.so: jack_mixer_c.la
 	ln -nfs .libs/jack_mixer_c.so
-
-jack_mix_box_SOURCES = jack_mix_box.c jack_mixer.c scale.c log.c
-
-jack_mix_box_CFLAGS = $(JACKMIXER_CFLAGS)
-
-jack_mix_box_LDADD = $(JACKMIXER_LIBS) -lm
 
 test: _jack_mixer_c.so
 	@./test.py
@@ -78,3 +89,5 @@ pacoinstall:
 	-paco -rvB jack_mixer
 	-paco -lE `pwd` -E /etc -p jack_mixer-`svnversion` "make install"
 	-paco -i jack_mixer
+
+endif

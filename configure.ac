@@ -79,7 +79,7 @@ then
   AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
   #AS_AC_EXPAND(PYTHONDIR, $pythondir)
   #AC_SUBST(PYTHONDIR)
-
+  enable_gui="yes"
 
   if test "$disable_pymod_checks" != "yes"
   then

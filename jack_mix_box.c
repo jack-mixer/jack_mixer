@@ -44,7 +44,7 @@ usage()
 {
 
 	printf("Usage:\n");
-	printf("\tjack_mix_box [ -n|--name <jack client name> ] [ -s|--stereo ] [ -v|--volume <initial vol> ] MIDI_CC_1 MIDI_CC_2 ...\n");
+	printf("\tjack_mix_box [ -n|--name <jack client name> ] [ -s|--stereo ] [ -p|--pickup ] [ -v|--volume <initial vol> ] MIDI_CC_1 MIDI_CC_2 ...\n");
 	printf("\tsend SIGUSR1 to the process to have the current columes reported per input channel\n\n");
 }
 
@@ -70,6 +70,7 @@ main(int argc, char *argv[])
 	char *jack_cli_name = NULL;
 	int channel_index;
 	bool bStereo = false;
+	bool bPickup = false;
 	double initialVolume = 0.0f; //in dbFS
 
 	while (1) {
@@ -79,12 +80,13 @@ main(int argc, char *argv[])
 			{"name",  required_argument, 0, 'n'},
 			{"help",  required_argument, 0, 'h'},
 			{"stereo",  required_argument, 0, 's'},
+			{"pickup",  required_argument, 0, 'p'},
 			{"volume",  required_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};
 		int option_index = 0;
 
-		c = getopt_long (argc, argv, "shn:v:", long_options, &option_index);
+		c = getopt_long (argc, argv, "sphn:v:", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -101,6 +103,9 @@ main(int argc, char *argv[])
 			case 'h':
 				usage();
 				exit(0);
+				break;
+			case 'p':
+				bPickup = true;
 				break;
 			default:
 				fprintf(stderr, "Unknown argument, aborting.\n");
@@ -146,6 +151,7 @@ main(int argc, char *argv[])
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));
 		channel_set_midi_scale(channel, scale);
 		channel_volume_write(channel, initialVolume);
+		channel_set_midi_cc_volume_picked_up(channel, bPickup);
 		free(channel_name);
 	}
 

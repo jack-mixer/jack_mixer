@@ -47,7 +47,13 @@ CSS = b"""
 }
 
 button {
-    padding: 0px
+    padding: 0px;
+}
+button#mute:checked {
+    color: #F00;
+}
+button#solo:checked {
+    color: #0F0;
 }
 
 .vbox_fader {
@@ -1262,6 +1268,10 @@ class ControlGroup(Gtk.Alignment):
 .control_group #solo {
     font-size: smaller;
     padding: 0px .1em;
+}
+
+.control_group #pre_fader:checked {
+    color: #D2691E;
 }
 """
 

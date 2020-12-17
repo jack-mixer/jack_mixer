@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 		{
 			{"name",  required_argument, 0, 'n'},
 			{"help",  no_argument, 0, 'h'},
-			{"pickup",  required_argument, 0, 'p'},
+			{"pickup",  no_argument, 0, 'p'},
 			{"stereo",  no_argument, 0, 's'},
 			{"volume",  required_argument, 0, 'v'},
 			{0, 0, 0, 0}

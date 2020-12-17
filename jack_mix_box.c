@@ -42,10 +42,19 @@ bool keepRunning = true;
 void
 usage()
 {
-
-	printf("Usage:\n");
-	printf("\tjack_mix_box [ -n|--name <jack client name> ] [ -s|--stereo ] [ -v|--volume <initial vol> ] MIDI_CC_1 MIDI_CC_2 ...\n");
-	printf("\tsend SIGUSR1 to the process to have the current columes reported per input channel\n\n");
+	printf("Usage: ");
+	printf("jack_mix_box [-n <name>] [-s] [-v <dB>] MIDI_CC...\n");
+	printf("\n");
+	printf("-h|--help\tprint this help message\n");
+	printf("-n|--name\tset JACK client name\n");
+	printf("-s|--stereo\tmake all input channels stereo with left+right input\n");
+	printf("-v|--volume\tinitial volume gain in dB, default is 0.0 (i.e. unity gain)\n");
+	printf("\n");
+	printf("Each positional argument is interpreted as a MIDI Control Change number and adds\n");
+	printf("a mixer channel with one (mono) or left+right (stereo) inputs, whose volume can\n");
+	printf("be controlled via the given MIDI Control Change.\n");
+	printf("\n");
+	printf("Send SIGUSR1 to the process to have the current volumes reported per input channel.\n\n");
 }
 
 void

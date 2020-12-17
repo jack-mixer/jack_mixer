@@ -80,8 +80,8 @@ main(int argc, char *argv[])
 	char *jack_cli_name = NULL;
 	int channel_index;
 	bool bStereo = false;
-	bool bPickup = false;
-	double initialVolume = 0.0f; //in dbFS
+	enum midi_behavior_mode ePickup = Jump_To_Value;
+	double initialVolume = -70.0f; //in dbFS
 
 	while (1) {
 		int c;
@@ -115,7 +115,7 @@ main(int argc, char *argv[])
 				exit(0);
 				break;
 			case 'p':
-				bPickup = true;
+				ePickup = Pick_Up;
 				break;
 			default:
 				fprintf(stderr, "Unknown argument, aborting.\n");
@@ -141,6 +141,7 @@ main(int argc, char *argv[])
 	main_mix_channel = add_output_channel(mixer, "MAIN", true, false);
 	channel_set_midi_scale(main_mix_channel, scale);
 	channel_volume_write(main_mix_channel, 0.0);
+	set_midi_behavior_mode(mixer, ePickup);
 
 	channel_index = 0;
 	while (optind < argc) {
@@ -161,7 +162,6 @@ main(int argc, char *argv[])
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));
 		channel_set_midi_scale(channel, scale);
 		channel_volume_write(channel, initialVolume);
-		channel_set_midi_cc_volume_picked_up(channel, bPickup);
 		free(channel_name);
 	}
 

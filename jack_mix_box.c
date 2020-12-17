@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 	int channel_index;
 	bool bStereo = false;
 	enum midi_behavior_mode ePickup = Jump_To_Value;
-	double initialVolume = -70.0f; //in dbFS
+	double initialVolume = 0.0f; //in dbFS
 
 	while (1) {
 		int c;

@@ -42,10 +42,20 @@ bool keepRunning = true;
 void
 usage()
 {
-
-	printf("Usage:\n");
-	printf("\tjack_mix_box [ -n|--name <jack client name> ] [ -s|--stereo ] [ -p|--pickup ] [ -v|--volume <initial vol> ] MIDI_CC_1 MIDI_CC_2 ...\n");
-	printf("\tsend SIGUSR1 to the process to have the current columes reported per input channel\n\n");
+	printf("Usage: ");
+	printf("jack_mix_box [-n <name>] [-p] [-s] [-v <dB>] MIDI_CC...\n");
+	printf("\n");
+	printf("-h|--help\tprint this help message\n");
+	printf("-n|--name\tset JACK client name\n");
+	printf("-p|--pickup\tenable MIDI pickup mode (default: jump-to-value)\n");
+	printf("-s|--stereo\tmake all input channels stereo with left+right input\n");
+	printf("-v|--volume\tinitial volume gain in dB, default is 0.0 (i.e. unity gain)\n");
+	printf("\n");
+	printf("Each positional argument is interpreted as a MIDI Control Change number and adds\n");
+	printf("a mixer channel with one (mono) or left+right (stereo) inputs, whose volume can\n");
+	printf("be controlled via the given MIDI Control Change.\n");
+	printf("\n");
+	printf("Send SIGUSR1 to the process to have the current volumes reported per input channel.\n\n");
 }
 
 void
@@ -78,9 +88,14 @@ main(int argc, char *argv[])
 		static struct option long_options[] =
 		{
 			{"name",  required_argument, 0, 'n'},
+<<<<<<< HEAD
 			{"help",  required_argument, 0, 'h'},
 			{"stereo",  required_argument, 0, 's'},
 			{"pickup",  required_argument, 0, 'p'},
+=======
+			{"help",  no_argument, 0, 'h'},
+			{"stereo",  no_argument, 0, 's'},
+>>>>>>> c1974adb62d61b0129557f16d1206f97c3d4994d
 			{"volume",  required_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};

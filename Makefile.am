@@ -19,6 +19,7 @@
 
 jack_mixerdir = $(pkgdatadir)
 
+ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = $(JACKMIXER_CFLAGS) -D_GNU_SOURCE -Wall -fno-strict-aliasing
 if DEV_VERSION
 AM_CFLAGS +=  -Werror

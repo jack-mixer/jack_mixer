@@ -54,7 +54,6 @@ SUBDIRS = data
 
 AM_CPPFLAGS = $(PYTHON_INCLUDES)
 
-pkgpyexecdir = $(pythondir)
 pkgpyexec_LTLIBRARIES = jack_mixer_c.la
 
 dist_jack_mixer_DATA = \
@@ -71,7 +70,7 @@ dist_jack_mixer_DATA = \
 	version.py
 
 CLEANFILES = *.pyc
-EXTRA_DIST += test.py jack_mixer.py 
+EXTRA_DIST += test.py jack_mixer.py
 
 bin_SCRIPTS = $(srcdir)/jack_mixer.py
 

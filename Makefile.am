@@ -67,6 +67,7 @@ dist_jack_mixer_DATA = \
 	serialization.py \
 	serialization_xml.py \
 	slider.py \
+	styling.py \
 	version.py
 
 CLEANFILES = *.pyc

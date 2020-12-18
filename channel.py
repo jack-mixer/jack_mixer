@@ -16,9 +16,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
-from random import random
 
-import gi
+import gi  # noqa:F401
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
@@ -28,83 +27,11 @@ import abspeak
 import meter
 import slider
 from serialization import SerializedObject
+from styling import set_background_color, random_color
 
 
 log = logging.getLogger(__name__)
 BUTTON_PADDING = 1
-CSS = b"""
-.top_label {
-    padding: 0px .1em;
-    min-height: 1.5rem;
-}
-
-.wide {
-    font-size: medium
-}
-
-.narrow {
-    font-size: smaller
-}
-
-button {
-    padding: 0px
-}
-
-.vbox_fader {
-    border: 1px inset #111;
-}
-
-.readout {
-    font-size: 80%;
-    margin: .1em;
-    padding: 0;
-    border: 1px inset #111;
-    color: white;
-}
-"""
-css_provider = Gtk.CssProvider()
-css_provider.load_from_data(CSS)
-context = Gtk.StyleContext()
-screen = Gdk.Screen.get_default()
-context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-
-def get_text_color(background_color):
-    """Calculates the luminance of the given color (GdkRGBA)
-       and returns an appropriate text color."""
-    # luminance coefficients taken from section C-9 from
-    # http://www.faqs.org/faqs/graphics/colorspace-faq/
-    brightess = background_color.red * 0.212671 + \
-            background_color.green * 0.715160 + \
-            background_color.blue * 0.072169
-
-    if brightess > 0.5:
-        return 'black'
-    else:
-        return 'white'
-
-
-def set_background_color(widget, name, color):
-    color_string = color.to_string()
-    css = """
-    .%s {
-        background-color: %s;
-        color: %s;
-    }
-""" % (name, color_string, get_text_color(color))
-
-    css_provider = Gtk.CssProvider()
-    css_provider.load_from_data(css.encode('utf-8'))
-    context = Gtk.StyleContext()
-    screen = Gdk.Screen.get_default()
-    context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-    widget_context = widget.get_style_context()
-    widget_context.add_class(name)
-
-
-def random_color():
-    return Gdk.RGBA(random(), random(), random(), 1)
 
 
 class Channel(Gtk.Box, SerializedObject):
@@ -174,7 +101,7 @@ class Channel(Gtk.Box, SerializedObject):
 
         self.mute = Gtk.ToggleButton()
         self.mute.set_label("M")
-        self.mute.set_name("mute")
+        self.mute.get_style_context().add_class("mute")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
         self.hbox_mutesolo.pack_start(self.mute, True, True, 0)
@@ -182,6 +109,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.pack_start(self.hbox_mutesolo, False, False, 0)
 
         self.monitor_button = Gtk.ToggleButton('MON')
+        self.monitor_button.get_style_context().add_class("monitor")
         self.monitor_button.connect('toggled', self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False, 0)
 
@@ -605,7 +533,7 @@ class InputChannel(Channel):
         super().create_buttons()
         self.solo = Gtk.ToggleButton()
         self.solo.set_label("S")
-        self.solo.set_name("solo")
+        self.solo.get_style_context().add_class("solo")
         self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
         self.hbox_mutesolo.pack_start(self.solo, True, True, 0)
@@ -1250,53 +1178,30 @@ class ControlGroup(Gtk.Alignment):
         set_background_color(self.vbox, output_channel.css_name, output_channel.color)
 
         self.vbox.pack_start(self.hbox, True, True, BUTTON_PADDING)
-        css = b"""
-.control_group {
-    min-width: 0px;
-    padding: 0px;
-}
-
-.control_group #label,
-.control_group #mute,
-.control_group #pre_fader,
-.control_group #solo {
-    font-size: smaller;
-    padding: 0px .1em;
-}
-"""
-
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(css)
-        context = Gtk.StyleContext()
-        screen = Gdk.Screen.get_default()
-        context.add_provider_for_screen(screen, css_provider,
-                                        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         hbox_context = self.hbox.get_style_context()
         hbox_context.add_class('control_group')
 
         name = output_channel.channel.name
         self.label = Gtk.Label(name)
-        self.label.set_name("label")
+        self.label.get_style_context().add_class("label")
         self.label.set_max_width_chars(self.input_channel.label_chars_narrow)
         self.label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
         if len(name) > self.input_channel.label_chars_narrow:
             self.label.set_tooltip_text(name)
         self.hbox.pack_start(self.label, False, False, BUTTON_PADDING)
         self.hbox.pack_end(self.buttons_box, False, False, BUTTON_PADDING)
-        mute = Gtk.ToggleButton()
-        mute.set_label("M")
-        mute.set_name("mute")
+        mute = Gtk.ToggleButton("M")
+        mute.get_style_context().add_class("mute")
         mute.set_tooltip_text("Mute output channel send")
         mute.connect("toggled", self.on_mute_toggled)
         self.mute = mute
-        solo = Gtk.ToggleButton()
-        solo.set_name("solo")
-        solo.set_label("S")
+        solo = Gtk.ToggleButton("S")
+        solo.get_style_context().add_class("solo")
         solo.set_tooltip_text("Solo output send")
         solo.connect("toggled", self.on_solo_toggled)
         self.solo = solo
         pre = Gtk.ToggleButton("P")
-        pre.set_name("pre_fader")
+        pre.get_style_context().add_class("prefader")
         pre.set_tooltip_text("Pre (on) / Post (off) fader send")
         pre.connect("toggled", self.on_prefader_toggled)
         self.prefader = pre

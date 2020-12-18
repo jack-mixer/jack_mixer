@@ -19,7 +19,7 @@ import configparser
 import logging
 import os
 
-import gi
+import gi  # noqa:F401
 from gi.repository import GObject
 from serialization import SerializedObject
 

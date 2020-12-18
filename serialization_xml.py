@@ -15,9 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from serialization import *
 import xml.dom
 import xml.dom.minidom
+
+from serialization import SerializationBackend
+
 
 class XmlSerialization(SerializationBackend):
     def get_root_serialization_object(self, name):
@@ -39,6 +41,7 @@ class XmlSerialization(SerializationBackend):
 
     def load(self, file):
         self.doc = xml.dom.minidom.parse(file)
+
 
 class XmlSerializationObject:
     def __init__(self, doc, element):

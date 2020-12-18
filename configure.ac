@@ -75,7 +75,7 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING(--disable-gui, [Disable GUI [default=no]])])
 AC_ARG_ENABLE(pymod-checks, [AS_HELP_STRING(--disable-pymod-checks, [Force disable checks for Python modules required at run time])], [ disable_pymod_checks="yes" ], [ disable_pymod_checks="no" ])
 if test "$enable_gui" != "no"
 then
-  AM_PATH_PYTHON(3.5)
+  AM_PATH_PYTHON(3.6)
   AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(Could not find Python headers)])
   #AS_AC_EXPAND(PYTHONDIR, $pythondir)
   #AC_SUBST(PYTHONDIR)

@@ -336,8 +336,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
     def get_preferred_height(self, widget):
         requisition = Gtk.Requisition()
-        on_size_request(self, widget, requisition)
-        minimal_height = natural_heigt = requisition.height
+        self.on_size_request(self, widget, requisition)
+        minimal_height = natural_height = requisition.height
         return (minimal_height, natural_height)
 
     def on_size_allocate(self, widget, allocation):

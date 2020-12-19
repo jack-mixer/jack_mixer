@@ -19,14 +19,14 @@ import configparser
 import logging
 import os
 
-import gi  # noqa:F401
+import gi  # noqa: F401
 from gi.repository import GObject
 from serialization import SerializedObject
 
 try:
     import xdg
     from xdg import BaseDirectory
-except:
+except ImportError:
     xdg = None
 
 
@@ -86,7 +86,7 @@ class Factory(GObject.GObject, SerializedObject):
         scale_id = self.config["Preferences"]["default_slider_scale"]
         self.default_slider_scale = lookup_scale(self.slider_scales, scale_id)
         if not self.default_slider_scale:
-            self.default_slider_scale = slider_scales[0]
+            self.default_slider_scale = self.slider_scales[0]
 
         try:
             self.midi_behavior_mode = self.config.getint(

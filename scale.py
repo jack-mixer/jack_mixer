@@ -30,7 +30,7 @@ class Mark:
     def __init__(self, db, scale, text=None):
         self.db = db
         self.scale = scale
-        if text == None:
+        if text is None:
             self.text = "%.0f" % math.fabs(db)
         else:
             self.text = text
@@ -110,7 +110,8 @@ class IEC268Minimalistic(Base):
         Base.__init__(
             self,
             "iec_268_minimalistic",
-            "IEC 60268-18 Peak programme level meters - Digital audio peak level meter, fewer marks",
+            "IEC 60268-18 Peak programme level meters - "
+            "Digital audio peak level meter, fewer marks",
         )
         self.add_threshold(-70.0, 0.0, False)
         self.add_threshold(-60.0, 0.05, True)

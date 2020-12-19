@@ -85,7 +85,7 @@ class Serializator:
 
     def unserialize(self, root, backend):
         backend_object = backend.get_root_unserialization_object(root.serialization_name())
-        if backend_object == None:
+        if backend_object is None:
             return False
 
         return self.unserialize_one(backend, root, backend_object)

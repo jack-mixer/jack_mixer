@@ -17,7 +17,7 @@
 
 import logging
 
-import gi  # noqa:F401
+import gi  # noqa: F401
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
@@ -151,7 +151,7 @@ class Channel(Gtk.Box, SerializedObject):
 
     def realize(self):
         log.debug('Realizing channel "%s".', self.channel_name)
-        if self.future_out_mute != None:
+        if self.future_out_mute is not None:
             self.channel.out_mute = self.future_out_mute
 
         # Widgets
@@ -198,8 +198,8 @@ class Channel(Gtk.Box, SerializedObject):
         self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
         self.on_vumeter_color_changed(self.gui_factory)
 
-        if self.initial_value != None:
-            if self.initial_value == True:
+        if self.initial_value is not None:
+            if self.initial_value is True:
                 self.slider_adjustment.set_value(0)
             else:
                 self.slider_adjustment.set_value_db(0)
@@ -301,7 +301,7 @@ class Channel(Gtk.Box, SerializedObject):
             try:
                 db = float(db_text)
                 log.debug('Volume digits confirmation "%f dBFS".', db)
-            except (ValueError) as e:
+            except ValueError:
                 log.debug("Volume digits confirmation ignore, reset to current.")
                 self.update_volume(False)
                 return
@@ -543,18 +543,18 @@ class InputChannel(Channel):
     def realize(self):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
 
-        if self.channel == None:
+        if self.channel is None:
             raise Exception("Cannot create a channel")
 
         super().realize()
 
-        if self.future_volume_midi_cc != None:
+        if self.future_volume_midi_cc is not None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
-        if self.future_balance_midi_cc != None:
+        if self.future_balance_midi_cc is not None:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
-        if self.future_mute_midi_cc != None:
+        if self.future_mute_midi_cc is not None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
-        if self.future_solo_midi_cc != None:
+        if self.future_solo_midi_cc is not None:
             self.channel.solo_midi_cc = self.future_solo_midi_cc
         if self.app._init_solo_channels and self.channel_name in self.app._init_solo_channels:
             self.channel.solo = True
@@ -624,7 +624,7 @@ class InputChannel(Channel):
         return ctlgroups
 
     def midi_events_check(self):
-        if self.channel != None and self.channel.midi_in_got_events:
+        if self.channel is not None and self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
             self.solo.set_active(self.channel.solo)
             super().on_midi_event_received()
@@ -704,16 +704,16 @@ class OutputChannel(Channel):
     def realize(self):
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
 
-        if self.channel == None:
+        if self.channel is None:
             raise Exception("Cannot create a channel")
 
         super().realize()
 
-        if self.future_volume_midi_cc != None:
+        if self.future_volume_midi_cc is not None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
-        if self.future_balance_midi_cc != None:
+        if self.future_balance_midi_cc is not None:
             self.channel.balance_midi_cc = self.future_balance_midi_cc
-        if self.future_mute_midi_cc != None:
+        if self.future_mute_midi_cc is not None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
         self.channel.midi_scale = self.slider_scale.scale
 
@@ -762,7 +762,7 @@ class OutputChannel(Channel):
         self.emit("output-channel-order-changed", source_name, self._channel_name)
 
     def midi_events_check(self):
-        if self.channel != None and self.channel.midi_in_got_events:
+        if self.channel is not None and self.channel.midi_in_got_events:
             self.mute.set_active(self.channel.out_mute)
             super().on_midi_event_received()
 
@@ -1215,7 +1215,7 @@ class ControlGroup(Gtk.Alignment):
 
     def update(self):
         if self.output_channel.display_solo_buttons:
-            if not self.solo in self.buttons_box.get_children():
+            if self.solo not in self.buttons_box.get_children():
                 self.buttons_box.pack_start(self.solo, True, True, BUTTON_PADDING)
                 self.solo.show()
         else:

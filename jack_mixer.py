@@ -49,7 +49,6 @@ from styling import load_css_styles
 from preferences import PreferencesDialog
 from version import __version__
 
-
 # restore Python modules lookup path
 sys.path = old_path
 log = logging.getLogger("jack_mixer")
@@ -59,7 +58,7 @@ def add_number_suffix(s):
     def inc(match):
         return str(int(match.group(0)) + 1)
 
-    new_s = re.sub("(\d+)\s*$", inc, s)
+    new_s = re.sub(r"(\d+)\s*$", inc, s)
     if new_s == s:
         new_s = s + " 1"
 
@@ -558,7 +557,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         dialog = getattr(self, "_add_{}_dialog".format(inout), None)
         values = getattr(self, "_add_{}_values".format(inout), {})
 
-        if dialog == None:
+        if dialog is None:
             cls = NewInputChannelDialog if inout == "input" else NewOutputChannelDialog
             dialog = cls(app=self)
             setattr(self, "_add_{}_dialog".format(inout), dialog)
@@ -582,9 +581,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
             setattr(self, "_add_{}_values".format(inout), result)
-            method = getattr(self, "add_channel" if inout == "input" else "add_output_channel")
-            channel = method(**result)
-            if self.visible or self.nsm_client == None:
+            (self.add_channel if inout == "input" else self.add_output_channel)(**result)
+            if self.visible or self.nsm_client is None:
                 self.window.show_all()
 
     def on_add_input_channel(self, widget):
@@ -812,7 +810,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         b = XmlSerialization()
         try:
             b.load(file)
-        except:
+        except:  # noqa: E722
             if silence_errors:
                 return
             raise
@@ -904,7 +902,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         if not self.mixer:
             return
 
-        if self.visible or self.nsm_client == None:
+        if self.visible or self.nsm_client is None:
             width, height = self.window.get_size()
             self.window.show_all()
             if hasattr(self, "paned_position"):

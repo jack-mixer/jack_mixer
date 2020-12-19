@@ -70,7 +70,7 @@ class PreferencesDialog(Gtk.Dialog):
         hbox = Gtk.HBox()
         interface_vbox.pack_start(hbox, True, True, 0)
         self.custom_color_box = hbox
-        self.custom_color_box.set_sensitive(self.vumeter_color_checkbutton.get_active() == True)
+        self.custom_color_box.set_sensitive(self.vumeter_color_checkbutton.get_active())
         hbox.pack_start(Gtk.Label("Custom color:"), True, True, 0)
         self.vumeter_color_picker = Gtk.ColorButton()
         self.vumeter_color_picker.set_color(
@@ -179,7 +179,7 @@ class PreferencesDialog(Gtk.Dialog):
         color = self.vumeter_color_picker.get_color().to_string()
         self.app.gui_factory.set_vumeter_color(color)
 
-        self.custom_color_box.set_sensitive(self.vumeter_color_checkbutton.get_active() == True)
+        self.custom_color_box.set_sensitive(self.vumeter_color_checkbutton.get_active())
 
     def on_confirm_quit_toggled(self, *args):
         self.app.gui_factory.set_confirm_quit(self.confirm_quit_checkbutton.get_active())

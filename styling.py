@@ -19,7 +19,7 @@
 
 from random import random
 
-import gi  # noqa:F401
+import gi  # noqa: F401
 from gi.repository import Gtk
 from gi.repository import Gdk
 

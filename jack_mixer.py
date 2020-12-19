@@ -29,7 +29,6 @@ from argparse import ArgumentParser
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from gi.repository import GObject
 from gi.repository import GLib
 
 # temporary change Python modules lookup path to look into installation
@@ -41,10 +40,11 @@ import jack_mixer_c
 
 import gui
 import scale
-from channel import *
+from channel import InputChannel, NewInputChannelDialog, NewOutputChannelDialog, OutputChannel
 from nsmclient import NSMClient
 from serialization_xml import XmlSerialization
 from serialization import SerializedObject, Serializator
+from styling import load_css_styles
 from preferences import PreferencesDialog
 from version import __version__
 
@@ -150,6 +150,7 @@ class JackMixer(SerializedObject):
     def create_ui(self, with_nsm):
         self.channels = []
         self.output_channels = []
+        load_css_styles()
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_icon_name('jack_mixer')
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)

@@ -22,22 +22,6 @@ from gi.repository import Gdk
 from gi.repository import GObject
 
 
-CSS = b"""
-.over_zero {
-    background-color: #cc4c00;
-}
-
-.is_nan {
-    background-color: #b20000;
-}
-"""
-css_provider = Gtk.CssProvider()
-css_provider.load_from_data(CSS)
-context = Gtk.StyleContext()
-screen = Gdk.Screen.get_default()
-context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-
 class AbspeakWidget(Gtk.EventBox):
     def __init__(self):
         super().__init__()

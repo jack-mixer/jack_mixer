@@ -27,14 +27,15 @@ import sys
 from argparse import ArgumentParser
 
 import gi
-gi.require_version('Gtk', '3.0')
+
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from gi.repository import GLib
 
 # temporary change Python modules lookup path to look into installation
 # directory ($prefix/share/jack_mixer/)
 old_path = sys.path
-sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..', 'share', 'jack_mixer'))
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), "..", "share", "jack_mixer"))
 
 import jack_mixer_c
 
@@ -58,9 +59,9 @@ def add_number_suffix(s):
     def inc(match):
         return str(int(match.group(0)) + 1)
 
-    new_s = re.sub('(\d+)\s*$', inc, s)
+    new_s = re.sub("(\d+)\s*$", inc, s)
     if new_s == s:
-        new_s = s + ' 1'
+        new_s = s + " 1"
 
     return new_s
 
@@ -73,16 +74,13 @@ class JackMixer(SerializedObject):
         scale.K14(),
         scale.IEC268(),
         scale.Linear70dB(),
-        scale.IEC268Minimalistic()
+        scale.IEC268Minimalistic(),
     ]
 
     # scales suitable as volume slider scales
-    slider_scales = [
-        scale.Linear30dB(),
-        scale.Linear70dB()
-    ]
+    slider_scales = [scale.Linear30dB(), scale.Linear70dB()]
 
-    def __init__(self, client_name='jack_mixer'):
+    def __init__(self, client_name="jack_mixer"):
         self.visible = False
         self.nsm_client = None
         # name of settings file that is currently open
@@ -90,7 +88,7 @@ class JackMixer(SerializedObject):
         self._monitored_channel = None
         self._init_solo_channels = None
 
-        if os.environ.get('NSM_URL'):
+        if os.environ.get("NSM_URL"):
             self.nsm_client = NSMClient(
                 prettyName="jack_mixer",
                 saveCallback=self.nsm_save_cb,
@@ -143,8 +141,9 @@ class JackMixer(SerializedObject):
             menuitem.connect("activate", callback)
         if accel:
             key, mod = Gtk.accelerator_parse(accel)
-            menuitem.add_accelerator("activate", self.menu_accelgroup, key, mod,
-                                     Gtk.AccelFlags.VISIBLE)
+            menuitem.add_accelerator(
+                "activate", self.menu_accelgroup, key, mod, Gtk.AccelFlags.VISIBLE
+            )
         return menuitem
 
     def create_ui(self, with_nsm):
@@ -152,9 +151,9 @@ class JackMixer(SerializedObject):
         self.output_channels = []
         load_css_styles()
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_icon_name('jack_mixer')
+        self.window.set_icon_name("jack_mixer")
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
-        self.gui_factory.connect('midi-behavior-mode-changed', self.on_midi_behavior_mode_changed)
+        self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
         self.gui_factory.emit_midi_behavior_mode()
 
         self.vbox_top = Gtk.VBox()
@@ -168,9 +167,9 @@ class JackMixer(SerializedObject):
 
         mixer_menu_item = Gtk.MenuItem.new_with_mnemonic("_Mixer")
         self.menubar.append(mixer_menu_item)
-        edit_menu_item = Gtk.MenuItem.new_with_mnemonic('_Edit')
+        edit_menu_item = Gtk.MenuItem.new_with_mnemonic("_Edit")
         self.menubar.append(edit_menu_item)
-        help_menu_item = Gtk.MenuItem.new_with_mnemonic('_Help')
+        help_menu_item = Gtk.MenuItem.new_with_mnemonic("_Help")
         self.menubar.append(help_menu_item)
 
         self.width = 420
@@ -181,71 +180,82 @@ class JackMixer(SerializedObject):
         self.mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(self.mixer_menu)
 
-        self.mixer_menu.append(self.new_menu_item('New _Input Channel',
-                                                  self.on_add_input_channel, "<Control>N"))
-        self.mixer_menu.append(self.new_menu_item('New Output _Channel',
-                                                  self.on_add_output_channel, "<Shift><Control>N"))
+        self.mixer_menu.append(
+            self.new_menu_item("New _Input Channel", self.on_add_input_channel, "<Control>N")
+        )
+        self.mixer_menu.append(
+            self.new_menu_item(
+                "New Output _Channel", self.on_add_output_channel, "<Shift><Control>N"
+            )
+        )
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
         if not with_nsm:
-            self.mixer_menu.append(self.new_menu_item('_Open...', self.on_open_cb, "<Control>O"))
+            self.mixer_menu.append(self.new_menu_item("_Open...", self.on_open_cb, "<Control>O"))
 
-        self.mixer_menu.append(self.new_menu_item('_Save', self.on_save_cb, "<Control>S"))
+        self.mixer_menu.append(self.new_menu_item("_Save", self.on_save_cb, "<Control>S"))
 
         if not with_nsm:
-            self.mixer_menu.append(self.new_menu_item('Save _As...', self.on_save_as_cb,
-                                                      "<Shift><Control>S"))
+            self.mixer_menu.append(
+                self.new_menu_item("Save _As...", self.on_save_as_cb, "<Shift><Control>S")
+            )
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
         if with_nsm:
-            self.mixer_menu.append(self.new_menu_item('_Hide', self.nsm_hide_cb, "<Control>W"))
+            self.mixer_menu.append(self.new_menu_item("_Hide", self.nsm_hide_cb, "<Control>W"))
         else:
-            self.mixer_menu.append(self.new_menu_item('_Quit', self.on_quit_cb, "<Control>Q"))
+            self.mixer_menu.append(self.new_menu_item("_Quit", self.on_quit_cb, "<Control>Q"))
 
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
-        self.channel_edit_input_menu_item = self.new_menu_item('_Edit Input Channel',
-                                                               enabled=False)
+        self.channel_edit_input_menu_item = self.new_menu_item(
+            "_Edit Input Channel", enabled=False
+        )
         edit_menu.append(self.channel_edit_input_menu_item)
         self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
 
-        self.channel_edit_output_menu_item = self.new_menu_item('E_dit Output Channel',
-                                                                enabled=False)
+        self.channel_edit_output_menu_item = self.new_menu_item(
+            "E_dit Output Channel", enabled=False
+        )
         edit_menu.append(self.channel_edit_output_menu_item)
         self.channel_edit_output_menu = Gtk.Menu()
         self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
 
-        self.channel_remove_input_menu_item = self.new_menu_item('_Remove Input Channel',
-                                                                 enabled=False)
+        self.channel_remove_input_menu_item = self.new_menu_item(
+            "_Remove Input Channel", enabled=False
+        )
         edit_menu.append(self.channel_remove_input_menu_item)
         self.channel_remove_input_menu = Gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
-        self.channel_remove_output_menu_item = self.new_menu_item('Re_move Output Channel',
-                                                                  enabled=False)
+        self.channel_remove_output_menu_item = self.new_menu_item(
+            "Re_move Output Channel", enabled=False
+        )
         edit_menu.append(self.channel_remove_output_menu_item)
         self.channel_remove_output_menu = Gtk.Menu()
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
         edit_menu.append(Gtk.SeparatorMenuItem())
-        edit_menu.append(self.new_menu_item('Shrink Channels', self.on_shrink_channels_cb,
-                                            "<Control>minus"))
-        edit_menu.append(self.new_menu_item('Expand Channels', self.on_expand_channels_cb,
-                                            "<Control>plus"))
+        edit_menu.append(
+            self.new_menu_item("Shrink Channels", self.on_shrink_channels_cb, "<Control>minus")
+        )
+        edit_menu.append(
+            self.new_menu_item("Expand Channels", self.on_expand_channels_cb, "<Control>plus")
+        )
         edit_menu.append(Gtk.SeparatorMenuItem())
 
-        edit_menu.append(self.new_menu_item('_Clear', self.on_channels_clear, "<Control>X"))
+        edit_menu.append(self.new_menu_item("_Clear", self.on_channels_clear, "<Control>X"))
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         self.preferences_dialog = None
-        edit_menu.append(self.new_menu_item('_Preferences', self.on_preferences_cb, "<Control>P"))
+        edit_menu.append(self.new_menu_item("_Preferences", self.on_preferences_cb, "<Control>P"))
 
         help_menu = Gtk.Menu()
         help_menu_item.set_submenu(help_menu)
 
-        help_menu.append(self.new_menu_item('_About', self.on_about, "F1"))
+        help_menu.append(self.new_menu_item("_About", self.on_about, "F1"))
 
         self.hbox_top = Gtk.HBox()
         self.vbox_top.pack_start(self.hbox_top, True, True, 0)
@@ -272,7 +282,7 @@ class JackMixer(SerializedObject):
         self.paned.pack2(self.scrolled_output, True, False)
 
         self.window.connect("destroy", Gtk.main_quit)
-        self.window.connect('delete-event', self.on_delete_event)
+        self.window.connect("delete-event", self.on_delete_event)
 
     # ---------------------------------------------------------------------------------------------
     # Channel creation
@@ -311,14 +321,16 @@ class JackMixer(SerializedObject):
 
         # create post fader output channel matching the input channel
         channel.post_fader_output_channel = self.mixer.add_output_channel(
-                        channel.channel.name + ' Out', channel.channel.is_stereo, True)
+            channel.channel.name + " Out", channel.channel.is_stereo, True
+        )
         channel.post_fader_output_channel.volume = 0
         channel.post_fader_output_channel.set_solo(channel.channel, True)
 
-        channel.connect('input-channel-order-changed', self.on_input_channel_order_changed)
+        channel.connect("input-channel-order-changed", self.on_input_channel_order_changed)
 
-    def add_output_channel(self, name, stereo, volume_cc, balance_cc, mute_cc,
-                           display_solo_buttons, color, value):
+    def add_output_channel(
+        self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons, color, value
+    ):
         try:
             channel = OutputChannel(self, name, stereo, value)
             channel.display_solo_buttons = display_solo_buttons
@@ -349,7 +361,7 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_sensitive(True)
 
         self.output_channels.append(channel)
-        channel.connect('output-channel-order-changed', self.on_output_channel_order_changed)
+        channel.connect("output-channel-order-changed", self.on_output_channel_order_changed)
 
     # ---------------------------------------------------------------------------------------------
     # Signal/event handlers
@@ -369,26 +381,27 @@ class JackMixer(SerializedObject):
     def nsm_show_cb(self):
         width, height = self.window.get_size()
         self.window.show_all()
-        self.paned.set_position(self.paned_position/self.width*width)
+        self.paned.set_position(self.paned_position / self.width * width)
 
         self.visible = True
         self.nsm_client.announceGuiVisibility(True)
 
     def nsm_open_cb(self, path, session_name, client_name):
         self.create_mixer(client_name, with_nsm=True)
-        self.current_filename = path + '.xml'
+        self.current_filename = path + ".xml"
         if os.path.isfile(self.current_filename):
             try:
-                with open(self.current_filename, 'r') as fp:
+                with open(self.current_filename, "r") as fp:
                     self.load_from_xml(fp, from_nsm=True)
             except Exception as exc:
                 # Re-raise with more meaningful error message
-                raise IOError("Error loading settings file '{}': {}".format(
-                              self.current_filename, exc))
+                raise IOError(
+                    "Error loading settings file '{}': {}".format(self.current_filename, exc)
+                )
 
     def nsm_save_cb(self, path, session_name, client_name):
-        self.current_filename = path + '.xml'
-        f = open(self.current_filename, 'w')
+        self.current_filename = path + ".xml"
+        f = open(self.current_filename, "w")
         self.save_to_xml(f)
         f.close()
 
@@ -414,11 +427,14 @@ class JackMixer(SerializedObject):
 
     def on_about(self, *args):
         about = Gtk.AboutDialog()
-        about.set_name('jack_mixer')
-        about.set_program_name('jack_mixer')
-        about.set_copyright('Copyright © 2006-2020\n'
-                            'Nedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler')
-        about.set_license("""\
+        about.set_name("jack_mixer")
+        about.set_program_name("jack_mixer")
+        about.set_copyright(
+            "Copyright © 2006-2020\n"
+            "Nedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler"
+        )
+        about.set_license(
+            """\
 jack_mixer is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
 Free Software Foundation; either version 2 of the License, or (at your
@@ -431,21 +447,24 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License along
 with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
-Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
-        about.set_authors([
-            'Nedko Arnaudov <nedko@arnaudov.name>',
-            'Christopher Arndt <chris@chrisarndt.de>',
-            'Arnout Engelen <arnouten@bzzt.net>',
-            'John Hedges <john@drystone.co.uk>',
-            'Olivier Humbert <trebmuh@tuxfamily.org>',
-            'Sarah Mischke <sarah@spooky-online.de>',
-            'Frédéric Péters <fpeters@0d.be>',
-            'Daniel Sheeler <dsheeler@pobox.com>',
-            'Athanasios Silis <athanasios.silis@gmail.com>',
-        ])
-        about.set_logo_icon_name('jack_mixer')
+Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
+        )
+        about.set_authors(
+            [
+                "Nedko Arnaudov <nedko@arnaudov.name>",
+                "Christopher Arndt <chris@chrisarndt.de>",
+                "Arnout Engelen <arnouten@bzzt.net>",
+                "John Hedges <john@drystone.co.uk>",
+                "Olivier Humbert <trebmuh@tuxfamily.org>",
+                "Sarah Mischke <sarah@spooky-online.de>",
+                "Frédéric Péters <fpeters@0d.be>",
+                "Daniel Sheeler <dsheeler@pobox.com>",
+                "Athanasios Silis <athanasios.silis@gmail.com>",
+            ]
+        )
+        about.set_logo_icon_name("jack_mixer")
         about.set_version(__version__)
-        about.set_website('https://rdio.space/jackmixer/')
+        about.set_website("https://rdio.space/jackmixer/")
         about.run()
         about.destroy()
 
@@ -457,15 +476,17 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         return self.on_quit_cb()
 
     def on_open_cb(self, *args):
-        dlg = Gtk.FileChooserDialog(title='Open', parent=self.window,
-                        action=Gtk.FileChooserAction.OPEN)
-        dlg.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        dlg = Gtk.FileChooserDialog(
+            title="Open", parent=self.window, action=Gtk.FileChooserAction.OPEN
+        )
+        dlg.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK
+        )
         dlg.set_default_response(Gtk.ResponseType.OK)
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             try:
-                with open(filename, 'r') as fp:
+                with open(filename, "r") as fp:
                     self.load_from_xml(fp)
             except Exception as exc:
                 error_dialog(self.window, "Error loading settings file '%s': %s", filename, exc)
@@ -476,15 +497,17 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
     def on_save_cb(self, *args):
         if not self.current_filename:
             return self.on_save_as_cb()
-        f = open(self.current_filename, 'w')
+        f = open(self.current_filename, "w")
         self.save_to_xml(f)
         f.close()
 
     def on_save_as_cb(self, *args):
-        dlg = Gtk.FileChooserDialog(title='Save', parent=self.window,
-                        action=Gtk.FileChooserAction.SAVE)
-        dlg.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                        Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
+        dlg = Gtk.FileChooserDialog(
+            title="Save", parent=self.window, action=Gtk.FileChooserAction.SAVE
+        )
+        dlg.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK
+        )
         dlg.set_default_response(Gtk.ResponseType.OK)
         if dlg.run() == Gtk.ResponseType.OK:
             self.current_filename = dlg.get_filename()
@@ -493,16 +516,19 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
     def on_quit_cb(self, *args):
         if not self.nsm_client and self.gui_factory.get_confirm_quit():
-            dlg = Gtk.MessageDialog(parent=self.window,
-                                    message_type=Gtk.MessageType.QUESTION,
-                                    buttons=Gtk.ButtonsType.NONE)
+            dlg = Gtk.MessageDialog(
+                parent=self.window,
+                message_type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.NONE,
+            )
             dlg.set_markup("<b>Quit application?</b>")
-            dlg.format_secondary_markup("All jack_mixer ports will be closed and connections lost,"
-                                        "\nstopping all sound going through jack_mixer.\n\n"
-                                        "Are you sure?")
+            dlg.format_secondary_markup(
+                "All jack_mixer ports will be closed and connections lost,"
+                "\nstopping all sound going through jack_mixer.\n\n"
+                "Are you sure?"
+            )
             dlg.add_buttons(
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_QUIT, Gtk.ResponseType.OK
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_QUIT, Gtk.ResponseType.OK
             )
             response = dlg.run()
             dlg.destroy()
@@ -529,20 +555,21 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         self.preferences_dialog.present()
 
     def on_add_channel(self, inout="input", default_name="Input"):
-        dialog = getattr(self, '_add_{}_dialog'.format(inout), None)
-        values = getattr(self, '_add_{}_values'.format(inout), {})
+        dialog = getattr(self, "_add_{}_dialog".format(inout), None)
+        values = getattr(self, "_add_{}_values".format(inout), {})
 
         if dialog == None:
-            cls = NewInputChannelDialog if inout == 'input' else NewOutputChannelDialog
+            cls = NewInputChannelDialog if inout == "input" else NewOutputChannelDialog
             dialog = cls(app=self)
-            setattr(self, '_add_{}_dialog'.format(inout), dialog)
+            setattr(self, "_add_{}_dialog".format(inout), dialog)
 
-        names = {ch.channel_name
-                 for ch in (self.channels if inout == 'input' else self.output_channels)}
-        values.setdefault('name', default_name)
+        names = {
+            ch.channel_name for ch in (self.channels if inout == "input" else self.output_channels)
+        }
+        values.setdefault("name", default_name)
         while True:
-            if values['name'] in names:
-                values['name'] = add_number_suffix(values['name'])
+            if values["name"] in names:
+                values["name"] = add_number_suffix(values["name"])
             else:
                 break
 
@@ -554,8 +581,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
         if ret == Gtk.ResponseType.OK:
             result = dialog.get_result()
-            setattr(self, '_add_{}_values'.format(inout), result)
-            method = getattr(self, 'add_channel' if inout == 'input' else 'add_output_channel')
+            setattr(self, "_add_{}_values".format(inout), result)
+            method = getattr(self, "add_channel" if inout == "input" else "add_output_channel")
             channel = method(**result)
             if self.visible or self.nsm_client == None:
                 self.window.show_all()
@@ -579,8 +606,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
         self.channel_remove_input_menu.remove(widget)
         self.channel_edit_input_menu.foreach(
-            remove_channel_edit_input_menuitem_by_label,
-            channel.channel_name)
+            remove_channel_edit_input_menuitem_by_label, channel.channel_name
+        )
 
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
@@ -609,8 +636,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
         self.channel_remove_output_menu.remove(widget)
         self.channel_edit_output_menu.foreach(
-            remove_channel_edit_output_menuitem_by_label,
-            channel.channel_name);
+            remove_channel_edit_output_menuitem_by_label, channel.channel_name
+        )
 
         if self.monitored_channel is channel:
             channel.monitor_button.set_active(False)
@@ -628,10 +655,10 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
     def on_channel_rename(self, oldname, newname):
         def rename_channels(container, parameters):
-            if container.get_label() == parameters['oldname']:
-                container.set_label(parameters['newname'])
+            if container.get_label() == parameters["oldname"]:
+                container.set_label(parameters["newname"])
 
-        rename_parameters = {'oldname': oldname, 'newname': newname}
+        rename_parameters = {"oldname": oldname, "newname": newname}
         self.channel_edit_input_menu.foreach(rename_channels, rename_parameters)
         self.channel_edit_output_menu.foreach(rename_channels, rename_parameters)
         self.channel_remove_input_menu.foreach(rename_channels, rename_parameters)
@@ -652,7 +679,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
         for f in frames:
             c = f.get_child()
-            if (dest_name == c._channel_name):
+            if dest_name == c._channel_name:
                 pos = frames.index(f)
                 channel_box.reorder_child(source_frame, pos)
                 break
@@ -670,12 +697,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         for f in frames:
             c = f.get_child()
             if source_name == c._channel_name:
-                 source_frame = f
-                 break
+                source_frame = f
+                break
 
         for f in frames:
             c = f.get_child()
-            if (dest_name == c._channel_name):
+            if dest_name == c._channel_name:
                 pos = len(frames) - 1 - frames.index(f)
                 channel_box.reorder_child(source_frame, pos)
                 break
@@ -685,11 +712,13 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
             self.output_channels.append(c)
 
     def on_channels_clear(self, widget):
-        dlg = Gtk.MessageDialog(parent = self.window,
-                modal = True,
-                message_type = Gtk.MessageType.WARNING,
-                text = "Are you sure you want to clear all channels?",
-                buttons = Gtk.ButtonsType.OK_CANCEL)
+        dlg = Gtk.MessageDialog(
+            parent=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.WARNING,
+            text="Are you sure you want to clear all channels?",
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+        )
         if not widget or dlg.run() == Gtk.ResponseType.OK:
             for channel in self.output_channels:
                 channel.unrealize()
@@ -743,6 +772,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         else:
             self.monitor_channel.prefader = False
         self.update_monitor(channel)
+
     monitored_channel = property(get_monitored_channel, set_monitored_channel)
 
     def update_monitor(self, channel):
@@ -753,10 +783,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         if type(self.monitored_channel) is OutputChannel:
             # sync solo/muted channels
             for input_channel in self.channels:
-                self.monitor_channel.set_solo(input_channel.channel,
-                                channel.channel.is_solo(input_channel.channel))
-                self.monitor_channel.set_muted(input_channel.channel,
-                                channel.channel.is_muted(input_channel.channel))
+                self.monitor_channel.set_solo(
+                    input_channel.channel, channel.channel.is_solo(input_channel.channel)
+                )
+                self.monitor_channel.set_muted(
+                    input_channel.channel, channel.channel.is_muted(input_channel.channel)
+                )
 
     def get_input_channel_by_name(self, name):
         for input_channel in self.channels:
@@ -802,43 +834,43 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
             self.window.show_all()
 
         if self.output_channels:
-            self.output_channels[-1].volume_digits.select_region(0,0)
+            self.output_channels[-1].volume_digits.select_region(0, 0)
             self.output_channels[-1].slider.grab_focus()
         elif self.channels:
-            self.channels[-1].volume_digits.select_region(0,0)
+            self.channels[-1].volume_digits.select_region(0, 0)
             self.channels[-1].volume_digits.grab_focus()
 
-        self.paned.set_position(self.paned_position/self.width*width)
+        self.paned.set_position(self.paned_position / self.width * width)
         self.window.resize(self.width, self.height)
 
     def serialize(self, object_backend):
         width, height = self.window.get_size()
-        object_backend.add_property('geometry',
-                        '%sx%s' % (width, height))
+        object_backend.add_property("geometry", "%sx%s" % (width, height))
         pos = self.paned.get_position()
-        object_backend.add_property('paned_position', '%s' % pos)
+        object_backend.add_property("paned_position", "%s" % pos)
         solo_channels = []
         for input_channel in self.channels:
             if input_channel.channel.solo:
                 solo_channels.append(input_channel)
         if solo_channels:
-            object_backend.add_property('solo_channels',
-                                        '|'.join([x.channel.name for x in solo_channels]))
-        object_backend.add_property('visible', '%s' % str(self.visible))
+            object_backend.add_property(
+                "solo_channels", "|".join([x.channel.name for x in solo_channels])
+            )
+        object_backend.add_property("visible", "%s" % str(self.visible))
 
     def unserialize_property(self, name, value):
-        if name == 'geometry':
-            width, height = value.split('x')
+        if name == "geometry":
+            width, height = value.split("x")
             self.width = int(width)
             self.height = int(height)
             return True
-        if name == 'solo_channels':
-            self._init_solo_channels = value.split('|')
+        if name == "solo_channels":
+            self._init_solo_channels = value.split("|")
             return True
-        if name == 'visible':
-            self.visible = value == 'True'
+        if name == "visible":
+            self.visible = value == "True"
             return True
-        if name == 'paned_position':
+        if name == "paned_position":
             self.paned_position = int(value)
             return True
         return False
@@ -858,7 +890,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
             return self.gui_factory
 
     def serialization_get_childs(self):
-        '''Get child objects that required and support serialization'''
+        """Get child objects that required and support serialization"""
         childs = self.channels[:] + self.output_channels[:] + [self.gui_factory]
         return childs
 
@@ -875,8 +907,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
         if self.visible or self.nsm_client == None:
             width, height = self.window.get_size()
             self.window.show_all()
-            if hasattr(self, 'paned_position'):
-                self.paned.set_position(self.paned_position/self.width*width)
+            if hasattr(self, "paned_position"):
+                self.paned.set_position(self.paned_position / self.width * width)
 
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)
@@ -888,8 +920,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA""")
 
 def error_dialog(parent, msg, *args):
     log.exception(msg, *args)
-    err = Gtk.MessageDialog(parent=parent, modal=True, destroy_with_parent=True,
-        message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.OK, text=msg % args)
+    err = Gtk.MessageDialog(
+        parent=parent,
+        modal=True,
+        destroy_with_parent=True,
+        message_type=Gtk.MessageType.ERROR,
+        buttons=Gtk.ButtonsType.OK,
+        text=msg % args,
+    )
     err.run()
     err.destroy()
 
@@ -897,25 +935,17 @@ def error_dialog(parent, msg, *args):
 def main():
     parser = ArgumentParser()
     parser.add_argument(
-        '-c',
-        '--config',
-        metavar="FILE",
-        help='load mixer project configuration from FILE')
+        "-c", "--config", metavar="FILE", help="load mixer project configuration from FILE"
+    )
+    parser.add_argument("-d", "--debug", action="store_true", help="enable debug logging messages")
     parser.add_argument(
-        '-d',
-        '--debug',
-        action="store_true",
-        help='enable debug logging messages')
-    parser.add_argument(
-        'client_name',
-        metavar='NAME',
-        nargs='?',
-        default='jack_mixer',
-        help='set JACK client name')
+        "client_name", metavar="NAME", nargs="?", default="jack_mixer", help="set JACK client name"
+    )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
-                        format="%(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO, format="%(levelname)s: %(message)s"
+    )
 
     try:
         mixer = JackMixer(args.client_name)
@@ -932,7 +962,9 @@ def main():
         else:
             mixer.current_filename = args.config
 
-        mixer.window.set_default_size(60*(1+len(mixer.channels)+len(mixer.output_channels)), 300)
+        mixer.window.set_default_size(
+            60 * (1 + len(mixer.channels) + len(mixer.output_channels)), 300
+        )
 
     mixer.main()
 

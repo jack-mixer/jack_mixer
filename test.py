@@ -3,7 +3,7 @@
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
-#  
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License
@@ -31,7 +31,7 @@ else:
 
 channel_name = channel.name
 
-print("%s channel \"%s\"" % (channel_type, channel_name))
+print('%s channel "%s"' % (channel_type, channel_name))
 
 print("Channel meter read %s" % repr(channel.meter))
 print("Channels count: %u" % mixer.channels_count)
@@ -39,4 +39,3 @@ print("Channels count: %u" % mixer.channels_count)
 channel.remove()
 
 print("Channels count: %u" % mixer.channels_count)
-

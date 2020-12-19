@@ -198,9 +198,7 @@ def load_css_styles():
 
 def set_background_color(widget, name, color):
     color_string = color.to_string()
-    add_css_provider(
-        COLOR_TMPL_CSS.format(name, color_string, get_text_color(color))
-    )
+    add_css_provider(COLOR_TMPL_CSS.format(name, color_string, get_text_color(color)))
     widget_context = widget.get_style_context()
     widget_context.add_class(name)
 

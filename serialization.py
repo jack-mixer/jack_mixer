@@ -22,10 +22,11 @@ log = logging.getLogger(__name__)
 
 
 class SerializationBackend:
-    '''Base class for serialization backends'''
+    """Base class for serialization backends"""
+
     def get_root_serialization_object(self, name):
-        '''Returns serialization object where properties of root object
-           will be serialized to'''
+        """Returns serialization object where properties of root object
+        will be serialized to"""
         # this method should never be called for the base class
         raise NotImplementedError
 
@@ -35,10 +36,11 @@ class SerializationBackend:
 
 
 class SerializationObjectBackend:
-    '''Base class for serialization backend objects where real object
-       properties will be serialized to or unserialized from.'''
+    """Base class for serialization backend objects where real object
+    properties will be serialized to or unserialized from."""
+
     def add_property(self, name, value):
-        '''Serialize particular property'''
+        """Serialize particular property"""
         pass
 
     def get_childs(self):
@@ -52,16 +54,17 @@ class SerializationObjectBackend:
 
 
 class SerializedObject:
-    '''Base class for object supporting serialization'''
+    """Base class for object supporting serialization"""
+
     def serialization_name(self):
         return None
 
     def serialize(self, object_backend):
-        '''Serialize properties of called object into supplied serialization_object_backend'''
+        """Serialize properties of called object into supplied serialization_object_backend"""
         pass
 
     def serialization_get_childs(self):
-        '''Get child objects tha required and support serialization'''
+        """Get child objects tha required and support serialization"""
         return []
 
     def unserialize_property(self, name, value):
@@ -76,7 +79,9 @@ class Serializator:
         pass
 
     def serialize(self, root, backend):
-        self.serialize_one(backend, root, backend.get_root_serialization_object(root.serialization_name()))
+        self.serialize_one(
+            backend, root, backend.get_root_serialization_object(root.serialization_name())
+        )
 
     def unserialize(self, root, backend):
         backend_object = backend.get_root_unserialization_object(root.serialization_name())
@@ -109,6 +114,8 @@ class Serializator:
         childs = object.serialization_get_childs()
         for child in childs:
             log.debug("Serializing child %r.", child)
-            self.serialize_one(backend, child,
-                               backend.get_child_serialization_object(
-                                       child.serialization_name(), backend_object))
+            self.serialize_one(
+                backend,
+                child,
+                backend.get_child_serialization_object(child.serialization_name(), backend_object),
+            )

@@ -30,7 +30,7 @@ class MeterWidget(Gtk.DrawingArea):
         log.debug("Creating MeterWidget for scale %s", scale)
         super().__init__()
         self.scale = scale
-        self.color_bg = Gdk.Color(0,0,0)
+        self.color_bg = Gdk.Color(0, 0, 0)
         self.color_value = None
         self.color_mark = Gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
         self.width = 0
@@ -49,8 +49,9 @@ class MeterWidget(Gtk.DrawingArea):
         return self.widen(False)
 
     def widen(self, flag=True):
-        self.set_size_request(self.preferred_width if flag else self.min_width,
-                              self.preferred_height)
+        self.set_size_request(
+            self.preferred_width if flag else self.min_width, self.preferred_height
+        )
 
     def set_color(self, color):
         self.color_value = color
@@ -79,10 +80,8 @@ class MeterWidget(Gtk.DrawingArea):
     def draw_background(self, cairo_ctx):
         if not self.cache_surface:
             self.cache_surface = cairo.Surface.create_similar(
-                            cairo_ctx.get_target(),
-                            cairo.CONTENT_COLOR,
-                            int(self.width),
-                            int(self.height))
+                cairo_ctx.get_target(), cairo.CONTENT_COLOR, int(self.width), int(self.height)
+            )
             cache_cairo_ctx = cairo.Context(self.cache_surface)
 
             cache_cairo_ctx.set_source_rgba(0, 0, 0, 0)
@@ -92,7 +91,7 @@ class MeterWidget(Gtk.DrawingArea):
             cache_cairo_ctx.set_source_rgba(0.2, 0.2, 0.2, 1)
             cache_cairo_ctx.select_font_face("Fixed")
             cache_cairo_ctx.set_font_size(self.font_size)
-            glyph_width = self.font_size * 3 / 5 # avarage glyph ratio
+            glyph_width = self.font_size * 3 / 5  # avarage glyph ratio
 
             for mark in self.scale.get_marks():
                 mark_position = int(self.height * (1 - mark.scale))
@@ -108,11 +107,14 @@ class MeterWidget(Gtk.DrawingArea):
 
     def draw_value(self, cairo_ctx, value, x, width):
         if self.color_value is not None:
-            cairo_ctx.set_source_rgb(self.color_value.red/65535.,
-                    self.color_value.green/65535., self.color_value.blue/65535.)
+            cairo_ctx.set_source_rgb(
+                self.color_value.red / 65535.0,
+                self.color_value.green / 65535.0,
+                self.color_value.blue / 65535.0,
+            )
         else:
             height = self.height
-            gradient = cairo.LinearGradient(1, 1, width-1, height-1)
+            gradient = cairo.LinearGradient(1, 1, width - 1, height - 1)
 
             if self.scale.scale_id == "K20":
                 gradient.add_color_stop_rgb(0, 1, 0, 0)
@@ -121,8 +123,8 @@ class MeterWidget(Gtk.DrawingArea):
                 gradient.add_color_stop_rgb(1, 0, 0, 1)
             elif self.scale.scale_id == "K14":
                 gradient.add_color_stop_rgb(0, 1, 0, 0)
-                gradient.add_color_stop_rgb(1-self.scale.db_to_scale(-14), 1, 1, 0)
-                gradient.add_color_stop_rgb(1-self.scale.db_to_scale(-24), 0, 1, 0)
+                gradient.add_color_stop_rgb(1 - self.scale.db_to_scale(-14), 1, 1, 0)
+                gradient.add_color_stop_rgb(1 - self.scale.db_to_scale(-24), 0, 1, 0)
                 gradient.add_color_stop_rgb(1, 0, 0, 1)
             else:
                 gradient.add_color_stop_rgb(0, 1, 0, 0)
@@ -155,8 +157,8 @@ class MonoMeterWidget(MeterWidget):
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
-        self.draw_value(cairo_ctx, self.value, self.width/4.0, self.width/2.0)
-        self.draw_peak(cairo_ctx, self.pk, self.width/4.0, self.width/2.0)
+        self.draw_value(cairo_ctx, self.value, self.width / 4.0, self.width / 2.0)
+        self.draw_peak(cairo_ctx, self.pk, self.width / 4.0, self.width / 2.0)
 
     def set_values(self, pk, value):
         if value == self.raw_value and pk == self.raw_pk:
@@ -169,7 +171,9 @@ class MonoMeterWidget(MeterWidget):
         self.value = self.scale.db_to_scale(value)
         self.pk = self.scale.db_to_scale(pk)
 
-        if (abs(old_value-self.value) * self.height) > 0.01 or (abs(old_pk-self.pk) * self.height) > 0.01:
+        if (abs(old_value - self.value) * self.height) > 0.01 or (
+            abs(old_pk - self.pk) * self.height
+        ) > 0.01:
             self.invalidate_all()
 
 
@@ -190,13 +194,18 @@ class StereoMeterWidget(MeterWidget):
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
-        self.draw_value(cairo_ctx, self.left, self.width/5.0, self.width/5.0)
-        self.draw_value(cairo_ctx, self.right, self.width/5.0 * 3.0, self.width/5.0)
-        self.draw_peak(cairo_ctx, self.pk_left, self.width/5.0, self.width/5.0)
-        self.draw_peak(cairo_ctx, self.pk_right, self.width/5.0 * 3.0, self.width/5.0)
+        self.draw_value(cairo_ctx, self.left, self.width / 5.0, self.width / 5.0)
+        self.draw_value(cairo_ctx, self.right, self.width / 5.0 * 3.0, self.width / 5.0)
+        self.draw_peak(cairo_ctx, self.pk_left, self.width / 5.0, self.width / 5.0)
+        self.draw_peak(cairo_ctx, self.pk_right, self.width / 5.0 * 3.0, self.width / 5.0)
 
     def set_values(self, pk_l, pk_r, left, right):
-        if left == self.raw_left and right == self.raw_right and pk_l == self.raw_left_pk and pk_r == self.raw_right_pk:
+        if (
+            left == self.raw_left
+            and right == self.raw_right
+            and pk_l == self.raw_left_pk
+            and pk_r == self.raw_right_pk
+        ):
             return
 
         self.raw_left = left
@@ -212,5 +221,10 @@ class StereoMeterWidget(MeterWidget):
         self.pk_left = self.scale.db_to_scale(pk_l)
         self.pk_right = self.scale.db_to_scale(pk_r)
 
-        if (abs(old_left-self.left) * self.height) > 0.01 or (abs(old_right-self.right) * self.height) > 0.01 or (abs(old_pk_left-self.pk_left) * self.height) > 0.01 or (abs(old_pk_right-self.pk_right) * self.height) > 0.01:
+        if (
+            (abs(old_left - self.left) * self.height) > 0.01
+            or (abs(old_right - self.right) * self.height) > 0.01
+            or (abs(old_pk_left - self.pk_left) * self.height) > 0.01
+            or (abs(old_pk_right - self.pk_right) * self.height) > 0.01
+        ):
             self.invalidate_all()

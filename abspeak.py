@@ -37,15 +37,15 @@ class AbspeakWidget(Gtk.EventBox):
         if event.type == Gdk.EventType.BUTTON_PRESS:
             if event.button == 1 or event.button == 2 or event.button == 3:
                 context = self.get_style_context()
-                context.remove_class('over_zero')
-                context.remove_class('is_nan')
+                context.remove_class("over_zero")
+                context.remove_class("is_nan")
 
             if event.button == 1 or event.button == 3:
                 self.emit("reset")
             elif event.button == 2:
                 adjust = -self.peak
 
-                if abs(adjust) < 30:    # we better don't adjust more than +- 30 dB
+                if abs(adjust) < 30:  # we better don't adjust more than +- 30 dB
                     self.emit("volume-adjust", adjust)
 
     def set_peak(self, peak):
@@ -53,21 +53,26 @@ class AbspeakWidget(Gtk.EventBox):
         context = self.get_style_context()
 
         if math.isnan(peak):
-            context.remove_class('over_zero')
-            context.add_class('is_nan')
+            context.remove_class("over_zero")
+            context.add_class("is_nan")
             self.label.set_text("NaN")
         else:
             text = "%+.1f" % peak
-            context.remove_class('is_nan')
+            context.remove_class("is_nan")
 
             if peak > 0:
-                context.add_class('over_zero')
+                context.add_class("over_zero")
 
             self.label.set_text(text)
 
 
-GObject.signal_new("reset", AbspeakWidget,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
-GObject.signal_new("volume-adjust", AbspeakWidget,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None,
-                   [GObject.TYPE_FLOAT])
+GObject.signal_new(
+    "reset", AbspeakWidget, GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, []
+)
+GObject.signal_new(
+    "volume-adjust",
+    AbspeakWidget,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [GObject.TYPE_FLOAT],
+)

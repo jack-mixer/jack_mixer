@@ -23,7 +23,9 @@ from serialization import SerializationBackend
 
 class XmlSerialization(SerializationBackend):
     def get_root_serialization_object(self, name):
-        self.doc = xml.dom.getDOMImplementation().createDocument(xml.dom.EMPTY_NAMESPACE, name, None)
+        self.doc = xml.dom.getDOMImplementation().createDocument(
+            xml.dom.EMPTY_NAMESPACE, name, None
+        )
         return XmlSerializationObject(self.doc, self.doc.documentElement)
 
     def get_root_unserialization_object(self, name):
@@ -54,7 +56,7 @@ class XmlSerializationObject:
     def add_property_as_attribute(self, name, value):
         self.element.setAttribute(name, value)
 
-    #def add_property_as_child_element(self, name, value):
+    # def add_property_as_child_element(self, name, value):
     #    child = self.doc.createElement(name)
     #    value = self.doc.createTextNode(value)
     #    child.appendChild(value)

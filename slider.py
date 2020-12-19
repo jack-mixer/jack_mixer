@@ -48,7 +48,7 @@ class AdjustmentdBFS(Gtk.Adjustment):
     def get_value_db(self):
         return self.db
 
-    def set_value_db(self, db, from_midi = False):
+    def set_value_db(self, db, from_midi=False):
         self.db = db
         self.disable_value_notify = True
         self.set_value(self.scale.db_to_scale(db))
@@ -70,11 +70,21 @@ class AdjustmentdBFS(Gtk.Adjustment):
         self.disable_value_notify = False
 
 
-GObject.signal_new("volume-changed", AdjustmentdBFS,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+GObject.signal_new(
+    "volume-changed",
+    AdjustmentdBFS,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [],
+)
 
-GObject.signal_new("volume-changed-from-midi", AdjustmentdBFS,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+GObject.signal_new(
+    "volume-changed-from-midi",
+    AdjustmentdBFS,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [],
+)
 
 
 class BalanceAdjustment(Gtk.Adjustment):
@@ -83,7 +93,7 @@ class BalanceAdjustment(Gtk.Adjustment):
         self.connect("value-changed", self.on_value_changed)
         self.disable_value_notify = False
 
-    def set_balance(self, value, from_midi = False):
+    def set_balance(self, value, from_midi=False):
         self.disable_value_notify = True
         self.set_value(value)
         self.disable_value_notify = False
@@ -95,8 +105,13 @@ class BalanceAdjustment(Gtk.Adjustment):
             self.emit("balance-changed")
 
 
-GObject.signal_new("balance-changed", BalanceAdjustment,
-                   GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION, None, [])
+GObject.signal_new(
+    "balance-changed",
+    BalanceAdjustment,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [],
+)
 
 
 class VolumeSlider(Gtk.Scale):
@@ -110,8 +125,8 @@ class VolumeSlider(Gtk.Scale):
         self.button_down_y = 0
         self.button_down_value = 0
 
-        self.connect('button-press-event', self.button_press_event)
-        self.connect('button-release-event', self.button_release_event)
+        self.connect("button-press-event", self.button_press_event)
+        self.connect("button-release-event", self.button_release_event)
         self.connect("motion-notify-event", self.motion_notify_event)
         self.connect("scroll-event", self.scroll_event)
 
@@ -137,9 +152,8 @@ class VolumeSlider(Gtk.Scale):
         return False
 
     def motion_notify_event(self, widget, event):
-        slider_length = (
-            widget.get_allocation().height -
-            widget.get_style_context().get_property('min-height', Gtk.StateFlags.NORMAL)
+        slider_length = widget.get_allocation().height - widget.get_style_context().get_property(
+            "min-height", Gtk.StateFlags.NORMAL
         )
         if self.button_down:
             delta_y = (self.button_down_y - event.y) / slider_length
@@ -217,9 +231,8 @@ class BalanceSlider(Gtk.Scale):
         return False
 
     def on_motion_notify_event(self, widget, event):
-        slider_length = (
-            widget.get_allocation().width -
-            widget.get_style_context().get_property('min-width', Gtk.StateFlags.NORMAL)
+        slider_length = widget.get_allocation().width - widget.get_style_context().get_property(
+            "min-width", Gtk.StateFlags.NORMAL
         )
 
         if self._button_down:
@@ -265,8 +278,11 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self.connect("button-press-event", self.on_mouse)
         self.connect("motion-notify-event", self.on_mouse)
         self.connect("scroll-event", self.on_scroll)
-        self.set_events(Gdk.EventMask.BUTTON1_MOTION_MASK |
-                        Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.set_events(
+            Gdk.EventMask.BUTTON1_MOTION_MASK
+            | Gdk.EventMask.SCROLL_MASK
+            | Gdk.EventMask.BUTTON_PRESS_MASK
+        )
 
     def on_scroll(self, widget, event):
         delta = self.adjustment.step_increment
@@ -286,8 +302,13 @@ class CustomSliderWidget(Gtk.DrawingArea):
         if event.type == Gdk.EventType.BUTTON_PRESS:
             log.debug("Mouse button %u pressed %ux%u", event.button, event.x, event.y)
             if event.button == 1:
-                if event.y >= self.slider_rail_up and event.y < self.slider_rail_up + self.slider_rail_height:
-                    self.adjustment.set_value(1 - float(event.y - self.slider_rail_up) / float(self.slider_rail_height))
+                if (
+                    event.y >= self.slider_rail_up
+                    and event.y < self.slider_rail_up + self.slider_rail_height
+                ):
+                    self.adjustment.set_value(
+                        1 - float(event.y - self.slider_rail_up) / float(self.slider_rail_height)
+                    )
         elif event.type == Gdk.EventType.MOTION_NOTIFY:
             log.debug("Mouse motion %ux%u", event.x, event.y)
             if event.y < self.slider_rail_up:
@@ -296,7 +317,9 @@ class CustomSliderWidget(Gtk.DrawingArea):
                 y = self.slider_rail_up + self.slider_rail_height
             else:
                 y = event.y
-            self.adjustment.set_value(1 - float(y - self.slider_rail_up) / float(self.slider_rail_height))
+            self.adjustment.set_value(
+                1 - float(y - self.slider_rail_up) / float(self.slider_rail_height)
+            )
 
         return False
 
@@ -326,7 +349,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
         requisition.width = 20
 
     def invalidate_all(self):
-        if hasattr(self, 'width') and hasattr(self, 'height'):
+        if hasattr(self, "width") and hasattr(self, "height"):
             self.queue_draw_area(0, 0, int(self.width), int(self.height))
 
     def draw(self, cairo_ctx):
@@ -335,37 +358,40 @@ class CustomSliderWidget(Gtk.DrawingArea):
         else:
             state = Gtk.StateType.NORMAL
 
-        #cairo_ctx.rectangle(0, 0, self.width, self.height)
-        #cairo_ctx.set_source_color(self.style.bg[state])
-        #cairo_ctx.fill_preserve()
-        #Gdk.cairo_set_source_color(cairo_ctx,
+        # cairo_ctx.rectangle(0, 0, self.width, self.height)
+        # cairo_ctx.set_source_color(self.style.bg[state])
+        # cairo_ctx.fill_preserve()
+        # Gdk.cairo_set_source_color(cairo_ctx,
         #        self.get_style_context().get_color(state).to_color())
-        #cairo_ctx.stroke()
+        # cairo_ctx.stroke()
 
         slider_knob_width = 37.5 if self.width * 3 / 4 > 37.5 else self.width * 3 / 4
         slider_knob_height = slider_knob_width * 2
         slider_knob_height -= slider_knob_height % 2
         slider_knob_height += 1
 
-        slider_x = self.width/2
+        slider_x = self.width / 2
 
         cairo_ctx.set_line_width(1)
 
         # slider rail
-        Gdk.cairo_set_source_color(cairo_ctx,
-                self.get_style_context().get_color(state).to_color())
-        self.slider_rail_up = slider_knob_height/2 + (self.width - slider_knob_width)/2
+        Gdk.cairo_set_source_color(cairo_ctx, self.get_style_context().get_color(state).to_color())
+        self.slider_rail_up = slider_knob_height / 2 + (self.width - slider_knob_width) / 2
         self.slider_rail_height = self.height - 2 * self.slider_rail_up
         cairo_ctx.move_to(slider_x, self.slider_rail_up)
         cairo_ctx.line_to(slider_x, self.slider_rail_height + self.slider_rail_up)
         cairo_ctx.stroke()
 
         # slider knob
-        slider_y = round(self.slider_rail_up + self.slider_rail_height * (1 - self.adjustment.get_value()))
-        lg = cairo.LinearGradient(slider_x -
-                float(slider_knob_width)/2, slider_y - slider_knob_height/2,
-                slider_x - float(slider_knob_width)/2, slider_y +
-                slider_knob_height/2)
+        slider_y = round(
+            self.slider_rail_up + self.slider_rail_height * (1 - self.adjustment.get_value())
+        )
+        lg = cairo.LinearGradient(
+            slider_x - float(slider_knob_width) / 2,
+            slider_y - slider_knob_height / 2,
+            slider_x - float(slider_knob_width) / 2,
+            slider_y + slider_knob_height / 2,
+        )
         slider_alpha = 1.0
         lg.add_color_stop_rgba(0, 0.55, 0.55, 0.55, slider_alpha)
         lg.add_color_stop_rgba(0.1, 0.65, 0.65, 0.65, slider_alpha)
@@ -381,12 +407,15 @@ class CustomSliderWidget(Gtk.DrawingArea):
         lg.add_color_stop_rgba(0.900, 0.75, 0.75, 0.75, slider_alpha)
         lg.add_color_stop_rgba(0.900, 0.15, 0.15, 0.15, slider_alpha)
         lg.add_color_stop_rgba(1.000, 0.10, 0.10, 0.10, slider_alpha)
-        cairo_ctx.rectangle(slider_x - float(slider_knob_width)/2,
-                            slider_y - slider_knob_height/2,
-                            float(slider_knob_width),
-                            slider_knob_height)
-        Gdk.cairo_set_source_color(cairo_ctx,
-                self.get_style_context().get_background_color(state).to_color())
+        cairo_ctx.rectangle(
+            slider_x - float(slider_knob_width) / 2,
+            slider_y - slider_knob_height / 2,
+            float(slider_knob_width),
+            slider_knob_height,
+        )
+        Gdk.cairo_set_source_color(
+            cairo_ctx, self.get_style_context().get_background_color(state).to_color()
+        )
         cairo_ctx.fill_preserve()
         cairo_ctx.set_source(lg)
         cairo_ctx.fill()

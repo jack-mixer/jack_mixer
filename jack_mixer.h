@@ -34,6 +34,12 @@ typedef void * jack_mixer_channel_t;
 typedef void * jack_mixer_output_channel_t;
 typedef void * jack_mixer_threshold_t;
 
+/* Masks bits for channel.midi_out_has_events */
+#define CHANNEL_VOLUME 1
+#define CHANNEL_BALANCE 2
+#define CHANNEL_MUTE 4
+#define CHANNEL_SOLO 8
+
 enum midi_behavior_mode { Jump_To_Value, Pick_Up };
 
 jack_mixer_t

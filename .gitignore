@@ -38,3 +38,4 @@ jack_mixer.cxxflags
 jack_mixer.files
 jack_mixer.includes
 *.xml
+*.geany

@@ -56,6 +56,9 @@ if get_option('gui').enabled()
     subdir('data')
 endif
 
+# Install documentation
+subdir('docs')
+
 if get_option('gui').enabled() and not get_option('wheel')
     meson.add_install_script('meson_postinstall.py')
 endif

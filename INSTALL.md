@@ -16,6 +16,7 @@ Build requirements:
  * [JACK] headers (`libjack-jackd2-dev` (recommended) or `libjack-dev`)
  * glib2 headers (`libglib-2.0-dev`)
  * [Cython] (optional, required if building from a Git checkout)
+ * [docutils] (optional, `rst2man` required if building from a Git checkout)
 
 Runtime requirements:
 
@@ -101,6 +102,7 @@ will be placed in the project's root directory.
 The wheel can be installed with `pip install jack_mixer-*.whl`.
 
 
+[docutils]: https://pypi.org/project/docutils/
 [Cython]: https://cython.org/
 [JACK]: https://jackaudio.org/
 [meson]: https://mesonbuild.com/

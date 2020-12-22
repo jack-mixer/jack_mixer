@@ -4,6 +4,10 @@ jack_mix_box
 *.la
 *.o
 
+# generated man pages
+jack_mix_box.1
+jack_mixer.1
+
 # Mixer configuration files
 *.xml
 *.geany

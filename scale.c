@@ -2,9 +2,9 @@
 /*****************************************************************************
  *
  *   This file is part of jack_mixer
- *    
+ *
  *   Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
- *    
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; version 2 of the License
@@ -20,19 +20,18 @@
  *
  *****************************************************************************/
 
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <math.h>
 #include <assert.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 #include "jack_mixer.h"
 //#define LOG_LEVEL LOG_LEVEL_DEBUG
-#include "log.h"
 #include "list.h"
+#include "log.h"
 
-struct threshold
-{
+struct threshold {
   struct list_head scale_siblings;
   double db;
   double scale;
@@ -40,20 +39,16 @@ struct threshold
   double b;
 };
 
-struct scale
-{
+struct scale {
   struct list_head thresholds;
   double max_db;
 };
 
-jack_mixer_scale_t
-scale_create()
-{
-  struct scale * scale_ptr;
+jack_mixer_scale_t scale_create() {
+  struct scale *scale_ptr;
 
   scale_ptr = malloc(sizeof(struct scale));
-  if (scale_ptr == NULL)
-  {
+  if (scale_ptr == NULL) {
     return NULL;
   }
 
@@ -67,45 +62,34 @@ scale_create()
 
 #define scale_ptr ((struct scale *)scale)
 
-void
-scale_destroy(
-  jack_mixer_scale_t scale)
-{
+void scale_destroy(jack_mixer_scale_t scale) {
   scale_remove_thresholds(scale);
   free(scale_ptr);
 }
 
-void 
-scale_remove_thresholds(
-  jack_mixer_scale_t scale)
-{
-  
-  struct threshold * threshold_ptr;
-  struct threshold * node_ptr;
+void scale_remove_thresholds(jack_mixer_scale_t scale) {
+  struct threshold *threshold_ptr;
+  struct threshold *node_ptr;
 
-  list_for_each_entry_safe(threshold_ptr, node_ptr, &scale_ptr->thresholds, scale_siblings)
-  {
+  list_for_each_entry_safe(
+   threshold_ptr, node_ptr, &scale_ptr->thresholds, scale_siblings) {
     list_del(&(threshold_ptr->scale_siblings));
     free(threshold_ptr);
     threshold_ptr = NULL;
   }
 }
 
-bool
-scale_add_threshold(
-  jack_mixer_scale_t scale,
-  float db,
-  float scale_value)
-{
-  struct threshold * threshold_ptr;
+bool scale_add_threshold(
+ jack_mixer_scale_t scale, float db, float scale_value) {
+  struct threshold *threshold_ptr;
 
-  LOG_DEBUG("Adding threshold (%f dBFS -> %f) to scale %p", db, scale, scale_ptr);
+  LOG_DEBUG(
+   "Adding threshold (%f dBFS -> %f) to scale %p", db, scale, scale_ptr);
 
   threshold_ptr = malloc(sizeof(struct threshold));
   LOG_DEBUG("Threshold %p created ", threshold_ptr, db, scale);
 
-  if (threshold_ptr == NULL)
-  {
+  if (threshold_ptr == NULL) {
     return false;
   }
 
@@ -114,8 +98,7 @@ scale_add_threshold(
 
   list_add_tail(&threshold_ptr->scale_siblings, &scale_ptr->thresholds);
 
-  if (db > scale_ptr->max_db)
-  {
+  if (db > scale_ptr->max_db) {
     scale_ptr->max_db = db;
   }
 
@@ -124,27 +107,25 @@ scale_add_threshold(
 
 #undef threshold_ptr
 
-void
-scale_calculate_coefficients(
-  jack_mixer_scale_t scale)
-{
-  struct threshold * threshold_ptr;
-  struct threshold * prev_ptr;
-  struct list_head * node_ptr;
+void scale_calculate_coefficients(jack_mixer_scale_t scale) {
+  struct threshold *threshold_ptr;
+  struct threshold *prev_ptr;
+  struct list_head *node_ptr;
 
   prev_ptr = NULL;
 
-  list_for_each(node_ptr, &scale_ptr->thresholds)
-  {
+  list_for_each(node_ptr, &scale_ptr->thresholds) {
     threshold_ptr = list_entry(node_ptr, struct threshold, scale_siblings);
 
     LOG_DEBUG("Calculating coefficients for threshold %p", threshold_ptr);
 
-    if (prev_ptr != NULL)
-    {
-      threshold_ptr->a = (prev_ptr->scale - threshold_ptr->scale) / (prev_ptr->db - threshold_ptr->db);
-      threshold_ptr->b = threshold_ptr->scale - threshold_ptr->a * threshold_ptr->db;
-      LOG_DEBUG("%.0f dB - %.0f dB: scale = %f * dB + %f", prev_ptr->db, threshold_ptr->db, threshold_ptr->a, threshold_ptr->b);
+    if (prev_ptr != NULL) {
+      threshold_ptr->a = (prev_ptr->scale - threshold_ptr->scale) /
+                         (prev_ptr->db - threshold_ptr->db);
+      threshold_ptr->b =
+       threshold_ptr->scale - threshold_ptr->a * threshold_ptr->db;
+      LOG_DEBUG("%.0f dB - %.0f dB: scale = %f * dB + %f", prev_ptr->db,
+       threshold_ptr->db, threshold_ptr->a, threshold_ptr->b);
     }
 
     prev_ptr = threshold_ptr;
@@ -152,26 +133,19 @@ scale_calculate_coefficients(
 }
 
 /* Convert dBFS value to number in range 0.0-1.0 */
-double
-scale_db_to_scale(
-  jack_mixer_scale_t scale,
-  double db)
-{
-  struct threshold * threshold_ptr;
-  struct threshold * prev_ptr;
-  struct list_head * node_ptr;
+double scale_db_to_scale(jack_mixer_scale_t scale, double db) {
+  struct threshold *threshold_ptr;
+  struct threshold *prev_ptr;
+  struct list_head *node_ptr;
 
   prev_ptr = NULL;
 
-  list_for_each(node_ptr, &scale_ptr->thresholds)
-  {
+  list_for_each(node_ptr, &scale_ptr->thresholds) {
     threshold_ptr = list_entry(node_ptr, struct threshold, scale_siblings);
 
-    if (db < threshold_ptr->db)
-    {
+    if (db < threshold_ptr->db) {
       LOG_DEBUG("Match at %f dB treshold", threshold_ptr->db);
-      if (prev_ptr == NULL)
-      {
+      if (prev_ptr == NULL) {
         return 0.0;
       }
 
@@ -185,25 +159,18 @@ scale_db_to_scale(
 }
 
 /* Convert number in range 0.0-1.0 to dBFS value */
-double
-scale_scale_to_db(
-  jack_mixer_scale_t scale,
-  double scale_value)
-{
-  struct threshold * threshold_ptr;
-  struct threshold * prev_ptr;
-  struct list_head * node_ptr;
+double scale_scale_to_db(jack_mixer_scale_t scale, double scale_value) {
+  struct threshold *threshold_ptr;
+  struct threshold *prev_ptr;
+  struct list_head *node_ptr;
 
   prev_ptr = NULL;
 
-  list_for_each(node_ptr, &scale_ptr->thresholds)
-  {
+  list_for_each(node_ptr, &scale_ptr->thresholds) {
     threshold_ptr = list_entry(node_ptr, struct threshold, scale_siblings);
 
-    if (scale_value <= threshold_ptr->scale)
-    {
-      if (prev_ptr == NULL)
-      {
+    if (scale_value <= threshold_ptr->scale) {
+      if (prev_ptr == NULL) {
         return -INFINITY;
       }
 

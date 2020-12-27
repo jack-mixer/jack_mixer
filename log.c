@@ -18,15 +18,14 @@
  *
  *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-
 #include "log.h"
 
-void jack_mixer_log(int level, const char * format, ...)
-{
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void jack_mixer_log(int level, const char* format, ...) {
   (void)level;
   va_list arglist;
 

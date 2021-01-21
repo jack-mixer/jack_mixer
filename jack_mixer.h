@@ -60,6 +60,7 @@ typedef void * jack_mixer_threshold_t;
 #endif
 
 enum midi_behavior_mode { Jump_To_Value, Pick_Up };
+enum meter_mode { Pre_Fader, Post_Fader };
 
 jack_mixer_t
 create(
@@ -137,19 +138,19 @@ channel_mono_meter_read(
 
 /* returned values are in dBFS */
 void
-channel_stereo_kmeter_read(
-  jack_mixer_channel_t channel,
+channel_stereo_kmeter_read(jack_mixer_channel_t channel,
   double * left_ptr,
   double * right_ptr,
   double * left_rms_ptr,
-  double * right_rms_ptr);
+  double * right_rms_ptr,
+  enum meter_mode
+);
 
 /* returned value is in dBFS */
 void
-channel_mono_kmeter_read(
-  jack_mixer_channel_t channel,
+channel_mono_kmeter_read(jack_mixer_channel_t channel,
   double * mono_ptr,
-  double * mono_rms_ptr);
+  double * mono_rms_ptr, enum meter_mode mode);
 
 
 
@@ -260,11 +261,12 @@ remove_channels(
 /* returned value is in dBFS */
 double
 channel_abspeak_read(
-  jack_mixer_channel_t channel);
+  jack_mixer_channel_t channel,
+  enum meter_mode modes);
 
 void
-channel_abspeak_reset(
-  jack_mixer_channel_t channel);
+channel_abspeak_reset(jack_mixer_channel_t channel,
+  enum meter_mode mode);
 
 void
 channel_out_mute(

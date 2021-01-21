@@ -23,7 +23,7 @@ from gi.repository import Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 
-import abspeak
+from abspeak import AbspeakWidget
 import meter
 import slider
 from serialization import SerializedObject
@@ -55,6 +55,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.balance_adjustment = slider.BalanceAdjustment()
         self.post_fader_output_channel = None
         self.future_out_mute = None
+        self.future_use_prefader_metering = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
@@ -62,6 +63,8 @@ class Channel(Gtk.Box, SerializedObject):
         self.css_name = "css_name_%d" % Channel.num_instances
         self.label_name = None
         self.wide = True
+        self.meter_prefader = False
+        self.prefader_button = None
         self.label_chars_wide = 12
         self.label_chars_narrow = 7
         self.channel_properties_dialog = None
@@ -127,6 +130,13 @@ class Channel(Gtk.Box, SerializedObject):
         self.vbox_fader = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.vbox_fader.get_style_context().add_class("vbox_fader")
 
+        pre = Gtk.ToggleButton("PRE")
+        pre.set_name("pre_fader")
+        pre.get_style_context().add_class("prefader")
+        pre.set_tooltip_text("Pre-fader (on) / Post-fader (off) metering")
+        pre.connect("toggled", self.on_prefader_metering_toggled)
+        self.prefader_button = pre
+
         self.hbox_readouts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_readouts.set_homogeneous(True)
         self.hbox_readouts.pack_start(self.volume_digits, False, True, 0)
@@ -135,7 +145,11 @@ class Channel(Gtk.Box, SerializedObject):
 
         self.hbox_fader = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_fader.pack_start(self.slider, True, True, 0)
-        self.hbox_fader.pack_start(self.meter, True, True, 0)
+        self.vbox_meter = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.vbox_meter.pack_start(self.meter, True, True, 0) 
+        self.vbox_meter.pack_start(self.prefader_button, False, True, 0)
+        self.hbox_fader.pack_start(self.vbox_meter, True, True, 0)
+
         self.vbox_fader.pack_start(self.hbox_fader, True, True, 0)
         self.vbox_fader.pack_end(self.balance, False, True, 0)
 
@@ -195,10 +209,17 @@ class Channel(Gtk.Box, SerializedObject):
         self.volume_digits.get_style_context().add_class("readout")
 
         # Peak level label
-        self.abspeak = abspeak.AbspeakWidget()
-        self.abspeak.connect("reset", self.on_abspeak_reset)
-        self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
-        self.abspeak.get_style_context().add_class("readout")
+        self.abspeak = Gtk.Stack()
+        self.abspeak_prefader = AbspeakWidget()
+        self.abspeak_postfader = AbspeakWidget()
+        for abspeak in [self.abspeak_prefader, self.abspeak_postfader]:
+            abspeak.connect("reset", self.on_abspeak_reset)
+            abspeak.connect("volume-adjust", self.on_abspeak_adjust)
+            abspeak.get_style_context().add_class("readout")
+        self.abspeak.add_named(self.abspeak_prefader, "pre")
+        self.abspeak.add_named(self.abspeak_postfader, "post")
+
+
 
         # Level meter
         if self.stereo:
@@ -294,6 +315,9 @@ class Channel(Gtk.Box, SerializedObject):
         self.create_slider_widget()
         # balance slider has no custom variant, no need to re-create it.
 
+    def on_prefader_metering_toggled(self, button):
+        self.use_prefader_metering(button.get_active())
+
     def on_abspeak_adjust(self, abspeak, adjust):
         log.debug("abspeak adjust %f", adjust)
         self.slider_adjustment.set_value_db(self.slider_adjustment.get_value_db() + adjust)
@@ -303,7 +327,10 @@ class Channel(Gtk.Box, SerializedObject):
 
     def on_abspeak_reset(self, abspeak):
         log.debug("abspeak reset")
-        self.channel.abspeak = None
+        if self.meter_prefader:
+            self.channel.abspeak_prefader = None
+        else:
+            self.channel.abspeak_postfader = None
 
     def on_volume_digits_key_pressed(self, widget, event):
         if event.keyval == Gdk.KEY_Return or event.keyval == Gdk.KEY_KP_Enter:
@@ -464,17 +491,38 @@ class Channel(Gtk.Box, SerializedObject):
     def narrow(self):
         self.widen(False)
 
+    def use_prefader_metering(self, flag=True):
+        self.meter_prefader = flag
+        self.prefader_button.set_active(flag)
+
     def read_meter(self):
         if not self.channel:
             return
         if self.stereo:
-            peak_left, peak_right, rms_left, rms_right = self.channel.kmeter
+            if self.meter_prefader:
+                peak_left, peak_right, rms_left, rms_right = self.channel.kmeter_prefader
+                self.channel.kmeter_postfader
+            else:
+                peak_left, peak_right, rms_left, rms_right = self.channel.kmeter_postfader
+                self.channel.kmeter_prefader
             self.meter.set_values(peak_left, peak_right, rms_left, rms_right)
         else:
-            peak, rms = self.channel.kmeter
+            if self.meter_prefader:
+                peak, rms = self.channel.kmeter_prefader
+                self.channel.kmeter_postfader
+            else:
+                peak, rms = self.channel.kmeter_postfader
+                self.channel.kmeter_prefader
             self.meter.set_values(peak, rms)
 
-        self.abspeak.set_peak(self.channel.abspeak)
+        if self.meter_prefader:
+            if self.abspeak.get_visible_child_name() != "pre":
+                self.abspeak.set_visible_child_name("pre")
+            self.abspeak.get_child_by_name("pre").set_peak(self.channel.abspeak_prefader)
+        else:
+            if self.abspeak.get_visible_child_name() != "post":
+                self.abspeak.set_visible_child_name("post")
+            self.abspeak.get_child_by_name("post").set_peak(self.channel.abspeak_postfader)
 
     def update_volume(self, update_engine, from_midi=False):
         db = self.slider_adjustment.get_value_db()
@@ -494,6 +542,7 @@ class Channel(Gtk.Box, SerializedObject):
         object_backend.add_property("volume", "%f" % self.slider_adjustment.get_value_db())
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
         object_backend.add_property("wide", "%s" % str(self.wide))
+        object_backend.add_property("meter_prefader", "%s" % str(self.meter_prefader))
 
         if hasattr(self.channel, "out_mute"):
             object_backend.add_property("out_mute", str(self.channel.out_mute))
@@ -515,6 +564,9 @@ class Channel(Gtk.Box, SerializedObject):
             return True
         if name == "out_mute":
             self.future_out_mute = value == "True"
+            return True
+        if name == "meter_prefader":
+            self.future_use_prefader_metering = (value == "True")
             return True
         if name == "volume_midi_cc":
             self.future_volume_midi_cc = int(value)
@@ -573,6 +625,12 @@ class InputChannel(Channel):
         self.on_balance_changed(self.balance_adjustment)
 
         self.create_fader()
+        if self.future_use_prefader_metering != None:
+            self.use_prefader_metering(self.future_use_prefader_metering)
+        else:
+            self.use_prefader_metering(False)
+
+        # Widgets
         self.create_buttons()
 
         if not self.wide:
@@ -731,6 +789,13 @@ class OutputChannel(Channel):
         set_background_color(self.label_name_event_box, self.css_name, self.color)
 
         self.create_fader()
+        if self.future_use_prefader_metering != None:
+            self.use_prefader_metering(self.future_use_prefader_metering)
+        else:
+            self.use_prefader_metering(False)
+
+        # Widgets
+
         self.create_buttons()
 
         # add control groups to the input channels, and initialize them

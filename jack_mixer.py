@@ -245,6 +245,13 @@ class JackMixer(SerializedObject):
         )
         edit_menu.append(Gtk.SeparatorMenuItem())
 
+        edit_menu.append(self.new_menu_item('Prefader Metering', self.on_prefader_meters_cb,
+                                            "<Control>M"))
+        edit_menu.append(self.new_menu_item('Postfader Metering', self.on_postfader_meters_cb,
+                                            "<Shift><Control>M"))
+
+        edit_menu.append(Gtk.SeparatorMenuItem())
+
         edit_menu.append(self.new_menu_item("_Clear", self.on_channels_clear, "<Control>X"))
         edit_menu.append(Gtk.SeparatorMenuItem())
 
@@ -543,6 +550,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
     def on_expand_channels_cb(self, widget):
         for channel in self.channels + self.output_channels:
             channel.widen()
+
+    def on_prefader_meters_cb(self, widget):
+        for channel in self.channels + self.output_channels:
+            channel.use_prefader_metering()
+
+    def on_postfader_meters_cb(self, widget):
+        for channel in self.channels + self.output_channels:
+            channel.use_prefader_metering(False)
 
     def on_midi_behavior_mode_changed(self, gui_factory, value):
         self.mixer.midi_behavior_mode = value

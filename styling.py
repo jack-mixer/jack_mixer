@@ -76,9 +76,11 @@ button {
 button.monitor:hover,
 button.mute:hover,
 button.solo:hover,
+button.prefader:hover,
 button.monitor:checked,
 button.mute:checked,
-button.solo:checked {
+button.solo:checked,
+button.prefader:checked {
     color: white;
     text-shadow: unset;
     background-image: none;
@@ -101,6 +103,13 @@ button.solo:hover {
 button.solo:checked {
     background-color: @solo_bgcolor_checked;
 }
+button.prefader:hover {
+    background-color: @prefader_bgcolor_hover;
+}
+button.prefader:checked {
+    background-color: @prefader_bgcolor_checked;
+}
+
 
 
 /* Control groups */

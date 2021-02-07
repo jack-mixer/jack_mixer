@@ -92,7 +92,16 @@ class Channel(Gtk.Box, SerializedObject):
     # UI creation and (de-)initialization
 
     def create_balance_widget(self):
+        parent = None
+        if self.balance:
+            parent = self.balance.get_parent()
+            self.balance.destroy()
+
         self.balance = slider.BalanceSlider(self.balance_adjustment, (20, 20), (0, 100))
+
+        if parent:
+            parent.pack_end(self.balance, False, True, 0)
+
         self.balance.show()
 
     def create_buttons(self):
@@ -128,7 +137,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.hbox_fader.pack_start(self.slider, True, True, 0)
         self.hbox_fader.pack_start(self.meter, True, True, 0)
         self.vbox_fader.pack_start(self.hbox_fader, True, True, 0)
-        self.vbox_fader.pack_start(self.balance, False, True, 0)
+        self.vbox_fader.pack_end(self.balance, False, True, 0)
 
         self.pack_start(self.vbox_fader, True, True, 0)
 
@@ -169,9 +178,11 @@ class Channel(Gtk.Box, SerializedObject):
         self.label_name_event_box.connect("button-press-event", self.on_label_mouse)
         self.label_name_event_box.add(self.label_name)
 
-        # Volume fader
+        # Volume slider
         self.slider = None
         self.create_slider_widget()
+        # Balance slider
+        self.balance = None
         self.create_balance_widget()
 
         # Volume entry
@@ -280,9 +291,8 @@ class Channel(Gtk.Box, SerializedObject):
             self.meter.set_color(Gdk.color_parse(color))
 
     def on_custom_widgets_changed(self, gui_factory, value):
-        self.balance.destroy()
-        self.create_balance_widget()
         self.create_slider_widget()
+        # balance slider has no custom variant, no need to re-create it.
 
     def on_abspeak_adjust(self, abspeak, adjust):
         log.debug("abspeak adjust %f", adjust)

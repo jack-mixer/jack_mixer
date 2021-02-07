@@ -43,10 +43,11 @@ void
 usage()
 {
 	printf("Usage: ");
-	printf("jack_mix_box [-n <name>] [-s] [-v <dB>] MIDI_CC...\n");
+	printf("jack_mix_box [-n <name>] [-p] [-s] [-v <dB>] MIDI_CC...\n");
 	printf("\n");
 	printf("-h|--help\tprint this help message\n");
 	printf("-n|--name\tset JACK client name\n");
+	printf("-p|--pickup\tenable MIDI pickup mode (default: jump-to-value)\n");
 	printf("-s|--stereo\tmake all input channels stereo with left+right input\n");
 	printf("-v|--volume\tinitial volume gain in dB, default is 0.0 (i.e. unity gain)\n");
 	printf("\n");
@@ -79,6 +80,7 @@ main(int argc, char *argv[])
 	char *jack_cli_name = NULL;
 	int channel_index;
 	bool bStereo = false;
+	enum midi_behavior_mode ePickup = Jump_To_Value;
 	double initialVolume = 0.0f; //in dbFS
 
 	while (1) {
@@ -87,13 +89,14 @@ main(int argc, char *argv[])
 		{
 			{"name",  required_argument, 0, 'n'},
 			{"help",  no_argument, 0, 'h'},
+			{"pickup",  no_argument, 0, 'p'},
 			{"stereo",  no_argument, 0, 's'},
 			{"volume",  required_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};
 		int option_index = 0;
 
-		c = getopt_long (argc, argv, "shn:v:", long_options, &option_index);
+		c = getopt_long (argc, argv, "sphn:v:", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -110,6 +113,9 @@ main(int argc, char *argv[])
 			case 'h':
 				usage();
 				exit(0);
+				break;
+			case 'p':
+				ePickup = Pick_Up;
 				break;
 			default:
 				fprintf(stderr, "Unknown argument, aborting.\n");
@@ -135,6 +141,7 @@ main(int argc, char *argv[])
 	main_mix_channel = add_output_channel(mixer, "MAIN", true, false);
 	channel_set_midi_scale(main_mix_channel, scale);
 	channel_volume_write(main_mix_channel, 0.0);
+	set_midi_behavior_mode(mixer, ePickup);
 
 	channel_index = 0;
 	while (optind < argc) {

@@ -373,18 +373,16 @@ class Channel(Gtk.Box, SerializedObject):
     def on_monitor_button_toggled(self, button):
         if button.get_active():
             for channel in self.app.channels + self.app.output_channels:
-                if channel.monitor_button.get_active() and channel.monitor_button is not button:
+                if channel is not self and channel.monitor_button.get_active():
                     channel.monitor_button.handler_block_by_func(channel.on_monitor_button_toggled)
                     channel.monitor_button.set_active(False)
                     channel.monitor_button.handler_unblock_by_func(
                         channel.on_monitor_button_toggled
                     )
-            self.app.set_monitored_channel(self)
+            self.app.monitored_channel = self
         else:
-            if self.app._monitored_channel.channel.name == self.channel.name:
-                self.monitor_button.handler_block_by_func(self.on_monitor_button_toggled)
-                self.monitor_button.set_active(True)
-                self.monitor_button.handler_unblock_by_func(self.on_monitor_button_toggled)
+            if self.app.monitored_channel is self:
+                self.app.monitored_channel = None
 
     def assign_midi_ccs(self, volume_cc, balance_cc, mute_cc, solo_cc=None):
         try:
@@ -1241,11 +1239,11 @@ class ControlGroup(Gtk.Alignment):
 
     def on_mute_toggled(self, button):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())
-        self.app.update_monitor(self)
+        self.app.update_monitor(self.output_channel)
 
     def on_solo_toggled(self, button):
         self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())
-        self.app.update_monitor(self)
+        self.app.update_monitor(self.output_channel)
 
     def on_prefader_toggled(self, button):
         self.output_channel.channel.set_in_prefader(

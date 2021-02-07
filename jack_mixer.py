@@ -756,20 +756,25 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         return self._monitored_channel
 
     def set_monitored_channel(self, channel):
-        if self._monitored_channel:
-            if channel.channel.name == self._monitored_channel.channel.name:
-                return
+        if channel == self._monitored_channel:
+            return
         self._monitored_channel = channel
-        if type(channel) is InputChannel:
+        if channel is None:
+            self.monitor_channel.out_mute = True
+        elif isinstance(channel, InputChannel):
             # reset all solo/mute settings
             for in_channel in self.channels:
                 self.monitor_channel.set_solo(in_channel.channel, False)
                 self.monitor_channel.set_muted(in_channel.channel, False)
             self.monitor_channel.set_solo(channel.channel, True)
             self.monitor_channel.prefader = True
+            self.monitor_channel.out_mute = False
         else:
             self.monitor_channel.prefader = False
-        self.update_monitor(channel)
+            self.monitor_channel.out_mute = False
+
+        if channel:
+            self.update_monitor(channel)
 
     monitored_channel = property(get_monitored_channel, set_monitored_channel)
 
@@ -778,7 +783,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             return
         self.monitor_channel.volume = channel.channel.volume
         self.monitor_channel.balance = channel.channel.balance
-        if type(self.monitored_channel) is OutputChannel:
+        if isinstance(self.monitored_channel, OutputChannel):
             # sync solo/muted channels
             for input_channel in self.channels:
                 self.monitor_channel.set_solo(

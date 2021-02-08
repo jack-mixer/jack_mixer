@@ -45,12 +45,12 @@
 #include "jack_compat.h"
 
 struct kmeter {
-  float          _z1;          // filter state
-  float          _z2;          // filter state
-  float          _rms;         // max rms value since last read()
-  float          _dpk;         // current digital peak value
-  int            _cnt;         // digital peak hold counter
-  bool           _flag;        // flag set by read(), resets _rms
+  float   _z1;          // filter state
+  float   _z2;          // filter state
+  float   _rms;         // max rms value since last read()
+  float   _dpk;         // current digital peak value
+  int     _cnt;         // digital peak hold counter
+  bool    _flag;        // flag set by read(), resets _rms
 
   int     _hold;        // number of JACK periods to hold peak value
   float   _fall;        // per period fallback multiplier for peak value
@@ -327,12 +327,12 @@ channel_set_balance_midi_cc(
   int8_t new_cc)
 {
   if (new_cc < 0 || new_cc > 127) {
-    return 2; /* error: outside limit CC */
+    return 2; /* error: outside CC value range */
   }
 
-  // remove previous assignment for this CC
+  /* Remove previous assignment for this CC */
   unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
-  // remove previous balance CC mapped to this channel (if any)
+  /* Remove previous balance CC mapped to this channel (if any) */
   if (channel_ptr->midi_cc_balance_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_balance_index] = NULL;
   }
@@ -357,9 +357,9 @@ channel_set_volume_midi_cc(
     return 2; /* error: outside limit CC */
   }
 
-  // remove previous assignment for this CC
+  /* remove previous assignment for this CC */
   unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
-  // remove previous volume CC mapped to this channel (if any)
+  /* remove previous volume CC mapped to this channel (if any) */
   if (channel_ptr->midi_cc_volume_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_volume_index] = NULL;
   }
@@ -381,12 +381,12 @@ channel_set_mute_midi_cc(
   int8_t new_cc)
 {
   if (new_cc < 0 || new_cc > 127) {
-    return 2; /* error: outside limit CC */
+    return 2; /* error: outside CC value range */
   }
 
-  // remove previous assignment for this CC
+  /* Remove previous assignment for this CC */
   unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
-  // remove previous mute CC mapped to this channel (if any)
+  /* Remove previous mute CC mapped to this channel (if any) */
   if (channel_ptr->midi_cc_mute_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_mute_index] = NULL;
   }
@@ -429,9 +429,9 @@ channel_set_solo_midi_cc(
     return 2; /* error: outside limit CC */
   }
 
-  // remove previous assignment for this CC
+  /* Remove previous assignment for this CC */
   unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_cc);
-  // remove previous solo CC mapped to this channel (if any)
+  /* Remove previous solo CC mapped to this channel (if any) */
   if (channel_ptr->midi_cc_solo_index != -1) {
     channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_cc_solo_index] = NULL;
   }
@@ -812,13 +812,15 @@ channel_get_midi_in_got_events(
 
 #undef channel_ptr
 
-/* process input channels and mix them into main mix */
+/*
+ * Process input channels and mix them into one output channel signal
+ */
 static inline void
 mix_one(
   struct output_channel *output_mix_channel,
-  GSList *channels_list,
-  jack_nframes_t start,         /* index of first sample to process */
-  jack_nframes_t end)           /* index of sample to stop processing before */
+  GSList *channels_list,        /* All input channels */
+  jack_nframes_t start,         /* Index of first sample to process */
+  jack_nframes_t end)           /* Index of sample to stop processing before */
 {
   jack_nframes_t i;
 
@@ -828,6 +830,7 @@ mix_one(
   jack_default_audio_sample_t frame_right;
   struct channel *mix_channel = (struct channel*)output_mix_channel;
 
+  /* Zero intermediate mix & output buffers */
   for (i = start; i < end; i++)
   {
     mix_channel->left_buffer_ptr[i] = mix_channel->tmp_mixed_frames_left[i] = 0.0;
@@ -835,34 +838,53 @@ mix_one(
       mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i] = 0.0;
   }
 
+  /* For each input channel: */
   for (node_ptr = channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;
 
+    /* Skip input channels with activated mute for this output channel */
     if (g_slist_find(output_mix_channel->muted_channels, channel_ptr) != NULL || channel_ptr->out_mute) {
-      /* skip muted channels */
       continue;
     }
 
+    /* Mix signal of all input channels going to this output channel:
+     *
+     * Only add the signal from this input channel:
+     *
+     * - if there are no globally soloed channels and no soloed channels for this output-channel;
+     * - or if the input channel is globally soloed;
+     * - or if the input channel is soloed for this output channel.
+     *
+     * */
     if ((!channel_ptr->mixer_ptr->soloed_channels && !output_mix_channel->soloed_channels) ||
         (channel_ptr->mixer_ptr->soloed_channels &&
          g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel_ptr) != NULL) ||
         (output_mix_channel->soloed_channels &&
         g_slist_find(output_mix_channel->soloed_channels, channel_ptr) != NULL)) {
 
+      /* Get either post or pre-fader signal */
       for (i = start ; i < end ; i++)
       {
+        /* Left/mono signal */
         if (! output_mix_channel->prefader &&
             g_slist_find(output_mix_channel->prefader_channels, channel_ptr) == NULL)
         {
           frame_left = channel_ptr->frames_left[i-start];
         }
         else {
+          /* Output channel is globally set to pre-fader routing or
+           * input channel has pre-fader routing set for this output channel
+           */
           frame_left = channel_ptr->prefader_frames_left[i-start];
         }
+
         if (frame_left == NAN)
           break;
+
         mix_channel->tmp_mixed_frames_left[i] += frame_left;
+
+        /* Right signal */
         if (mix_channel->stereo)
         {
           if (! output_mix_channel->prefader &&
@@ -871,21 +893,25 @@ mix_one(
             frame_right = channel_ptr->frames_right[i-start];
           }
           else {
+            /* Pre-fader routing */
             frame_right = channel_ptr->prefader_frames_right[i-start];
           }
+
           if (frame_right == NAN)
             break;
+
           mix_channel->tmp_mixed_frames_right[i] += frame_right;
         }
       }
     }
   }
 
-  /* process main mix channel */
+  /* Apply output channel volume and compute meter signal and peak values */
   unsigned int steps = mix_channel->num_volume_transition_steps;
 
   for (i = start ; i < end ; i++)
   {
+    /** Apply fader volume if output channel is not set to pre-fader routing */
     if (! output_mix_channel->prefader) {
       float volume = mix_channel->volume;
       float volume_new = mix_channel->volume_new;
@@ -893,15 +919,21 @@ mix_one(
       float balance = mix_channel->balance;
       float balance_new = mix_channel->balance_new;
       float bal = balance;
+
+      /* Do interpolation during transition to target volume level */
       if (volume != volume_new) {
         vol = interpolate(volume, volume_new, mix_channel->volume_idx, steps);
       }
+
+      /* Do interpolation during transition to target balance */
       if (balance != balance_new) {
         bal = mix_channel->balance_idx * (balance_new - balance) / steps + balance;
       }
 
       float vol_l;
       float vol_r;
+
+      /* Calculate left+right gain from volume and balance levels */
       if (mix_channel->stereo) {
         if (bal > 0) {
           vol_l = vol * (1 - bal);
@@ -916,10 +948,13 @@ mix_one(
         vol_l = vol * (1 - bal);
         vol_r = vol * (1 + bal);
       }
+
+      /* Apply gain to output mix */
       mix_channel->tmp_mixed_frames_left[i] *= vol_l;
       mix_channel->tmp_mixed_frames_right[i] *= vol_r;
     }
 
+    /* Get peak signal, left/right and combined */
     frame_left = fabsf(mix_channel->tmp_mixed_frames_left[i]);
     if (mix_channel->peak_left < frame_left)
     {
@@ -945,6 +980,7 @@ mix_one(
       }
     }
 
+    /* This seems to duplicate what was already done right above? */
     if (mix_channel->stereo)
     {
       frame_left = fabsf(mix_channel->tmp_mixed_frames_left[i]);
@@ -983,6 +1019,7 @@ mix_one(
       }
     }
 
+    /* update left/right peak values every so often */
     mix_channel->peak_frames++;
     if (mix_channel->peak_frames >= PEAK_FRAMES_CHUNK)
     {
@@ -997,23 +1034,28 @@ mix_one(
 
       mix_channel->peak_frames = 0;
     }
+
+    /* Finish off volume interpolation */
     mix_channel->volume_idx++;
     if ((mix_channel->volume != mix_channel->volume_new) && (mix_channel->volume_idx == steps)) {
       mix_channel->volume = mix_channel->volume_new;
       mix_channel->volume_idx = 0;
     }
+    /* Finish off volume interpolation */
     mix_channel->balance_idx++;
     if ((mix_channel->balance != mix_channel->balance_new) && (mix_channel->balance_idx == steps)) {
       mix_channel->balance = mix_channel->balance_new;
       mix_channel->balance_idx = 0;
     }
 
+    /* Finally, if output channel is not muted, put signal into output buffer */
     if (!mix_channel->out_mute) {
         mix_channel->left_buffer_ptr[i] = mix_channel->tmp_mixed_frames_left[i];
         if (mix_channel->stereo)
           mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
+  /* Calculate k-metering for output channel*/
   kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
   kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
 }
@@ -1035,28 +1077,39 @@ calc_channel_frames(
     {
       fprintf(stderr, "i-start too high: %d - %d\n", i, start);
     }
+
+    /* Save pre-fader signal */
     channel_ptr->prefader_frames_left[i-start] = channel_ptr->left_buffer_ptr[i];
     if (channel_ptr->stereo)
       channel_ptr->prefader_frames_right[i-start] = channel_ptr->right_buffer_ptr[i];
 
+    /* Detect de-normals */
     if (!FLOAT_EXISTS(channel_ptr->left_buffer_ptr[i]))
     {
       channel_ptr->NaN_detected = true;
       channel_ptr->frames_left[i-start] = NAN;
       break;
     }
+
+    /* Get current and target channel volume and balance. */
     float volume = channel_ptr->volume;
     float volume_new = channel_ptr->volume_new;
     float vol = volume;
     float balance = channel_ptr->balance;
     float balance_new = channel_ptr->balance_new;
     float bal = balance;
+
+    /* During transition do interpolation to target volume level */
     if (channel_ptr->volume != channel_ptr->volume_new) {
       vol = interpolate(volume, volume_new, channel_ptr->volume_idx, steps);
     }
+
+    /* During transition do interpolation to target balance */
     if (channel_ptr->balance != channel_ptr->balance_new) {
       bal = channel_ptr->balance_idx * (balance_new - balance) / steps + balance;
     }
+
+    /* Calculate left+right gain from volume and balance levels */
     float vol_l;
     float vol_r;
     if (channel_ptr->stereo) {
@@ -1073,7 +1126,10 @@ calc_channel_frames(
       vol_l = vol * (1 - bal);
       vol_r = vol * (1 + bal);
     }
+
+    /* Calculate left channel post-fader sample */
     frame_left = channel_ptr->left_buffer_ptr[i] * vol_l;
+    /* Calculate right channel post-fader sample */
     if (channel_ptr->stereo)
     {
       if (!FLOAT_EXISTS(channel_ptr->right_buffer_ptr[i]))
@@ -1092,6 +1148,9 @@ calc_channel_frames(
     channel_ptr->frames_left[i-start] = frame_left;
     channel_ptr->frames_right[i-start] = frame_right;
 
+    /* Calculate left+right peak-level and, if need be,
+     * update abspeak level
+     */
     if (channel_ptr->stereo)
     {
       frame_left = fabsf(frame_left);
@@ -1133,6 +1192,7 @@ calc_channel_frames(
       }
     }
 
+    /* Update input channel volume meter every so often */
     channel_ptr->peak_frames++;
     if (channel_ptr->peak_frames >= PEAK_FRAMES_CHUNK)
     {
@@ -1148,6 +1208,7 @@ calc_channel_frames(
       channel_ptr->peak_frames = 0;
     }
 
+    /* Finish off volume & balance level interpolation */
     channel_ptr->volume_idx++;
     if ((channel_ptr->volume != channel_ptr->volume_new) &&
      (channel_ptr->volume_idx == steps)) {
@@ -1162,27 +1223,30 @@ calc_channel_frames(
     }
   }
 
+  /* Calculate k-metering for input channel */
   kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
-  if (channel_ptr->stereo) kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
-
+  if (channel_ptr->stereo)
+    kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
 }
 
 static inline void
 mix(
   struct jack_mixer * mixer_ptr,
-  jack_nframes_t start,         /* index of first sample to process */
-  jack_nframes_t end)           /* index of sample to stop processing before */
+  jack_nframes_t start,         /* Index of first sample to process */
+  jack_nframes_t end)           /* Index of sample to stop processing before */
 {
   GSList *node_ptr;
   struct output_channel * output_channel_ptr;
   struct channel *channel_ptr;
 
+  /* Calculate pre/post-fader output and peak values for each input channel */
   for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = (struct channel*)node_ptr->data;
     calc_channel_frames(channel_ptr, start, end);
   }
 
+  /* For all output channels: */
   for (node_ptr = mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     output_channel_ptr = node_ptr->data;
@@ -1203,6 +1267,7 @@ mix(
       }
     }
 
+    /* Mix this output channel */
     mix_one(output_channel_ptr, mixer_ptr->input_channels_list, start, end);
   }
 }
@@ -1240,13 +1305,14 @@ process(
   uint8_t cc_num, cc_val, cur_cc_val;
 #endif
 
+  /* Get input ports buffer pointers */
   for (node_ptr = mixer_ptr->input_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;
     update_channel_buffers(channel_ptr, nframes);
   }
 
-  // Fill output buffers with the input
+  /* Get output ports buffer pointer */
   for (node_ptr = mixer_ptr->output_channels_list; node_ptr; node_ptr = g_slist_next(node_ptr))
   {
     channel_ptr = node_ptr->data;
@@ -1277,7 +1343,7 @@ process(
 
     LOG_DEBUG("%u: CC#%u -> %u", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
 
-    /* do we have a mapping for particular CC? */
+    /* Do we have a mapping for particular CC? */
     channel_ptr = mixer_ptr->midi_cc_map[cc_num];
     if (channel_ptr)
     {
@@ -1305,21 +1371,22 @@ process(
       }
       else if (channel_ptr->midi_cc_volume_index == cc_num)
       {
-        // Is a MIDI scale set for corresponding channel?
+        /* Is a MIDI scale set for corresponding channel? */
         if (channel_ptr->midi_scale) {
           volume = scale_scale_to_db(channel_ptr->midi_scale,
                                      (double)cc_val / 127);
           if (mixer_ptr->midi_behavior == Pick_Up &&
               !channel_ptr->midi_cc_volume_picked_up)
           {
-              // MIDI control in pick-up mode but not picked up yet
+              /* MIDI control in pick-up mode but not picked up yet */
               cur_cc_val = (uint8_t)(127 * scale_db_to_scale(
                 channel_ptr->midi_scale,
                 value_to_db(channel_ptr->volume)));
               if (cc_val == cur_cc_val)
               {
-                // Incoming MIDI CC value matches current volume level
-                // --> MIDI control is picked up
+                /* Incoming MIDI CC value matches current volume level
+                 * --> MIDI control is picked up
+                 */
                 channel_set_midi_cc_volume_picked_up(channel_ptr, true);
               }
           }

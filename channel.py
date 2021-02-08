@@ -144,7 +144,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.hbox_fader = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_fader.pack_start(self.slider, True, True, 0)
         self.vbox_meter = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.vbox_meter.pack_start(self.meter, True, True, 0) 
+        self.vbox_meter.pack_start(self.meter, True, True, 0)
         self.vbox_meter.pack_start(self.prefader_button, False, True, 0)
         self.hbox_fader.pack_start(self.vbox_meter, True, True, 0)
 

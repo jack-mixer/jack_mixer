@@ -71,7 +71,7 @@ DEFAULT_CSS = """\
 /* Channel buttons */
 
 button {
-    padding: 0px;
+    padding: 0px .2em;
 }
 button.monitor:hover,
 button.mute:hover,

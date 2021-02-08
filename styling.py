@@ -112,7 +112,7 @@ button.solo:checked {
 
 .control_group .label,
 .control_group .mute,
-.control_group .pre_fader,
+.control_group .prefader,
 .control_group .solo {
     font-size: smaller;
     padding: 0px .1em;

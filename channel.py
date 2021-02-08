@@ -25,6 +25,7 @@ from gi.repository import Pango
 
 import abspeak
 import meter
+import scale
 import slider
 from serialization import SerializedObject
 from styling import set_background_color, random_color
@@ -274,6 +275,7 @@ class Channel(Gtk.Box, SerializedObject):
     def on_default_meter_scale_changed(self, gui_factory, scale):
         log.debug("Default meter scale change detected.")
         self.meter.set_scale(scale)
+        self.meter_scale = scale
 
     def on_default_slider_scale_changed(self, gui_factory, scale):
         log.debug("Default slider scale change detected.")
@@ -467,12 +469,17 @@ class Channel(Gtk.Box, SerializedObject):
     def read_meter(self):
         if not self.channel:
             return
+
         if self.stereo:
-            peak_left, peak_right, rms_left, rms_right = self.channel.kmeter
-            self.meter.set_values(peak_left, peak_right, rms_left, rms_right)
+            if self.meter.kmetering:
+                self.meter.set_values_kmeter(*self.channel.kmeter)
+            else:
+                self.meter.set_values(*self.channel.meter)
         else:
-            peak, rms = self.channel.kmeter
-            self.meter.set_values(peak, rms)
+            if self.meter.kmetering:
+                self.meter.set_value_kmeter(*self.channel.kmeter)
+            else:
+                self.meter.set_value(*self.channel.meter)
 
         self.abspeak.set_peak(self.channel.abspeak)
 

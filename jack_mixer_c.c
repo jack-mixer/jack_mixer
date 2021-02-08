@@ -311,15 +311,15 @@ Channel_get_kmeter(ChannelObject *self, void *closure)
 	if (channel_is_stereo(self->channel)) {
 		result = PyTuple_New(4);
 		channel_stereo_kmeter_read(self->channel, &peak_left, &peak_right, &rms_left, &rms_right);
-		PyTuple_SetItem(result, 0, PyFloat_FromDouble(peak_left));
-		PyTuple_SetItem(result, 1, PyFloat_FromDouble(peak_right));
-		PyTuple_SetItem(result, 2, PyFloat_FromDouble(rms_left));
-		PyTuple_SetItem(result, 3, PyFloat_FromDouble(rms_right));
+		PyTuple_SetItem(result, 0, PyFloat_FromDouble(rms_left));
+		PyTuple_SetItem(result, 1, PyFloat_FromDouble(rms_right));
+		PyTuple_SetItem(result, 2, PyFloat_FromDouble(peak_left));
+		PyTuple_SetItem(result, 3, PyFloat_FromDouble(peak_right));
 	} else {
 		result = PyTuple_New(2);
 		channel_mono_kmeter_read(self->channel, &peak_left, &rms_left);
-		PyTuple_SetItem(result, 0, PyFloat_FromDouble(peak_left));
-		PyTuple_SetItem(result, 1, PyFloat_FromDouble(rms_left));
+		PyTuple_SetItem(result, 0, PyFloat_FromDouble(rms_left));
+		PyTuple_SetItem(result, 1, PyFloat_FromDouble(peak_left));
 	}
 	return result;
 }
@@ -994,6 +994,31 @@ Mixer_get_client_name(MixerObject *self, void *closure)
 }
 
 static PyObject*
+Mixer_get_kmetering(MixerObject *self, void *closure)
+{
+	PyObject *result;
+
+	if (get_kmetering(self->mixer)) {
+		result = Py_True;
+	} else {
+		result = Py_False;
+	}
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+Mixer_set_kmetering(MixerObject *self, PyObject *value, void *closure)
+{
+	if (value == Py_True) {
+		set_kmetering(self->mixer, true);
+	} else {
+		set_kmetering(self->mixer, false);
+	}
+	return 0;
+}
+
+static PyObject*
 Mixer_get_last_midi_cc(MixerObject *self, void *closure)
 {
 	return PyLong_FromLong(get_last_midi_cc(self->mixer));
@@ -1038,6 +1063,8 @@ Mixer_set_midi_behavior_mode(MixerObject *self, PyObject *value, void *closure)
 static PyGetSetDef Mixer_getseters[] = {
 	{"channels_count", (getter)Mixer_get_channels_count, NULL,
 		"channels count", NULL},
+	{"kmetering", (getter)Mixer_get_kmetering, (setter)Mixer_set_kmetering,
+		"k-metering", NULL},
 	{"last_midi_cc", (getter)Mixer_get_last_midi_cc, (setter)Mixer_set_last_midi_cc,
 		"last midi channel", NULL},
 	{"midi_behavior_mode", (getter)Mixer_get_midi_behavior_mode, (setter)Mixer_set_midi_behavior_mode,

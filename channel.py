@@ -23,9 +23,9 @@ from gi.repository import Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 
-from abspeak import AbspeakWidget
 import meter
 import slider
+from abspeak import AbspeakWidget
 from serialization import SerializedObject
 from styling import set_background_color, random_color
 
@@ -130,12 +130,10 @@ class Channel(Gtk.Box, SerializedObject):
         self.vbox_fader = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.vbox_fader.get_style_context().add_class("vbox_fader")
 
-        pre = Gtk.ToggleButton("PRE")
-        pre.set_name("pre_fader")
-        pre.get_style_context().add_class("prefader")
+        self.prefader_button = pre = Gtk.ToggleButton("PRE")
+        pre.get_style_context().add_class("prefader_meter")
         pre.set_tooltip_text("Pre-fader (on) / Post-fader (off) metering")
         pre.connect("toggled", self.on_prefader_metering_toggled)
-        self.prefader_button = pre
 
         self.hbox_readouts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_readouts.set_homogeneous(True)

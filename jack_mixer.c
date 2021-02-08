@@ -76,12 +76,12 @@ struct channel {
   float volume_right_new;
   float meter_left;
   float meter_right;
-  float abspeak;
-  float abspeak_pre_fader;
+  float abspeak_postfader;
+  float abspeak_prefader;
   struct kmeter kmeter_left;
   struct kmeter kmeter_right;
-  struct kmeter kmeter_pre_fader_left;
-  struct kmeter kmeter_pre_fader_right;
+  struct kmeter kmeter_prefader_left;
+  struct kmeter kmeter_prefader_right;
 
   jack_port_t * port_left;
   jack_port_t * port_right;
@@ -614,8 +614,8 @@ channel_stereo_kmeter_read(
   struct kmeter *kmeter_right;
   assert(channel_ptr);
   if (mode == Pre_Fader) {
-    kmeter_left = &channel_ptr->kmeter_pre_fader_left;
-    kmeter_right = &channel_ptr->kmeter_pre_fader_right;
+    kmeter_left = &channel_ptr->kmeter_prefader_left;
+    kmeter_right = &channel_ptr->kmeter_prefader_right;
   } else {
     kmeter_left = &channel_ptr->kmeter_left;
     kmeter_right = &channel_ptr->kmeter_right;
@@ -637,7 +637,7 @@ channel_mono_kmeter_read(
 {
   struct kmeter *kmeter;
   if (mode == Pre_Fader) {
-    kmeter = &channel_ptr->kmeter_pre_fader_left;
+    kmeter = &channel_ptr->kmeter_prefader_left;
   } else {
     kmeter = &channel_ptr->kmeter_left;
   }
@@ -732,7 +732,7 @@ channel_abspeak_read(
   }
   else
   {
-    return value_to_db(mode == Post_Fader ? channel_ptr->abspeak : channel_ptr->abspeak_pre_fader);
+    return value_to_db(mode == Post_Fader ? channel_ptr->abspeak_postfader : channel_ptr->abspeak_prefader);
   }
 }
 
@@ -742,9 +742,9 @@ channel_abspeak_reset(
   enum meter_mode mode)
 {
   if (mode == Post_Fader) {
-    channel_ptr->abspeak = 0;
+    channel_ptr->abspeak_postfader = 0;
   } else if (mode == Pre_Fader) {
-    channel_ptr->abspeak_pre_fader = 0;
+    channel_ptr->abspeak_prefader = 0;
   }
   channel_ptr->NaN_detected = false;
 }
@@ -957,13 +957,13 @@ mix_one(
     {
       mix_channel->peak_left = frame_left;
 
-      if (frame_left > mix_channel->abspeak)
+      if (frame_left > mix_channel->abspeak_postfader)
       {
-        mix_channel->abspeak = frame_left;
+        mix_channel->abspeak_postfader = frame_left;
       }
-      if (frame_left_pre > mix_channel->abspeak_pre_fader)
+      if (frame_left_pre > mix_channel->abspeak_prefader)
       {
-        mix_channel->abspeak_pre_fader = frame_left_pre;
+        mix_channel->abspeak_prefader = frame_left_pre;
       }
     }
 
@@ -975,13 +975,13 @@ mix_one(
       {
         mix_channel->peak_right = frame_right;
 
-        if (frame_right > mix_channel->abspeak)
+        if (frame_right > mix_channel->abspeak_postfader)
         {
-          mix_channel->abspeak = frame_right;
+          mix_channel->abspeak_postfader = frame_right;
         }
-        if (frame_right_pre > mix_channel->abspeak_pre_fader)
+        if (frame_right_pre > mix_channel->abspeak_prefader)
         {
-          mix_channel->abspeak_pre_fader = frame_right_pre;
+          mix_channel->abspeak_prefader = frame_right_pre;
         }
       }
     }
@@ -1019,8 +1019,8 @@ mix_one(
   }
   kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
   kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
-  kmeter_process(&mix_channel->kmeter_pre_fader_left, mix_channel->prefader_frames_left, start, end);
-  kmeter_process(&mix_channel->kmeter_pre_fader_right, mix_channel->prefader_frames_right, start, end);
+  kmeter_process(&mix_channel->kmeter_prefader_left, mix_channel->prefader_frames_left, start, end);
+  kmeter_process(&mix_channel->kmeter_prefader_right, mix_channel->prefader_frames_right, start, end);
 }
 
 static inline void
@@ -1112,13 +1112,13 @@ calc_channel_frames(
       {
         channel_ptr->peak_left = frame_left;
 
-        if (frame_left > channel_ptr->abspeak)
+        if (frame_left > channel_ptr->abspeak_postfader)
         {
-          channel_ptr->abspeak = frame_left;
+          channel_ptr->abspeak_postfader = frame_left;
         }
-        if (frame_left_pre > channel_ptr->abspeak_pre_fader)
+        if (frame_left_pre > channel_ptr->abspeak_prefader)
         {
-          channel_ptr->abspeak_pre_fader = frame_left_pre;
+          channel_ptr->abspeak_prefader = frame_left_pre;
         }
       }
 
@@ -1126,13 +1126,13 @@ calc_channel_frames(
       {
         channel_ptr->peak_right = frame_right;
 
-        if (frame_right > channel_ptr->abspeak)
+        if (frame_right > channel_ptr->abspeak_postfader)
         {
-          channel_ptr->abspeak = frame_right;
+          channel_ptr->abspeak_postfader = frame_right;
         }
-        if (frame_right_pre > channel_ptr->abspeak_pre_fader)
+        if (frame_right_pre > channel_ptr->abspeak_prefader)
         {
-          channel_ptr->abspeak_pre_fader = frame_right_pre;
+          channel_ptr->abspeak_prefader = frame_right_pre;
         }
       }
     }
@@ -1145,13 +1145,13 @@ calc_channel_frames(
       {
         channel_ptr->peak_left = frame_left;
 
-        if (frame_left > channel_ptr->abspeak)
+        if (frame_left > channel_ptr->abspeak_postfader)
         {
-          channel_ptr->abspeak = frame_left;
+          channel_ptr->abspeak_postfader = frame_left;
         }
-        if (frame_left_pre > channel_ptr->abspeak_pre_fader)
+        if (frame_left_pre > channel_ptr->abspeak_prefader)
         {
-          channel_ptr->abspeak_pre_fader = frame_left_pre;
+          channel_ptr->abspeak_prefader = frame_left_pre;
         }
       }
     }
@@ -1187,8 +1187,8 @@ calc_channel_frames(
 
   kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
   if (channel_ptr->stereo) kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
-  kmeter_process(&channel_ptr->kmeter_pre_fader_left, channel_ptr->prefader_frames_left, start, end);
-  if (channel_ptr->stereo) kmeter_process(&channel_ptr->kmeter_pre_fader_right, channel_ptr->prefader_frames_right, start, end);
+  kmeter_process(&channel_ptr->kmeter_prefader_left, channel_ptr->prefader_frames_left, start, end);
+  if (channel_ptr->stereo) kmeter_process(&channel_ptr->kmeter_prefader_right, channel_ptr->prefader_frames_right, start, end);
 }
 
 static inline void
@@ -1718,14 +1718,14 @@ add_channel(
   channel_ptr->balance_new = 0.0;
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;
-  channel_ptr->abspeak = 0.0;
-  channel_ptr->abspeak_pre_fader = 0.0;
+  channel_ptr->abspeak_postfader = 0.0;
+  channel_ptr->abspeak_prefader = 0.0;
   channel_ptr->out_mute = false;
 
   kmeter_init(&channel_ptr->kmeter_left, sr, fsize, .5f, 15.0f);
   kmeter_init(&channel_ptr->kmeter_right, sr, fsize, .5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_pre_fader_left, sr, fsize, .5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_pre_fader_right, sr, fsize, .5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_prefader_left, sr, fsize, .5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_prefader_right, sr, fsize, .5f, 15.0f);
 
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;
@@ -1854,12 +1854,12 @@ create_output_channel(
   channel_ptr->balance_new = 0.0;
   channel_ptr->meter_left = -1.0;
   channel_ptr->meter_right = -1.0;
-  channel_ptr->abspeak = 0.0;
-  channel_ptr->abspeak_pre_fader = 0.0;
+  channel_ptr->abspeak_postfader = 0.0;
+  channel_ptr->abspeak_prefader = 0.0;
   kmeter_init(&channel_ptr->kmeter_left, sr, fsize, 0.5f, 15.0f);
   kmeter_init(&channel_ptr->kmeter_right, sr, fsize, 0.5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_pre_fader_left, sr, fsize, 0.5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_pre_fader_right, sr, fsize, 0.5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_prefader_left, sr, fsize, 0.5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_prefader_right, sr, fsize, 0.5f, 15.0f);
 
   channel_ptr->peak_left = 0.0;
   channel_ptr->peak_right = 0.0;

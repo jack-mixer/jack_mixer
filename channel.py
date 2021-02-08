@@ -55,7 +55,6 @@ class Channel(Gtk.Box, SerializedObject):
         self.balance_adjustment = slider.BalanceAdjustment()
         self.post_fader_output_channel = None
         self.future_out_mute = None
-        self.future_use_prefader_metering = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
@@ -134,6 +133,7 @@ class Channel(Gtk.Box, SerializedObject):
         pre.get_style_context().add_class("prefader_meter")
         pre.set_tooltip_text("Pre-fader (on) / Post-fader (off) metering")
         pre.connect("toggled", self.on_prefader_metering_toggled)
+        pre.set_active(self.meter_prefader)
 
         self.hbox_readouts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_readouts.set_homogeneous(True)
@@ -207,17 +207,10 @@ class Channel(Gtk.Box, SerializedObject):
         self.volume_digits.get_style_context().add_class("readout")
 
         # Peak level label
-        self.abspeak = Gtk.Stack()
-        self.abspeak_prefader = AbspeakWidget()
-        self.abspeak_postfader = AbspeakWidget()
-        for abspeak in [self.abspeak_prefader, self.abspeak_postfader]:
-            abspeak.connect("reset", self.on_abspeak_reset)
-            abspeak.connect("volume-adjust", self.on_abspeak_adjust)
-            abspeak.get_style_context().add_class("readout")
-        self.abspeak.add_named(self.abspeak_prefader, "pre")
-        self.abspeak.add_named(self.abspeak_postfader, "post")
-
-
+        self.abspeak = AbspeakWidget()
+        self.abspeak.connect("reset", self.on_abspeak_reset)
+        self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
+        self.abspeak.get_style_context().add_class("readout")
 
         # Level meter
         if self.stereo:
@@ -319,7 +312,10 @@ class Channel(Gtk.Box, SerializedObject):
     def on_abspeak_adjust(self, abspeak, adjust):
         log.debug("abspeak adjust %f", adjust)
         self.slider_adjustment.set_value_db(self.slider_adjustment.get_value_db() + adjust)
-        self.channel.abspeak = None
+        if self.meter_prefader:
+            self.channel.abspeak_prefader = None
+        else:
+            self.channel.abspeak_postfader = None
         # We want to update gui even if actual decibels have not changed (scale wrap for example)
         # self.update_volume(False)
 
@@ -514,13 +510,9 @@ class Channel(Gtk.Box, SerializedObject):
             self.meter.set_values(peak, rms)
 
         if self.meter_prefader:
-            if self.abspeak.get_visible_child_name() != "pre":
-                self.abspeak.set_visible_child_name("pre")
-            self.abspeak.get_child_by_name("pre").set_peak(self.channel.abspeak_prefader)
+            self.abspeak.set_peak(self.channel.abspeak_prefader)
         else:
-            if self.abspeak.get_visible_child_name() != "post":
-                self.abspeak.set_visible_child_name("post")
-            self.abspeak.get_child_by_name("post").set_peak(self.channel.abspeak_postfader)
+            self.abspeak.set_peak(self.channel.abspeak_postfader)
 
     def update_volume(self, update_engine, from_midi=False):
         db = self.slider_adjustment.get_value_db()
@@ -564,7 +556,7 @@ class Channel(Gtk.Box, SerializedObject):
             self.future_out_mute = value == "True"
             return True
         if name == "meter_prefader":
-            self.future_use_prefader_metering = (value == "True")
+            self.meter_prefader = (value == "True")
             return True
         if name == "volume_midi_cc":
             self.future_volume_midi_cc = int(value)
@@ -623,10 +615,6 @@ class InputChannel(Channel):
         self.on_balance_changed(self.balance_adjustment)
 
         self.create_fader()
-        if self.future_use_prefader_metering != None:
-            self.use_prefader_metering(self.future_use_prefader_metering)
-        else:
-            self.use_prefader_metering(False)
 
         # Widgets
         self.create_buttons()
@@ -787,10 +775,6 @@ class OutputChannel(Channel):
         set_background_color(self.label_name_event_box, self.css_name, self.color)
 
         self.create_fader()
-        if self.future_use_prefader_metering != None:
-            self.use_prefader_metering(self.future_use_prefader_metering)
-        else:
-            self.use_prefader_metering(False)
 
         # Widgets
 

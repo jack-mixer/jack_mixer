@@ -32,7 +32,7 @@ class AdjustmentdBFS(Gtk.Adjustment):
         self.db = default_db
         self.scale = scale
         self.step_increment = step_inc
-        Gtk.Adjustment.__init__(self, self.default_value, 0.0, 1.0, 0.02)
+        super().__init__(self.default_value, 0.0, 1.0, step_inc)
         self.connect("value-changed", self.on_value_changed)
         self.disable_value_notify = False
 
@@ -53,10 +53,10 @@ class AdjustmentdBFS(Gtk.Adjustment):
         self.disable_value_notify = True
         self.set_value(self.scale.db_to_scale(db))
         self.disable_value_notify = False
-        if not from_midi:
-            self.emit("volume-changed")
-        else:
+        if from_midi:
             self.emit("volume-changed-from-midi")
+        else:
+            self.emit("volume-changed")
 
     def on_value_changed(self, adjustment):
         if not self.disable_value_notify:
@@ -89,7 +89,7 @@ GObject.signal_new(
 
 class BalanceAdjustment(Gtk.Adjustment):
     def __init__(self):
-        Gtk.Adjustment.__init__(self, 0.0, -1.0, 1.0, 0.02)
+        super().__init__(0.0, -1.0, 1.0, 0.1)
         self.connect("value-changed", self.on_value_changed)
         self.disable_value_notify = False
 
@@ -116,14 +116,14 @@ GObject.signal_new(
 
 class VolumeSlider(Gtk.Scale):
     def __init__(self, adjustment):
-        Gtk.Scale.__init__(self, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.adjustment = adjustment
         self.set_adjustment(adjustment)
         self.set_draw_value(False)
         self.set_inverted(True)
-        self.button_down = False
-        self.button_down_y = 0
-        self.button_down_value = 0
+        self._button_down = False
+        self._button_down_y = 0
+        self._button_down_value = 0
 
         self.connect("button-press-event", self.button_press_event)
         self.connect("button-release-event", self.button_release_event)
@@ -137,9 +137,9 @@ class VolumeSlider(Gtk.Scale):
                     self.adjustment.set_value_db(0)
                     return True
             elif event.type == Gdk.EventType.BUTTON_PRESS:
-                self.button_down = True
-                self.button_down_y = event.y
-                self.button_down_value = self.adjustment.get_value()
+                self._button_down = True
+                self._button_down_y = event.y
+                self._button_down_value = self.adjustment.get_value()
                 return True
             elif event.type == Gdk.EventType._2BUTTON_PRESS:
                 self.adjustment.set_value(0)
@@ -148,16 +148,16 @@ class VolumeSlider(Gtk.Scale):
         return False
 
     def button_release_event(self, widget, event):
-        self.button_down = False
+        self._button_down = False
         return False
 
     def motion_notify_event(self, widget, event):
         slider_length = widget.get_allocation().height - widget.get_style_context().get_property(
             "min-height", Gtk.StateFlags.NORMAL
         )
-        if self.button_down:
-            delta_y = (self.button_down_y - event.y) / slider_length
-            y = self.button_down_value + delta_y
+        if self._button_down:
+            delta_y = (self._button_down_y - event.y) / slider_length
+            y = self._button_down_value + delta_y
             if y >= 1:
                 y = 1
             elif y <= 0:
@@ -187,7 +187,7 @@ class VolumeSlider(Gtk.Scale):
 
 class BalanceSlider(Gtk.Scale):
     def __init__(self, adjustment, preferred_width, preferred_height):
-        Gtk.Scale.__init__(self, orientation=Gtk.Orientation.HORIZONTAL)
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.adjustment = adjustment
         self.set_adjustment(adjustment)
         self.set_has_origin(False)
@@ -269,7 +269,7 @@ class BalanceSlider(Gtk.Scale):
 
 class CustomSliderWidget(Gtk.DrawingArea):
     def __init__(self, adjustment):
-        Gtk.DrawingArea.__init__(self)
+        super().__init__()
         self.adjustment = adjustment
 
         self.connect("draw", self.on_expose)

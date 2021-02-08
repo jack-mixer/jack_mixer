@@ -72,8 +72,10 @@ struct channel {
   float volume_left_new;
   float volume_right;
   float volume_right_new;
-  float meter_left;
-  float meter_right;
+  float meter_left_postfader;
+  float meter_left_prefader;
+  float meter_right_postfader;
+  float meter_right_prefader;
   float abspeak_postfader;
   float abspeak_prefader;
   struct kmeter kmeter_left;
@@ -85,8 +87,10 @@ struct channel {
   jack_port_t * port_right;
 
   jack_nframes_t peak_frames;
-  float peak_left;
-  float peak_right;
+  float peak_left_prefader;
+  float peak_left_postfader;
+  float peak_right_prefader;
+  float peak_right_postfader;
 
   jack_default_audio_sample_t * tmp_mixed_frames_left;
   jack_default_audio_sample_t * tmp_mixed_frames_right;
@@ -134,6 +138,9 @@ struct jack_mixer {
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
+
+  bool kmetering;
+
   int8_t last_midi_cc;
   enum midi_behavior_mode midi_behavior;
 
@@ -661,20 +668,31 @@ void
 channel_stereo_meter_read(
   jack_mixer_channel_t channel,
   double * left_ptr,
-  double * right_ptr)
+  double * right_ptr,
+  enum meter_mode mode)
 {
   assert(channel_ptr);
-  *left_ptr = value_to_db(channel_ptr->meter_left);
-  *right_ptr = value_to_db(channel_ptr->meter_right);
+  if (mode == Pre_Fader) {
+    *left_ptr = value_to_db(channel_ptr->meter_left_prefader);
+    *right_ptr = value_to_db(channel_ptr->meter_right_prefader);
+  } else {
+    *left_ptr = value_to_db(channel_ptr->meter_left_postfader);
+    *right_ptr = value_to_db(channel_ptr->meter_right_postfader);
+  }
 }
 
 
 void
 channel_mono_meter_read(
   jack_mixer_channel_t channel,
-  double * mono_ptr)
+  double * mono_ptr,
+  enum meter_mode mode)
 {
-  *mono_ptr = value_to_db(channel_ptr->meter_left);
+  if (mode == Pre_Fader) {
+    *mono_ptr = value_to_db(channel_ptr->meter_left_prefader);
+  } else {
+    *mono_ptr = value_to_db(channel_ptr->meter_left_postfader);
+  }
 }
 
 void
@@ -1069,18 +1087,25 @@ mix_one(
     /* Get peak signal, left/right and combined */
     frame_left = fabsf(mix_channel->tmp_mixed_frames_left[i]);
     frame_left_pre = fabsf(mix_channel->prefader_frames_left[i]);
-    if (mix_channel->peak_left < frame_left)
-    {
-      mix_channel->peak_left = frame_left;
 
-      if (frame_left > mix_channel->abspeak_postfader)
-      {
-        mix_channel->abspeak_postfader = frame_left;
-      }
-      if (frame_left_pre > mix_channel->abspeak_prefader)
-      {
-        mix_channel->abspeak_prefader = frame_left_pre;
-      }
+    if (mix_channel->peak_left_prefader < frame_left_pre)
+    {
+      mix_channel->peak_left_prefader = frame_left_pre;
+    }
+
+    if (mix_channel->peak_left_postfader < frame_left)
+    {
+      mix_channel->peak_left_postfader = frame_left;
+    }
+
+    if (frame_left > mix_channel->abspeak_postfader)
+    {
+      mix_channel->abspeak_postfader = frame_left;
+    }
+
+    if (frame_left_pre > mix_channel->abspeak_prefader)
+    {
+      mix_channel->abspeak_prefader = frame_left_pre;
     }
 
     /* This seems to duplicate what was already done right above? */
@@ -1088,18 +1113,25 @@ mix_one(
     {
       frame_right = fabsf(mix_channel->tmp_mixed_frames_right[i]);
       frame_right_pre = fabsf(mix_channel->prefader_frames_right[i]);
-      if (mix_channel->peak_right < frame_right)
-      {
-        mix_channel->peak_right = frame_right;
 
-        if (frame_right > mix_channel->abspeak_postfader)
-        {
-          mix_channel->abspeak_postfader = frame_right;
-        }
-        if (frame_right_pre > mix_channel->abspeak_prefader)
-        {
-          mix_channel->abspeak_prefader = frame_right_pre;
-        }
+      if (mix_channel->peak_right_prefader < frame_right_pre)
+      {
+        mix_channel->peak_right_prefader = frame_right_pre;
+      }
+
+      if (mix_channel->peak_right_postfader < frame_right)
+      {
+        mix_channel->peak_right_postfader = frame_right;
+      }
+
+      if (frame_right > mix_channel->abspeak_postfader)
+      {
+        mix_channel->abspeak_postfader = frame_right;
+      }
+
+      if (frame_right_pre > mix_channel->abspeak_prefader)
+      {
+        mix_channel->abspeak_prefader = frame_right_pre;
       }
     }
 
@@ -1107,13 +1139,19 @@ mix_one(
     mix_channel->peak_frames++;
     if (mix_channel->peak_frames >= PEAK_FRAMES_CHUNK)
     {
-      mix_channel->meter_left = mix_channel->peak_left;
-      mix_channel->peak_left = 0.0;
+      mix_channel->meter_left_prefader = mix_channel->peak_left_prefader;
+      mix_channel->peak_left_prefader = 0.0;
+
+      mix_channel->meter_left_postfader = mix_channel->peak_left_postfader;
+      mix_channel->peak_left_postfader = 0.0;
 
       if (mix_channel->stereo)
       {
-        mix_channel->meter_right = mix_channel->peak_right;
-        mix_channel->peak_right = 0.0;
+        mix_channel->meter_right_prefader = mix_channel->peak_right_prefader;
+        mix_channel->peak_right_prefader = 0.0;
+
+        mix_channel->meter_right_postfader = mix_channel->peak_right_postfader;
+        mix_channel->peak_right_postfader = 0.0;
       }
 
       mix_channel->peak_frames = 0;
@@ -1139,11 +1177,15 @@ mix_one(
           mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
+
   /* Calculate k-metering for output channel*/
-  kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
-  kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
-  kmeter_process(&mix_channel->kmeter_prefader_left, mix_channel->prefader_frames_left, start, end);
-  kmeter_process(&mix_channel->kmeter_prefader_right, mix_channel->prefader_frames_right, start, end);
+
+  if (mix_channel->mixer_ptr->kmetering) {
+    kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
+    kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
+    kmeter_process(&mix_channel->kmeter_prefader_left, mix_channel->prefader_frames_left, start, end);
+    kmeter_process(&mix_channel->kmeter_prefader_right, mix_channel->prefader_frames_right, start, end);
+  }
 }
 
 static inline void
@@ -1249,51 +1291,70 @@ calc_channel_frames(
       frame_right = fabsf(frame_right);
       frame_left_pre = fabsf(frame_left_pre);
       frame_right_pre = fabsf(frame_right_pre);
-      if (channel_ptr->peak_left < frame_left)
-      {
-        channel_ptr->peak_left = frame_left;
 
-        if (frame_left > channel_ptr->abspeak_postfader)
-        {
-          channel_ptr->abspeak_postfader = frame_left;
-        }
-        if (frame_left_pre > channel_ptr->abspeak_prefader)
-        {
-          channel_ptr->abspeak_prefader = frame_left_pre;
-        }
+      if (channel_ptr->peak_left_prefader < frame_left_pre)
+      {
+        channel_ptr->peak_left_prefader = frame_left_pre;
       }
 
-      if (channel_ptr->peak_right < frame_right)
+      if (channel_ptr->peak_left_postfader < frame_left)
       {
-        channel_ptr->peak_right = frame_right;
+        channel_ptr->peak_left_postfader = frame_left;
+      }
 
-        if (frame_right > channel_ptr->abspeak_postfader)
-        {
-          channel_ptr->abspeak_postfader = frame_right;
-        }
-        if (frame_right_pre > channel_ptr->abspeak_prefader)
-        {
-          channel_ptr->abspeak_prefader = frame_right_pre;
-        }
+      if (frame_left > channel_ptr->abspeak_postfader)
+      {
+        channel_ptr->abspeak_postfader = frame_left;
+      }
+
+      if (frame_left_pre > channel_ptr->abspeak_prefader)
+      {
+        channel_ptr->abspeak_prefader = frame_left_pre;
+      }
+
+      if (channel_ptr->peak_right_prefader < frame_right_pre)
+      {
+        channel_ptr->peak_right_prefader = frame_right_pre;
+      }
+
+      if (channel_ptr->peak_right_postfader < frame_right)
+      {
+        channel_ptr->peak_right_postfader = frame_right;
+      }
+
+      if (frame_right > channel_ptr->abspeak_postfader)
+      {
+        channel_ptr->abspeak_postfader = frame_right;
+      }
+
+      if (frame_right_pre > channel_ptr->abspeak_prefader)
+      {
+        channel_ptr->abspeak_prefader = frame_right_pre;
       }
     }
     else
     {
-
       frame_left = (fabsf(frame_left) + fabsf(frame_right)) / 2;
       frame_left_pre = fabsf(frame_left_pre);
-      if (channel_ptr->peak_left < frame_left)
-      {
-        channel_ptr->peak_left = frame_left;
 
-        if (frame_left > channel_ptr->abspeak_postfader)
-        {
-          channel_ptr->abspeak_postfader = frame_left;
-        }
-        if (frame_left_pre > channel_ptr->abspeak_prefader)
-        {
-          channel_ptr->abspeak_prefader = frame_left_pre;
-        }
+      if (channel_ptr->peak_left_prefader < frame_left_pre)
+      {
+        channel_ptr->peak_left_prefader = frame_left_pre;
+      }
+
+      if (channel_ptr->peak_left_postfader < frame_left)
+      {
+        channel_ptr->peak_left_postfader = frame_left;
+      }
+
+      if (frame_left > channel_ptr->abspeak_postfader)
+      {
+        channel_ptr->abspeak_postfader = frame_left;
+      }
+
+      if (frame_left_pre > channel_ptr->abspeak_prefader)
+      {
+        channel_ptr->abspeak_prefader = frame_left_pre;
       }
     }
 
@@ -1301,13 +1362,16 @@ calc_channel_frames(
     channel_ptr->peak_frames++;
     if (channel_ptr->peak_frames >= PEAK_FRAMES_CHUNK)
     {
-      channel_ptr->meter_left = channel_ptr->peak_left;
-      channel_ptr->peak_left = 0.0;
-
+      channel_ptr->meter_left_postfader = channel_ptr->peak_left_postfader;
+      channel_ptr->peak_left_postfader = 0.0;
+      channel_ptr->meter_left_prefader = channel_ptr->peak_left_prefader;
+      channel_ptr->peak_left_prefader = 0.0;
       if (channel_ptr->stereo)
       {
-        channel_ptr->meter_right = channel_ptr->peak_right;
-        channel_ptr->peak_right = 0.0;
+        channel_ptr->meter_right_postfader = channel_ptr->peak_right_postfader;
+        channel_ptr->peak_right_postfader = 0.0;
+        channel_ptr->meter_right_prefader = channel_ptr->peak_right_prefader;
+        channel_ptr->peak_right_prefader = 0.0;
       }
 
       channel_ptr->peak_frames = 0;
@@ -1329,13 +1393,15 @@ calc_channel_frames(
   }
 
   /* Calculate k-metering for input channel */
-  kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
-  if (channel_ptr->stereo)
-    kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
-  kmeter_process(&channel_ptr->kmeter_prefader_left, channel_ptr->prefader_frames_left, start, end);
-  if (channel_ptr->stereo)
-    kmeter_process(&channel_ptr->kmeter_prefader_right, channel_ptr->prefader_frames_right, start, end);
-
+  if (channel_ptr->mixer_ptr->kmetering) {
+    kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
+    if (channel_ptr->stereo) {
+      kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
+    }
+    kmeter_process(&channel_ptr->kmeter_prefader_left, channel_ptr->prefader_frames_left, start, end);
+    if (channel_ptr->stereo)
+      kmeter_process(&channel_ptr->kmeter_prefader_right, channel_ptr->prefader_frames_right, start, end);
+    }
 }
 
 static inline void
@@ -1667,6 +1733,8 @@ create(
 
   mixer_ptr->soloed_channels = NULL;
 
+  mixer_ptr->kmetering = true;
+
   mixer_ptr->last_midi_cc = -1;
 
   mixer_ptr->midi_behavior = Jump_To_Value;
@@ -1763,6 +1831,21 @@ get_client_name(
   jack_mixer_t mixer)
 {
   return jack_get_client_name(mixer_ctx_ptr->jack_client);
+}
+
+bool
+get_kmetering(
+  jack_mixer_t mixer)
+{
+  return mixer_ctx_ptr->kmetering;
+}
+
+void
+set_kmetering(
+  jack_mixer_t mixer,
+  bool flag)
+{
+  mixer_ctx_ptr->kmetering = flag;
 }
 
 int8_t
@@ -1876,8 +1959,8 @@ add_channel(
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
   channel_ptr->balance_new = 0.0;
-  channel_ptr->meter_left = -1.0;
-  channel_ptr->meter_right = -1.0;
+  channel_ptr->meter_left_prefader = channel_ptr->meter_left_postfader = -1.0;
+  channel_ptr->meter_right_prefader = channel_ptr->meter_right_postfader = -1.0;
   channel_ptr->abspeak_postfader = 0.0;
   channel_ptr->abspeak_prefader = 0.0;
   channel_ptr->out_mute = false;
@@ -1887,8 +1970,8 @@ add_channel(
   kmeter_init(&channel_ptr->kmeter_prefader_left, sr, fsize, .5f, 15.0f);
   kmeter_init(&channel_ptr->kmeter_prefader_right, sr, fsize, .5f, 15.0f);
 
-  channel_ptr->peak_left = 0.0;
-  channel_ptr->peak_right = 0.0;
+  channel_ptr->peak_left_prefader = channel_ptr->peak_left_postfader = 0.0;
+  channel_ptr->peak_right_prefader = channel_ptr->peak_right_postfader = 0.0;
   channel_ptr->peak_frames = 0;
 
   channel_ptr->frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));
@@ -2021,8 +2104,8 @@ create_output_channel(
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
   channel_ptr->balance_new = 0.0;
-  channel_ptr->meter_left = -1.0;
-  channel_ptr->meter_right = -1.0;
+  channel_ptr->meter_left_prefader = channel_ptr->meter_left_postfader = -1.0;
+  channel_ptr->meter_right_prefader = channel_ptr->meter_right_postfader = -1.0;
   channel_ptr->abspeak_postfader = 0.0;
   channel_ptr->abspeak_prefader = 0.0;
   kmeter_init(&channel_ptr->kmeter_left, sr, fsize, 0.5f, 15.0f);
@@ -2030,8 +2113,8 @@ create_output_channel(
   kmeter_init(&channel_ptr->kmeter_prefader_left, sr, fsize, 0.5f, 15.0f);
   kmeter_init(&channel_ptr->kmeter_prefader_right, sr, fsize, 0.5f, 15.0f);
 
-  channel_ptr->peak_left = 0.0;
-  channel_ptr->peak_right = 0.0;
+  channel_ptr->peak_left_prefader = channel_ptr->peak_left_postfader = 0.0;
+  channel_ptr->peak_right_prefader = channel_ptr->peak_right_postfader = 0.0;
   channel_ptr->peak_frames = 0;
 
   channel_ptr->tmp_mixed_frames_left = calloc(MAX_BLOCK_SIZE, sizeof(jack_default_audio_sample_t));

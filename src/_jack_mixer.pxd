@@ -30,6 +30,9 @@ cdef extern from "jack_mixer.h":
     cdef enum midi_behavior_mode:
         pass
 
+    cdef enum meter_mode:
+        pass
+
     ctypedef enum jack_mixer_error_t:
         pass
 
@@ -59,6 +62,8 @@ cdef extern from "jack_mixer.h":
         const char * channel_name,
         bool stereo,
         bool system)
+    cdef bool mixer_get_kmetering "get_kmetering" (jack_mixer_t mixer)
+    cdef void mixer_set_kmetering "set_kmetering" (jack_mixer_t mixer, bool flag)
 
     # not used by Python
     #cdef void channels_volumes_read(jack_mixer_t mixer)
@@ -68,25 +73,31 @@ cdef extern from "jack_mixer.h":
     cdef const char * channel_get_name(jack_mixer_channel_t channel)
     cdef int channel_rename(jack_mixer_channel_t channel, const char * name)
 
-    cdef double channel_abspeak_read(jack_mixer_channel_t channel)
-    cdef void channel_abspeak_reset(jack_mixer_channel_t channel)
+    cdef double channel_abspeak_read(jack_mixer_channel_t channel, meter_mode mode)
+    cdef void channel_abspeak_reset(jack_mixer_channel_t channel, meter_mode mode)
 
-    cdef void channel_mono_meter_read(jack_mixer_channel_t channel, double * mono_ptr)
+    cdef void channel_mono_meter_read(
+        jack_mixer_channel_t channel,
+        double * mono_ptr,
+        meter_mode mode)
     cdef void channel_stereo_meter_read(
         jack_mixer_channel_t channel,
         double * left_ptr,
-        double * right_ptr)
+        double * right_ptr,
+        meter_mode mode)
 
     cdef void channel_mono_kmeter_read(
       jack_mixer_channel_t channel,
       double * left_ptr,
-      double * left_rms_ptr)
+      double * left_rms_ptr,
+      meter_mode mode)
     cdef void channel_stereo_kmeter_read(
       jack_mixer_channel_t channel,
       double * left_ptr,
       double * right_ptr,
       double * left_rms_ptr,
-      double * right_rms_ptr)
+      double * right_rms_ptr,
+      meter_mode mode)
 
     cdef void channel_volume_write(jack_mixer_channel_t channel, double volume)
     cdef double channel_volume_read(jack_mixer_channel_t channel)

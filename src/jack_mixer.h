@@ -114,6 +114,15 @@ const char*
 get_client_name(
   jack_mixer_t mixer);
 
+bool
+get_kmetering(
+  jack_mixer_t mixer);
+
+void
+set_kmetering(
+  jack_mixer_t mixer,
+  bool flag);
+
 int8_t
 get_last_midi_cc(
   jack_mixer_t mixer);
@@ -162,13 +171,15 @@ void
 channel_stereo_meter_read(
   jack_mixer_channel_t channel,
   double * left_ptr,
-  double * right_ptr);
+  double * right_ptr,
+  enum meter_mode);
 
 /* returned value is in dBFS */
 void
 channel_mono_meter_read(
   jack_mixer_channel_t channel,
-  double * mono_ptr);
+  double * mono_ptr,
+  enum meter_mode);
 
 /* returned values are in dBFS */
 void
@@ -178,8 +189,7 @@ channel_stereo_kmeter_read(
   double * right_ptr,
   double * left_rms_ptr,
   double * right_rms_ptr,
-  enum meter_mode
-);
+  enum meter_mode);
 
 /* returned value is in dBFS */
 void

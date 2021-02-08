@@ -23,7 +23,6 @@ from gi.repository import Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 
-
 from . import abspeak
 from . import meter
 from . import slider
@@ -297,6 +296,7 @@ class Channel(Gtk.Box, SerializedObject):
     def on_default_meter_scale_changed(self, gui_factory, scale):
         log.debug("Default meter scale change detected.")
         self.meter.set_scale(scale)
+        self.meter_scale = scale
 
     def on_default_slider_scale_changed(self, gui_factory, scale):
         log.debug("Default slider scale change detected.")
@@ -503,22 +503,33 @@ class Channel(Gtk.Box, SerializedObject):
     def read_meter(self):
         if not self.channel:
             return
+
         if self.stereo:
-            if self.meter_prefader:
-                peak_left, peak_right, rms_left, rms_right = self.channel.kmeter_prefader
-                self.channel.kmeter_postfader
+
+            if self.meter.kmetering:
+                if self.meter_prefader:
+                    self.meter.set_values_kmeter(*self.channel.kmeter_prefader)
+                else:
+                    self.meter.set_values_kmeter(*self.channel.kmeter_postfader)
             else:
-                peak_left, peak_right, rms_left, rms_right = self.channel.kmeter_postfader
-                self.channel.kmeter_prefader
-            self.meter.set_values(peak_left, peak_right, rms_left, rms_right)
+                if self.meter_prefader:
+                    self.meter.set_values(*self.channel.meter_prefader)
+                else:
+                    self.meter.set_values(*self.channel.meter_postfader)
+
         else:
-            if self.meter_prefader:
-                peak, rms = self.channel.kmeter_prefader
-                self.channel.kmeter_postfader
+            if self.meter.kmetering:
+                if self.meter_prefader:
+                    self.meter.set_value_kmeter(*self.channel.kmeter_prefader)
+                else:
+                    self.meter.set_value_kmeter(*self.channel.kmeter_postfader)
+
             else:
-                peak, rms = self.channel.kmeter_postfader
-                self.channel.kmeter_prefader
-            self.meter.set_values(peak, rms)
+                if self.meter_prefader:
+                    self.meter.set_value(*self.channel.meter_prefader)
+                else:
+                    self.meter.set_value(*self.channel.meter_postfader)
+
 
         if self.meter_prefader:
             self.abspeak.set_peak(self.channel.abspeak_prefader)

@@ -200,6 +200,9 @@ class JackMixer(SerializedObject):
         self.gui_factory.connect("language-changed", self.on_language_changed)
         self.gui_factory.emit("language-changed", self.gui_factory.get_language())
         self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
+        self.gui_factory.connect(
+            "default-meter-scale-changed", self.on_default_meter_scale_changed
+        )
         self.gui_factory.emit_midi_behavior_mode()
 
         # Recent files manager
@@ -932,6 +935,12 @@ class JackMixer(SerializedObject):
             self.current_filename = None
 
         dlg.destroy()
+
+    def on_default_meter_scale_changed(self, sender, newscale):
+        if isinstance(newscale, (scale.K14, scale.K20)):
+            self.mixer.kmetering = True
+        else:
+            self.mixer.kmetering = False
 
     def read_meters(self):
         for channel in self.channels:

@@ -33,6 +33,21 @@ class MidiBehaviour(enum.IntEnum):
     PICK_UP = 1
 
 
+class MeterMode(enum.IntEnum):
+    """Choose between pre-fader or post-fader metering.
+
+    `PRE_FADER`
+
+    Meter signal before applying fader.
+
+    `POST_FADER`
+
+    Meter signal after applying fader.
+    """
+    PRE_FADER = 0
+    POST_FADER = 1
+
+
 cdef class Scale:
     """Mixer level scale representation.
 
@@ -164,6 +179,14 @@ cdef class Mixer:
 
         return OutputChannel.new(chan_ptr)
 
+    @property
+    def kmetering(self):
+        """Using kmeters."""
+        return mixer_get_kmetering(self._mixer)
+
+    @kmetering.setter
+    def kmetering(self, bool flag):
+        mixer_set_kmetering(self._mixer, flag)
 
 cdef class Channel:
     """Jack Mixer (input) channel representation.
@@ -191,19 +214,34 @@ cdef class Channel:
         return channel
 
     @property
-    def abspeak(self):
+    def abspeak_postfader(self):
         """Absolute peak of channel meter.
 
         Set to `None` to reset the absolute peak to -inf.
         Trying to set it to any other value will raise a `ValueError`.
         """
-        return channel_abspeak_read(self._channel)
+        return channel_abspeak_read(self._channel, MeterMode.POST_FADER)
 
-    @abspeak.setter
-    def abspeak(self, reset):
+    @abspeak_postfader.setter
+    def abspeak_postfader(self, reset):
         if reset is not None:
             raise ValueError("abspeak can only be reset (set to None)")
-        channel_abspeak_reset(self._channel)
+        channel_abspeak_reset(self._channel, MeterMode.POST_FADER)
+
+    @property
+    def abspeak_prefader(self):
+        """Absolute peak of channel meter.
+
+        Set to `None` to reset the absolute peak to -inf.
+        Trying to set it to any other value will raise a `ValueError`.
+        """
+        return channel_abspeak_read(self._channel, MeterMode.PRE_FADER)
+
+    @abspeak_prefader.setter
+    def abspeak_prefader(self, reset):
+        if reset is not None:
+            raise ValueError("abspeak can only be reset (set to None)")
+        channel_abspeak_reset(self._channel, MeterMode.PRE_FADER)
 
     @property
     def balance(self):
@@ -220,7 +258,7 @@ cdef class Channel:
         return channel_is_stereo(self._channel)
 
     @property
-    def kmeter(self):
+    def kmeter_prefader(self):
         """Read channel kmeter.
 
         If channel is stereo, return a four-item tupel with
@@ -231,14 +269,32 @@ cdef class Channel:
 
         if channel_is_stereo(self._channel):
             channel_stereo_kmeter_read(
-                self._channel, &peak_left, &peak_right, &left_rms, &right_rms)
-            return (peak_left, peak_right, left_rms, right_rms)
+                self._channel, &peak_left, &peak_right, &left_rms, &right_rms, MeterMode.PRE_FADER)
+            return (left_rms, right_rms, peak_left, peak_right)
         else:
-            channel_mono_kmeter_read(self._channel, &peak_left, &left_rms)
-            return (peak_left, left_rms)
+            channel_mono_kmeter_read(self._channel, &peak_left, &left_rms, MeterMode.PRE_FADER)
+            return (left_rms, peak_left)
 
     @property
-    def meter(self):
+    def kmeter_postfader(self):
+        """Read channel kmeter.
+
+        If channel is stereo, return a four-item tupel with
+        ``(peak_left, peak_right, rms_left, rms_right)`` value.
+        If channel is mono, return a tow-item tupel with ``(peak, rms)`` value.
+        """
+        cdef double peak_left, peak_right, left_rms, right_rms
+
+        if channel_is_stereo(self._channel):
+            channel_stereo_kmeter_read(
+                self._channel, &peak_left, &peak_right, &left_rms, &right_rms, MeterMode.POST_FADER)
+            return (left_rms, right_rms, peak_left, peak_right)
+        else:
+            channel_mono_kmeter_read(self._channel, &peak_left, &left_rms, MeterMode.POST_FADER)
+            return (left_rms, peak_left)
+
+    @property
+    def meter_prefader(self):
         """Read channel meter.
 
         If channel is stereo, return a two-item tupel with (left, right) value.
@@ -247,10 +303,26 @@ cdef class Channel:
         cdef double left, right
 
         if channel_is_stereo(self._channel):
-            channel_stereo_meter_read(self._channel, &left, &right)
+            channel_stereo_meter_read(self._channel, &left, &right, MeterMode.PRE_FADER)
             return (left, right)
         else:
-            channel_mono_meter_read(self._channel, &left)
+            channel_mono_meter_read(self._channel, &left, MeterMode.PRE_FADER)
+            return (left,)
+
+    @property
+    def meter_postfader(self):
+        """Read channel meter.
+
+        If channel is stereo, return a two-item tupel with (left, right) value.
+        If channel is mono, return a tupel with the value as the only item.
+        """
+        cdef double left, right
+
+        if channel_is_stereo(self._channel):
+            channel_stereo_meter_read(self._channel, &left, &right, MeterMode.POST_FADER)
+            return (left, right)
+        else:
+            channel_mono_meter_read(self._channel, &left, MeterMode.POST_FADER)
             return (left,)
 
     @property

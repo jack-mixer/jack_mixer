@@ -310,7 +310,7 @@ Channel_get_kmeter(ChannelObject *self, void *closure, enum meter_mode mode)
 	if (channel_is_stereo(self->channel)) {
 		result = PyTuple_New(4);
 		channel_stereo_kmeter_read(self->channel,
-		 &peak_left, &peak_right, &rms_left, &rms_right, mode);
+			&peak_left, &peak_right, &rms_left, &rms_right, mode);
 		PyTuple_SetItem(result, 0, PyFloat_FromDouble(peak_left));
 		PyTuple_SetItem(result, 1, PyFloat_FromDouble(peak_right));
 		PyTuple_SetItem(result, 2, PyFloat_FromDouble(rms_left));
@@ -566,16 +566,16 @@ static PyGetSetDef Channel_getseters[] = {
 	{"kmeter_prefader",
 		(getter)Channel_get_kmeter_prefader, NULL,
 		"kmeter postader", NULL},
-        {"kmeter_postfader",
-                (getter)Channel_get_kmeter_postfader, NULL,
-                "kmeter postfader", NULL},
-        {"abspeak_prefader",
+	{"kmeter_postfader",
+		(getter)Channel_get_kmeter_postfader, NULL,
+		"kmeter postfader", NULL},
+	{"abspeak_prefader",
 		(getter)Channel_get_abspeak_prefader, (setter)Channel_set_abspeak_prefader,
 		"abspeak prefader", NULL},
-        {"abspeak_postfader",
-                (getter)Channel_get_abspeak_postfader, (setter)Channel_set_abspeak_postfader,
-                "abspeak postfader", NULL},
-        {"midi_scale",
+	{"abspeak_postfader",
+		(getter)Channel_get_abspeak_postfader, (setter)Channel_set_abspeak_postfader,
+		"abspeak postfader", NULL},
+	{"midi_scale",
 		NULL, (setter)Channel_set_midi_scale,
 		"midi scale", NULL},
 	{"midi_change_callback",

@@ -616,7 +616,7 @@ channel_stereo_kmeter_read(
   if (mode == Pre_Fader) {
     kmeter_left = &channel_ptr->kmeter_pre_fader_left;
     kmeter_right = &channel_ptr->kmeter_pre_fader_right;
-  } else if (mode == Post_Fader) {
+  } else {
     kmeter_left = &channel_ptr->kmeter_left;
     kmeter_right = &channel_ptr->kmeter_right;
   }
@@ -638,7 +638,7 @@ channel_mono_kmeter_read(
   struct kmeter *kmeter;
   if (mode == Pre_Fader) {
     kmeter = &channel_ptr->kmeter_pre_fader_left;
-  } else if (mode == Post_Fader) {
+  } else {
     kmeter = &channel_ptr->kmeter_left;
   }
   *mono_ptr = value_to_db(kmeter->_dpk);
@@ -732,11 +732,7 @@ channel_abspeak_read(
   }
   else
   {
-    if (mode == Post_Fader) {
-      return value_to_db(channel_ptr->abspeak);
-    } else if (mode == Pre_Fader) {
-      return value_to_db(channel_ptr->abspeak_pre_fader);
-    }
+    return value_to_db(mode == Post_Fader ? channel_ptr->abspeak : channel_ptr->abspeak_pre_fader);
   }
 }
 

@@ -505,6 +505,10 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK
         )
         dlg.set_default_response(Gtk.ResponseType.OK)
+
+        if self.current_filename:
+            dlg.set_filename(self.current_filename)
+
         if dlg.run() == Gtk.ResponseType.OK:
             self.current_filename = dlg.get_filename()
             self.on_save_cb()

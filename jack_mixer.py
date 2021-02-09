@@ -19,7 +19,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import getpass
 import logging
+import datetime
 import os
 import re
 import signal
@@ -82,8 +84,9 @@ class JackMixer(SerializedObject):
     def __init__(self, client_name="jack_mixer"):
         self.visible = False
         self.nsm_client = None
-        # name of settings file that is currently open
+        # name of project file that is currently open
         self.current_filename = None
+        self.last_project_path = None
         self._monitored_channel = None
         self._init_solo_channels = None
 
@@ -394,7 +397,7 @@ class JackMixer(SerializedObject):
             except Exception as exc:
                 # Re-raise with more meaningful error message
                 raise IOError(
-                    "Error loading settings file '{}': {}".format(self.current_filename, exc)
+                    "Error loading project file '{}': {}".format(self.current_filename, exc)
                 )
 
     def nsm_save_cb(self, path, session_name, client_name):
@@ -471,47 +474,90 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
 
         return self.on_quit_cb(on_delete=True)
 
+    def add_file_filters(self, dialog):
+        filter_xml = Gtk.FileFilter()
+        filter_xml.set_name("XML files")
+        filter_xml.add_mime_type("text/xml")
+        dialog.add_filter(filter_xml)
+        filter_all = Gtk.FileFilter()
+        filter_all.set_name("All files")
+        filter_all.add_pattern("*")
+        dialog.add_filter(filter_all)
+
     def on_open_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
-            title="Open", parent=self.window, action=Gtk.FileChooserAction.OPEN
+            title="Open project", parent=self.window, action=Gtk.FileChooserAction.OPEN
         )
         dlg.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK
         )
         dlg.set_default_response(Gtk.ResponseType.OK)
+
+        default_project_path = self.gui_factory.get_default_project_path()
+
+        if self.current_filename:
+            dlg.set_current_folder(os.path.dirname(self.current_filename))
+        else:
+            dlg.set_current_folder(self.last_project_path or default_project_path or os.getcwd())
+
+        if default_project_path:
+            dlg.add_shortcut_folder(default_project_path)
+
+        self.add_file_filters(dlg)
+
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             try:
                 with open(filename, "r") as fp:
                     self.load_from_xml(fp)
             except Exception as exc:
-                error_dialog(self.window, "Error loading settings file '%s': %s", filename, exc)
+                error_dialog(self.window, "Error loading project file '%s': %s", filename, exc)
             else:
                 self.current_filename = filename
+
         dlg.destroy()
 
     def on_save_cb(self, *args):
         if not self.current_filename:
             return self.on_save_as_cb()
-        f = open(self.current_filename, "w")
-        self.save_to_xml(f)
-        f.close()
+
+        with open(self.current_filename, "w") as fp:
+            self.save_to_xml(fp)
 
     def on_save_as_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
-            title="Save", parent=self.window, action=Gtk.FileChooserAction.SAVE
+            title="Save project", parent=self.window, action=Gtk.FileChooserAction.SAVE
         )
         dlg.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK
         )
         dlg.set_default_response(Gtk.ResponseType.OK)
+        dlg.set_do_overwrite_confirmation(True)
+
+        default_project_path = self.gui_factory.get_default_project_path()
 
         if self.current_filename:
             dlg.set_filename(self.current_filename)
+        else:
+            dlg.set_current_folder(self.last_project_path or default_project_path or os.getcwd())
+            filename = "{}-{}.xml".format(
+                getpass.getuser(), datetime.datetime.now().strftime('%Y%m%d-%H%M'))
+            dlg.set_current_name(filename)
+
+        if default_project_path:
+            dlg.add_shortcut_folder(default_project_path)
+
+        self.add_file_filters(dlg)
 
         if dlg.run() == Gtk.ResponseType.OK:
+            save_path = dlg.get_filename()
+            save_dir = os.path.dirname(save_path)
+            if os.path.isdir(save_dir):
+                self.last_project_path = save_dir
+
             self.current_filename = dlg.get_filename()
             self.on_save_cb()
+
         dlg.destroy()
 
     def on_quit_cb(self, *args, on_delete=False):
@@ -801,7 +847,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         return None
 
     # ---------------------------------------------------------------------------------------------
-    # Mixer settings (de-)serialization and file handling
+    # Mixer project (de-)serialization and file handling
 
     def save_to_xml(self, file):
         log.debug("Saving to XML...")
@@ -962,7 +1008,7 @@ def main():
             with open(args.config) as fp:
                 mixer.load_from_xml(fp)
         except Exception as exc:
-            error_dialog(mixer.window, "Error loading settings file '%s': %s", args.config, exc)
+            error_dialog(mixer.window, "Error loading project file '%s': %s", args.config, exc)
         else:
             mixer.current_filename = args.config
 

@@ -66,6 +66,7 @@ class Factory(GObject.GObject, SerializedObject):
     def set_default_preferences(self):
         self.confirm_quit = False
         self.default_meter_scale = self.meter_scales[0]
+        self.default_project_path = None
         self.default_slider_scale = self.slider_scales[0]
         self.midi_behavior_mode = 0
         self.use_custom_widgets = False
@@ -87,6 +88,8 @@ class Factory(GObject.GObject, SerializedObject):
         self.default_slider_scale = lookup_scale(self.slider_scales, scale_id)
         if not self.default_slider_scale:
             self.default_slider_scale = self.slider_scales[0]
+
+        self.default_project_path = self.config["Preferences"].get("default_project_path")
 
         try:
             self.midi_behavior_mode = self.config.getint(
@@ -110,6 +113,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.config["Preferences"] = {}
         self.config["Preferences"]["confirm_quit"] = str(self.confirm_quit)
         self.config["Preferences"]["default_meter_scale"] = self.default_meter_scale.scale_id
+        self.config["Preferences"]["default_project_path"] = self.default_project_path or ''
         self.config["Preferences"]["default_slider_scale"] = self.default_slider_scale.scale_id
         self.config["Preferences"]["midi_behavior_mode"] = str(self.midi_behavior_mode)
         self.config["Preferences"]["use_custom_widgets"] = str(self.use_custom_widgets)
@@ -135,6 +139,12 @@ class Factory(GObject.GObject, SerializedObject):
             log.warning(
                 'Ignoring default_meter_scale setting, because "%s" scale is not known.', scale
             )
+
+    def set_default_project_path(self, path):
+        self.default_project_path = path
+        if xdg:
+            self.write_preferences()
+        self.emit("default-project-path-changed", self.default_project_path)
 
     def set_default_slider_scale(self, scale):
         if scale:
@@ -175,6 +185,12 @@ class Factory(GObject.GObject, SerializedObject):
     def get_default_meter_scale(self):
         return self.default_meter_scale
 
+    def get_default_project_path(self):
+        if self.default_project_path:
+            return os.path.expanduser(self.default_project_path)
+        elif xdg:
+            return BaseDirectory.save_data_path("jack_mixer")
+
     def get_default_slider_scale(self):
         return self.default_slider_scale
 
@@ -200,6 +216,8 @@ class Factory(GObject.GObject, SerializedObject):
     def serialize(self, object_backend):
         object_backend.add_property("confirm-quit", str(self.get_confirm_quit()))
         object_backend.add_property("default_meter_scale", self.get_default_meter_scale().scale_id)
+        # serialize the value, even if it's empty, not the default fallback directories
+        object_backend.add_property("default_project_path", self.default_project_path or '')
         object_backend.add_property(
             "default_slider_scale", self.get_default_slider_scale().scale_id
         )
@@ -214,6 +232,9 @@ class Factory(GObject.GObject, SerializedObject):
             return True
         elif name == "default_meter_scale":
             self.set_default_meter_scale(lookup_scale(self.meter_scales, value))
+            return True
+        elif name == "default_project_path":
+            self.set_default_project_path(value or None)
             return True
         elif name == "default_slider_scale":
             self.set_default_slider_scale(lookup_scale(self.slider_scales, value))
@@ -242,6 +263,13 @@ GObject.signal_new(
 )
 GObject.signal_new(
     "default-meter-scale-changed",
+    Factory,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [GObject.TYPE_PYOBJECT],
+)
+GObject.signal_new(
+    "default-project-path-changed",
     Factory,
     GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
     None,

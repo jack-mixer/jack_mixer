@@ -546,6 +546,8 @@ class InputChannel(Channel):
         self.solo.get_style_context().add_class("solo")
         self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
+        self.solo.connect("button-press-event", self.on_solo_button_pressed)
+        self.mute.connect("button-press-event", self.on_mute_button_pressed)
         self.hbox_mutesolo.pack_start(self.solo, True, True, 0)
 
     def realize(self):
@@ -636,6 +638,29 @@ class InputChannel(Channel):
             self.mute.set_active(self.channel.out_mute)
             self.solo.set_active(self.channel.solo)
             super().on_midi_event_received()
+
+    def on_mute_button_pressed(self, button, event, *args):
+        if event.button == 3:
+            # right click on the mute button, act on all output channels
+            if button.get_active(): # was muted
+                button.set_active(False)
+                if hasattr(button, 'touched_channels'):
+                    touched_channels = button.touched_channels
+                    for chan in touched_channels:
+                        ctlgroup = self.get_control_group(chan)
+                        ctlgroup.mute.set_active(False)
+                    del button.touched_channels
+            else: # was not muted
+                button.set_active(True)
+                touched_channels = []
+                for chan in self.app.output_channels:
+                    ctlgroup = self.get_control_group(chan)
+                    if not ctlgroup.mute.get_active():
+                        ctlgroup.mute.set_active(True)
+                        touched_channels.append(chan)
+                button.touched_channels = touched_channels
+            return True
+        return False
 
     def on_solo_toggled(self, button):
         self.channel.solo = self.solo.get_active()

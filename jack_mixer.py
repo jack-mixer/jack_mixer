@@ -4,7 +4,7 @@
 # This file is part of jack_mixer
 #
 # Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
-# Copyright (C) 2009-2020 Frederic Peters <fpeters@0d.be> et al.
+# Copyright (C) 2009-2021 Frederic Peters <fpeters@0d.be> et al.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -429,8 +429,10 @@ class JackMixer(SerializedObject):
         about.set_name("jack_mixer")
         about.set_program_name("jack_mixer")
         about.set_copyright(
-            "Copyright © 2006-2020\n"
-            "Nedko Arnaudov, Frédéric Péters, Arnout Engelen, Daniel Sheeler"
+            "Copyright © 2006-2021\n"
+            "Nedko Arnaudov,\n"
+            "Frédéric Péters, Arnout Engelen,\n"
+            "Daniel Sheeler, Christopher Arndt"
         )
         about.set_license(
             """\

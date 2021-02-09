@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
 # Copyright (C) 2009-2020 Frederic Peters <fpeters@0d.be> et al.
-# Copyright (C) 2020 Christopher Arndt <info@chrisarndt>
+# Copyright (C) 2020-2021 Christopher Arndt <info@chrisarndt>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

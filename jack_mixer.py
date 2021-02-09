@@ -413,10 +413,8 @@ class JackMixer(SerializedObject):
         log.debug("Signal %d received.", signum)
         if signum == signal.SIGUSR1:
             GLib.timeout_add(0, self.on_save_cb)
-        elif signum == signal.SIGTERM:
-            self.on_quit_cb()
-        elif signum == signal.SIGINT:
-            self.on_quit_cb()
+        elif signum == signal.SIGINT or signal == signal.SIGTERM:
+            GLib.timeout_add(0, self.on_quit_cb)
         else:
             log.warning("Unknown signal %d received.", signum)
 
@@ -471,7 +469,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             self.nsm_hide_cb()
             return True
 
-        return self.on_quit_cb()
+        return self.on_quit_cb(on_delete=True)
 
     def on_open_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
@@ -512,7 +510,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             self.on_save_cb()
         dlg.destroy()
 
-    def on_quit_cb(self, *args):
+    def on_quit_cb(self, *args, on_delete=False):
         if not self.nsm_client and self.gui_factory.get_confirm_quit():
             dlg = Gtk.MessageDialog(
                 parent=self.window,
@@ -531,7 +529,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             response = dlg.run()
             dlg.destroy()
             if response != Gtk.ResponseType.OK:
-                return True
+                return on_delete
 
         Gtk.main_quit()
 

@@ -112,7 +112,6 @@ class JackMixer(SerializedObject):
         self.window.set_title(client_name)
 
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
-        self.save = False
 
         GLib.timeout_add(33, self.read_meters)
         GLib.timeout_add(50, self.midi_events_check)
@@ -413,7 +412,7 @@ class JackMixer(SerializedObject):
     def sighandler(self, signum, frame):
         log.debug("Signal %d received.", signum)
         if signum == signal.SIGUSR1:
-            self.save = True
+            GLib.timeout_add(0, self.on_save_cb)
         elif signum == signal.SIGTERM:
             self.on_quit_cb()
         elif signum == signal.SIGINT:

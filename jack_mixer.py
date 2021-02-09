@@ -764,6 +764,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             text="Are you sure you want to clear all channels?",
             buttons=Gtk.ButtonsType.OK_CANCEL,
         )
+
         if not widget or dlg.run() == Gtk.ResponseType.OK:
             for channel in self.output_channels:
                 channel.unrealize()
@@ -785,6 +786,10 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             self.channel_remove_output_menu = Gtk.Menu()
             self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
             self.channel_remove_output_menu_item.set_sensitive(False)
+
+            # Force save-as dialog on next save
+            self.current_filename = None
+
         dlg.destroy()
 
     def read_meters(self):

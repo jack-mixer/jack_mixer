@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from os.path import expanduser, isdir
+
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
@@ -37,41 +39,61 @@ class PreferencesDialog(Gtk.Dialog):
         frame.set_shadow_type(Gtk.ShadowType.NONE)
         frame.get_label_widget().set_markup("<b>%s</b>" % label)
 
-        alignment = Gtk.Alignment.new(0, 0, 12, 0)
-        frame.add(alignment)
-        alignment.add(child)
+        child.set_margin_top(10)
+        child.set_margin_bottom(10)
+        frame.add(child)
 
         return frame
 
     def create_ui(self):
-        vbox = Gtk.VBox()
-        self.vbox.add(vbox)
+        vbox = self.get_content_area()
 
-        interface_vbox = Gtk.VBox()
+        path_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.path_entry = Gtk.Entry()
+        self.path_entry.connect("changed", self.on_path_entry_changed)
+        path_vbox.pack_start(self.path_entry, False, False, 3)
+        self.project_path_chooser = Gtk.FileChooserButton(
+            title="Default Project Path",
+            action=Gtk.FileChooserAction.SELECT_FOLDER
+        )
+        project_path = self.app.gui_factory.default_project_path
+        path_vbox.pack_start(self.project_path_chooser, False, False, 3)
+
+        if project_path:
+            self.path_entry.set_text(project_path)
+
+            if isdir(expanduser(project_path)):
+                self.project_path_chooser.set_current_folder(expanduser(project_path))
+
+        self.project_path_chooser.connect("file-set", self.on_project_path_selected)
+        vbox.pack_start(self.create_frame("Default Project Path", path_vbox), True, True, 0)
+
+        interface_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.confirm_quit_checkbutton = Gtk.CheckButton("Confirm quit")
         self.confirm_quit_checkbutton.set_tooltip_text(
             "Always ask for confirmation before " "quitting the application"
         )
         self.confirm_quit_checkbutton.set_active(self.app.gui_factory.get_confirm_quit())
         self.confirm_quit_checkbutton.connect("toggled", self.on_confirm_quit_toggled)
-        interface_vbox.pack_start(self.confirm_quit_checkbutton, True, True, 0)
+        interface_vbox.pack_start(self.confirm_quit_checkbutton, True, True, 3)
 
         self.custom_widgets_checkbutton = Gtk.CheckButton("Use custom widgets")
         self.custom_widgets_checkbutton.set_active(self.app.gui_factory.get_use_custom_widgets())
         self.custom_widgets_checkbutton.connect("toggled", self.on_custom_widget_toggled)
-        interface_vbox.pack_start(self.custom_widgets_checkbutton, True, True, 0)
+        interface_vbox.pack_start(self.custom_widgets_checkbutton, True, True, 3)
 
         self.vumeter_color_checkbutton = Gtk.CheckButton("Use custom vumeter color")
         self.vumeter_color_checkbutton.set_active(
             self.app.gui_factory.get_vumeter_color_scheme() == "solid"
         )
         self.vumeter_color_checkbutton.connect("toggled", self.on_vumeter_color_change)
-        interface_vbox.pack_start(self.vumeter_color_checkbutton, True, True, 0)
-        hbox = Gtk.HBox()
-        interface_vbox.pack_start(hbox, True, True, 0)
-        self.custom_color_box = hbox
-        self.custom_color_box.set_sensitive(self.vumeter_color_checkbutton.get_active())
-        hbox.pack_start(Gtk.Label("Custom color:"), True, True, 0)
+        interface_vbox.pack_start(self.vumeter_color_checkbutton, True, True, 3)
+
+        self.custom_color_box = hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        interface_vbox.pack_start(hbox, True, True, 3)
+
+        hbox.set_sensitive(self.vumeter_color_checkbutton.get_active())
+        hbox.pack_start(Gtk.Label("Custom color:"), False, True, 5)
         self.vumeter_color_picker = Gtk.ColorButton()
         self.vumeter_color_picker.set_color(
             Gdk.color_parse(self.app.gui_factory.get_vumeter_color())
@@ -155,6 +177,21 @@ class PreferencesDialog(Gtk.Dialog):
     def on_response_cb(self, dlg, response_id, *args):
         self.app.preferences_dialog = None
         self.destroy()
+
+    def on_path_entry_changed(self, *args):
+        path = self.path_entry.get_text().strip()
+
+        if path:
+            fullpath = expanduser(path)
+
+            if isdir(fullpath):
+                self.project_path_chooser.set_current_folder(fullpath)
+                self.app.gui_factory.set_default_project_path(path)
+
+    def on_project_path_selected(self, *args):
+        path = self.project_path_chooser.get_current_folder()
+        self.path_entry.set_text(path)
+        self.app.gui_factory.set_default_project_path(path)
 
     def on_meter_scale_combo_changed(self, *args):
         active_iter = self.meter_scale_combo.get_active_iter()

@@ -452,7 +452,7 @@ class JackMixer(SerializedObject):
         log.debug("Signal %d received.", signum)
         if signum == signal.SIGUSR1:
             GLib.timeout_add(0, self.on_save_cb)
-        elif signum == signal.SIGINT or signal == signal.SIGTERM:
+        elif signum == signal.SIGINT or signum == signal.SIGTERM:
             GLib.timeout_add(0, self.on_quit_cb)
         else:
             log.warning("Unknown signal %d received.", signum)

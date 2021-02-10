@@ -73,12 +73,19 @@ DEFAULT_CSS = """\
 button {
     padding: 0px .2em;
 }
+button.prefader_meter {
+    font-size: smaller;
+}
 button.monitor:hover,
 button.mute:hover,
 button.solo:hover,
+button.prefader:hover,
+button.prefader_meter:hover,
 button.monitor:checked,
 button.mute:checked,
-button.solo:checked {
+button.solo:checked,
+button.prefader:checked,
+button.prefader_meter:checked {
     color: white;
     text-shadow: unset;
     background-image: none;
@@ -100,6 +107,18 @@ button.solo:hover {
 }
 button.solo:checked {
     background-color: @solo_bgcolor_checked;
+}
+button.prefader:hover {
+    background-color: @prefader_bgcolor_hover;
+}
+button.prefader:checked {
+    background-color: @prefader_bgcolor_checked;
+}
+button.prefader_meter:hover {
+    background-color: @prefader_bgcolor_hover;
+}
+button.prefader_meter:checked {
+    background-color: @prefader_bgcolor_checked;
 }
 
 

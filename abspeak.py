@@ -62,6 +62,8 @@ class AbspeakWidget(Gtk.EventBox):
 
             if peak > 0:
                 context.add_class("over_zero")
+            else:
+                context.remove_class("over_zero")
 
             self.label.set_text(text)
 

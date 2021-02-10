@@ -21,6 +21,14 @@ import xml.dom.minidom
 from serialization import SerializationBackend
 
 
+class XmlSerializationError(Exception):
+    pass
+
+
+class InvalidDocumentTypeError(XmlSerializationError):
+    pass
+
+
 class XmlSerialization(SerializationBackend):
     def get_root_serialization_object(self, name):
         self.doc = xml.dom.getDOMImplementation().createDocument(
@@ -41,8 +49,12 @@ class XmlSerialization(SerializationBackend):
     def save(self, file):
         file.write(self.doc.toprettyxml())
 
-    def load(self, file):
+    def load(self, file, name):
         self.doc = xml.dom.minidom.parse(file)
+
+        document_type = self.doc.documentElement.nodeName
+        if document_type != name:
+            raise InvalidDocumentTypeError("Document type '%s' not supported." % document_type)
 
 
 class XmlSerializationObject:

@@ -27,6 +27,7 @@ import re
 import signal
 import sys
 from argparse import ArgumentParser
+from urllib.parse import urlparse
 
 import gi
 
@@ -147,6 +148,25 @@ class JackMixer(SerializedObject):
             )
         return menuitem
 
+    def create_recent_file_menu(self):
+        recentmenu = Gtk.MenuItem.new_with_mnemonic('_Recent Projects')
+
+        self.recentmanager = Gtk.RecentManager.get_default()
+        recentchooser = Gtk.RecentChooserMenu.new_for_manager(self.recentmanager)
+        recentchooser.set_sort_type(Gtk.RecentSortType.MRU)
+        recentchooser.set_local_only(True)
+        recentchooser.set_limit(10)
+        recentchooser.set_show_icons(True)
+        recentchooser.set_show_numbers(True)
+        recentchooser.set_show_tips(True)
+        recentfilter = Gtk.RecentFilter()
+        recentfilter.add_application("jack_mixer.py")
+        recentfilter.add_application("jack_mixer")
+        recentchooser.add_filter(recentfilter)
+        recentchooser.connect('item-activated', self.on_recent_file_chosen)
+        recentmenu.set_submenu(recentchooser)
+        return recentmenu
+
     def create_ui(self, with_nsm):
         self.channels = []
         self.output_channels = []
@@ -178,6 +198,7 @@ class JackMixer(SerializedObject):
         self.paned_position = 210
         self.window.set_default_size(self.width, self.height)
 
+        # Mixer (and File) menu
         self.mixer_menu = Gtk.Menu()
         mixer_menu_item.set_submenu(self.mixer_menu)
 
@@ -194,6 +215,9 @@ class JackMixer(SerializedObject):
         if not with_nsm:
             self.mixer_menu.append(self.new_menu_item("_Open...", self.on_open_cb, "<Control>O"))
 
+        # Recent files sub-menu
+        self.mixer_menu.append(self.create_recent_file_menu())
+
         self.mixer_menu.append(self.new_menu_item("_Save", self.on_save_cb, "<Control>S"))
 
         if not with_nsm:
@@ -207,6 +231,7 @@ class JackMixer(SerializedObject):
         else:
             self.mixer_menu.append(self.new_menu_item("_Quit", self.on_quit_cb, "<Control>Q"))
 
+        # Edit menu
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
@@ -253,11 +278,13 @@ class JackMixer(SerializedObject):
         self.preferences_dialog = None
         edit_menu.append(self.new_menu_item("_Preferences", self.on_preferences_cb, "<Control>P"))
 
+        # Help menu
         help_menu = Gtk.Menu()
         help_menu_item.set_submenu(help_menu)
 
         help_menu.append(self.new_menu_item("_About", self.on_about, "F1"))
 
+        # Main panel
         self.hbox_top = Gtk.HBox()
         self.vbox_top.pack_start(self.hbox_top, True, True, 0)
 
@@ -486,6 +513,16 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         filter_all.add_pattern("*")
         dialog.add_filter(filter_all)
 
+    def _open_project(self, filename):
+        try:
+            with open(filename, "r") as fp:
+                self.load_from_xml(fp)
+        except Exception as exc:
+            error_dialog(self.window, "Error loading project file '%s': %s", filename, exc)
+        else:
+            self.current_filename = filename
+            return True
+
     def on_open_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
             title="Open project", parent=self.window, action=Gtk.FileChooserAction.OPEN
@@ -509,22 +546,33 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
 
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
-            try:
-                with open(filename, "r") as fp:
-                    self.load_from_xml(fp)
-            except Exception as exc:
-                error_dialog(self.window, "Error loading project file '%s': %s", filename, exc)
-            else:
-                self.current_filename = filename
+            if self._open_project(filename):
+                self.recentmanager.add_item("file://" + os.path.abspath(filename))
 
         dlg.destroy()
+
+    def on_recent_file_chosen(self, recentchooser):
+        item = recentchooser.get_current_item()
+
+        if item and item.exists():
+            log.debug("Recent file menu entry selected: %s", item.get_display_name())
+            uri = item.get_uri()
+            if not self._open_project(urlparse(uri).path):
+                self.recentmanager.remove_item(uri)
+
+    def _save_project(self, filename):
+        with open(filename, "w") as fp:
+            self.save_to_xml(fp)
 
     def on_save_cb(self, *args):
         if not self.current_filename:
             return self.on_save_as_cb()
 
-        with open(self.current_filename, "w") as fp:
-            self.save_to_xml(fp)
+        try:
+            self._save_project(self.current_filename)
+        except Exception as exc:
+            error_dialog(self.window, "Error saving project file '%s': %s",
+                         self.current_filename, exc)
 
     def on_save_as_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
@@ -557,8 +605,14 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             if os.path.isdir(save_dir):
                 self.last_project_path = save_dir
 
-            self.current_filename = dlg.get_filename()
-            self.on_save_cb()
+            filename = dlg.get_filename()
+            try:
+                self._save_project(filename)
+            except Exception as exc:
+                error_dialog(self.window, "Error saving project file '%s': %s", filename, exc)
+            else:
+                self.current_filename = filename
+                self.recentmanager.add_item("file://" + os.path.abspath(filename))
 
         dlg.destroy()
 
@@ -868,11 +922,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         self.unserialized_channels = []
         b = XmlSerialization()
         try:
-            b.load(file)
+            b.load(file, self.serialization_name())
         except:  # noqa: E722
             if silence_errors:
                 return
             raise
+
         self.on_channels_clear(None)
         s = Serializator()
         s.unserialize(self, b)

@@ -177,8 +177,15 @@ class JackMixer(SerializedObject):
         self.channels = []
         self.output_channels = []
         load_css_styles()
+
+        # Main window
+        self.width = 420
+        self.height = 420
+        self.paned_position = 210
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_icon_name("jack_mixer")
+        self.window.set_default_size(self.width, self.height)
+
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
         self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
         self.gui_factory.emit_midi_behavior_mode()
@@ -192,6 +199,7 @@ class JackMixer(SerializedObject):
         self.menu_accelgroup = Gtk.AccelGroup()
         self.window.add_accel_group(self.menu_accelgroup)
 
+        # Main Menu
         self.menubar = Gtk.MenuBar()
         self.vbox_top.pack_start(self.menubar, False, True, 0)
 
@@ -201,11 +209,6 @@ class JackMixer(SerializedObject):
         self.menubar.append(edit_menu_item)
         help_menu_item = Gtk.MenuItem.new_with_mnemonic("_Help")
         self.menubar.append(help_menu_item)
-
-        self.width = 420
-        self.height = 420
-        self.paned_position = 210
-        self.window.set_default_size(self.width, self.height)
 
         # Mixer (and File) menu
         self.mixer_menu = Gtk.Menu()

@@ -642,7 +642,7 @@ class InputChannel(Channel):
     def on_mute_button_pressed(self, button, event, *args):
         if event.button == 3:
             # right click on the mute button, act on all output channels
-            if button.get_active(): # was muted
+            if button.get_active():  # was muted
                 button.set_active(False)
                 if hasattr(button, 'touched_channels'):
                     touched_channels = button.touched_channels
@@ -650,7 +650,7 @@ class InputChannel(Channel):
                         ctlgroup = self.get_control_group(chan)
                         ctlgroup.mute.set_active(False)
                     del button.touched_channels
-            else: # was not muted
+            else:  # was not muted
                 button.set_active(True)
                 touched_channels = []
                 for chan in self.app.output_channels:

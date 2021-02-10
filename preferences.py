@@ -27,7 +27,7 @@ class PreferencesDialog(Gtk.Dialog):
     def __init__(self, parent):
         self.app = parent
         GObject.GObject.__init__(self)
-        self.set_title("")
+        self.set_title("Preferences")
         self.create_ui()
         self.connect("response", self.on_response_cb)
         self.connect("delete-event", self.on_response_cb)

@@ -149,12 +149,9 @@ class JackMixer(SerializedObject):
         return menuitem
 
     def create_recent_file_menu(self):
-        recentmenu = Gtk.MenuItem.new_with_mnemonic("_Recent Projects")
-        self.recentmanager = Gtk.RecentManager.get_default()
-
-        def filter_func(info):
-            return info.mime_type in ("text/xml", "application/xml") and (
-                "jack_mixer.py" in info.applications or "jack_mixer" in info.applications
+        def filter_func(item):
+            return item.mime_type in ("text/xml", "application/xml") and (
+                "jack_mixer.py" in item.applications or "jack_mixer" in item.applications
             )
 
         filter_flags = Gtk.RecentFilterFlags.MIME_TYPE | Gtk.RecentFilterFlags.APPLICATION
@@ -172,6 +169,7 @@ class JackMixer(SerializedObject):
         recentchooser.add_filter(recentfilter)
         recentchooser.connect("item-activated", self.on_recent_file_chosen)
 
+        recentmenu = Gtk.MenuItem.new_with_mnemonic("_Recent Projects")
         recentmenu.set_submenu(recentchooser)
         return recentmenu
 
@@ -184,6 +182,9 @@ class JackMixer(SerializedObject):
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
         self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
         self.gui_factory.emit_midi_behavior_mode()
+
+        # Recent files manager
+        self.recentmanager = Gtk.RecentManager.get_default()
 
         self.vbox_top = Gtk.VBox()
         self.window.add(self.vbox_top)
@@ -223,8 +224,8 @@ class JackMixer(SerializedObject):
         if not with_nsm:
             self.mixer_menu.append(self.new_menu_item("_Open...", self.on_open_cb, "<Control>O"))
 
-        # Recent files sub-menu
-        self.mixer_menu.append(self.create_recent_file_menu())
+            # Recent files sub-menu
+            self.mixer_menu.append(self.create_recent_file_menu())
 
         self.mixer_menu.append(self.new_menu_item("_Save", self.on_save_cb, "<Control>S"))
 

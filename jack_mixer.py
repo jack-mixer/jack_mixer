@@ -149,9 +149,20 @@ class JackMixer(SerializedObject):
         return menuitem
 
     def create_recent_file_menu(self):
-        recentmenu = Gtk.MenuItem.new_with_mnemonic('_Recent Projects')
-
+        recentmenu = Gtk.MenuItem.new_with_mnemonic("_Recent Projects")
         self.recentmanager = Gtk.RecentManager.get_default()
+
+
+        def filter_func(info):
+            return info.mime_type in ("text/xml", "application/xml") and (
+                "jack_mixer.py" in info.applications or "jack_mixer" in info.applications
+            )
+
+        filter_flags = Gtk.RecentFilterFlags.MIME_TYPE | Gtk.RecentFilterFlags.APPLICATION
+        recentfilter = Gtk.RecentFilter()
+        recentfilter.set_name("jack_mixer XML files")
+        recentfilter.add_custom(filter_flags, filter_func)
+
         recentchooser = Gtk.RecentChooserMenu.new_for_manager(self.recentmanager)
         recentchooser.set_sort_type(Gtk.RecentSortType.MRU)
         recentchooser.set_local_only(True)
@@ -159,11 +170,9 @@ class JackMixer(SerializedObject):
         recentchooser.set_show_icons(True)
         recentchooser.set_show_numbers(True)
         recentchooser.set_show_tips(True)
-        recentfilter = Gtk.RecentFilter()
-        recentfilter.add_application("jack_mixer.py")
-        recentfilter.add_application("jack_mixer")
         recentchooser.add_filter(recentfilter)
-        recentchooser.connect('item-activated', self.on_recent_file_chosen)
+        recentchooser.connect("item-activated", self.on_recent_file_chosen)
+
         recentmenu.set_submenu(recentchooser)
         return recentmenu
 

@@ -152,7 +152,6 @@ class JackMixer(SerializedObject):
         recentmenu = Gtk.MenuItem.new_with_mnemonic("_Recent Projects")
         self.recentmanager = Gtk.RecentManager.get_default()
 
-
         def filter_func(info):
             return info.mime_type in ("text/xml", "application/xml") and (
                 "jack_mixer.py" in info.applications or "jack_mixer" in info.applications
@@ -580,8 +579,9 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         try:
             self._save_project(self.current_filename)
         except Exception as exc:
-            error_dialog(self.window, "Error saving project file '%s': %s",
-                         self.current_filename, exc)
+            error_dialog(
+                self.window, "Error saving project file '%s': %s", self.current_filename, exc
+            )
 
     def on_save_as_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
@@ -600,7 +600,8 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         else:
             dlg.set_current_folder(self.last_project_path or default_project_path or os.getcwd())
             filename = "{}-{}.xml".format(
-                getpass.getuser(), datetime.datetime.now().strftime('%Y%m%d-%H%M'))
+                getpass.getuser(), datetime.datetime.now().strftime("%Y%m%d-%H%M")
+            )
             dlg.set_current_name(filename)
 
         if default_project_path:

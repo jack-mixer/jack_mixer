@@ -113,7 +113,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.config["Preferences"] = {}
         self.config["Preferences"]["confirm_quit"] = str(self.confirm_quit)
         self.config["Preferences"]["default_meter_scale"] = self.default_meter_scale.scale_id
-        self.config["Preferences"]["default_project_path"] = self.default_project_path or ''
+        self.config["Preferences"]["default_project_path"] = self.default_project_path or ""
         self.config["Preferences"]["default_slider_scale"] = self.default_slider_scale.scale_id
         self.config["Preferences"]["midi_behavior_mode"] = str(self.midi_behavior_mode)
         self.config["Preferences"]["use_custom_widgets"] = str(self.use_custom_widgets)
@@ -217,7 +217,7 @@ class Factory(GObject.GObject, SerializedObject):
         object_backend.add_property("confirm-quit", str(self.get_confirm_quit()))
         object_backend.add_property("default_meter_scale", self.get_default_meter_scale().scale_id)
         # serialize the value, even if it's empty, not the default fallback directories
-        object_backend.add_property("default_project_path", self.default_project_path or '')
+        object_backend.add_property("default_project_path", self.default_project_path or "")
         object_backend.add_property(
             "default_slider_scale", self.get_default_slider_scale().scale_id
         )

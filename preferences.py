@@ -53,8 +53,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.path_entry.connect("changed", self.on_path_entry_changed)
         path_vbox.pack_start(self.path_entry, False, False, 3)
         self.project_path_chooser = Gtk.FileChooserButton(
-            title="Default Project Path",
-            action=Gtk.FileChooserAction.SELECT_FOLDER
+            title="Default Project Path", action=Gtk.FileChooserAction.SELECT_FOLDER
         )
         project_path = self.app.gui_factory.default_project_path
         path_vbox.pack_start(self.project_path_chooser, False, False, 3)

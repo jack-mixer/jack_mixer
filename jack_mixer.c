@@ -853,15 +853,18 @@ mix_one(
      * Only add the signal from this input channel:
      *
      * - if there are no globally soloed channels and no soloed channels for this output-channel;
-     * - or if the input channel is globally soloed;
+     * - or if the input channel is globally soloed and the output channel is not a system
+     *   channel (direct out or monitor out);
      * - or if the input channel is soloed for this output channel.
      *
      * */
     if ((!channel_ptr->mixer_ptr->soloed_channels && !output_mix_channel->soloed_channels) ||
         (channel_ptr->mixer_ptr->soloed_channels &&
-         g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel_ptr) != NULL) ||
+         g_slist_find(channel_ptr->mixer_ptr->soloed_channels, channel_ptr) != NULL &&
+         !output_mix_channel->system) ||
         (output_mix_channel->soloed_channels &&
-        g_slist_find(output_mix_channel->soloed_channels, channel_ptr) != NULL)) {
+         g_slist_find(output_mix_channel->soloed_channels, channel_ptr) != NULL))
+    {
 
       /* Get either post or pre-fader signal */
       for (i = start ; i < end ; i++)

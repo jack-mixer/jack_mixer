@@ -358,8 +358,7 @@ class Channel(Gtk.Box, SerializedObject):
         return False
 
     def on_drag_data_get(self, widget, drag_context, data, info, time):
-        channel = widget.get_parent().get_parent()
-        data.set(data.get_target(), 8, channel._channel_name.encode("utf-8"))
+        data.set(data.get_target(), 8, self.channel_name.encode("utf-8"))
 
     def on_drag_data_received(self, widget, drag_context, x, y, data, info, time):
         pass

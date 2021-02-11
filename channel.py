@@ -603,9 +603,9 @@ class InputChannel(Channel):
 
     def on_drag_data_received(self, widget, drag_context, x, y, data, info, time):
         source_name = data.get_data().decode("utf-8")
-        if source_name == self._channel_name:
+        if source_name == self.channel_name:
             return
-        self.emit("input-channel-order-changed", source_name, self._channel_name)
+        self.emit("input-channel-order-changed", source_name, self.channel_name)
 
     def add_control_group(self, channel):
         control_group = ControlGroup(channel, self)
@@ -805,9 +805,9 @@ class OutputChannel(Channel):
 
     def on_drag_data_received(self, widget, drag_context, x, y, data, info, time):
         source_name = data.get_data().decode("utf-8")
-        if source_name == self._channel_name:
+        if source_name == self.channel_name:
             return
-        self.emit("output-channel-order-changed", source_name, self._channel_name)
+        self.emit("output-channel-order-changed", source_name, self.channel_name)
 
     def on_mute_button_pressed(self, button, event, *args):
         if event.button == 1 and event.state & Gdk.ModifierType.CONTROL_MASK:

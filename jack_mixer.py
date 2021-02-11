@@ -780,51 +780,54 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         self.channel_remove_output_menu.foreach(rename_channels, rename_parameters)
         log.debug('Renaming channel from "%s" to "%s".', oldname, newname)
 
+    def reorder_menu_item(self, menu, source_label, dest_label):
+        pos = -1
+        source_item = None
+        for i, menuitem in enumerate(menu.get_children()):
+            label = menuitem.get_label()
+            if label == source_label:
+                source_item = menuitem
+            elif label == dest_label:
+                pos = i
+
+        if pos != -1 and source_item is not None:
+            menu.reorder_child(source_item, pos)
+
+    def reorder_channels(self, container, source_name, dest_name, reverse=False):
+        frames = container.get_children()
+
+        for frame in frames:
+            if source_name == frame.get_child().channel_name:
+                source_frame = frame
+                break
+
+        if reverse:
+            frames.reverse()
+
+        for pos, frame in enumerate(frames):
+            if dest_name == frame.get_child().channel_name:
+                container.reorder_child(source_frame, pos)
+                break
+
     def on_input_channel_order_changed(self, widget, source_name, dest_name):
         self.channels.clear()
-
-        channel_box = self.hbox_inputs
-        frames = channel_box.get_children()
-
-        for f in frames:
-            c = f.get_child()
-            if source_name == c._channel_name:
-                source_frame = f
-                break
-
-        for f in frames:
-            c = f.get_child()
-            if dest_name == c._channel_name:
-                pos = frames.index(f)
-                channel_box.reorder_child(source_frame, pos)
-                break
+        self.reorder_channels(self.hbox_inputs, source_name, dest_name)
 
         for frame in self.hbox_inputs.get_children():
-            c = frame.get_child()
-            self.channels.append(c)
+            self.channels.append(frame.get_child())
+
+        for menu in (self.channel_edit_input_menu, self.channel_remove_input_menu):
+            self.reorder_menu_item(menu, source_name, dest_name)
 
     def on_output_channel_order_changed(self, widget, source_name, dest_name):
         self.output_channels.clear()
-        channel_box = self.hbox_outputs
-
-        frames = channel_box.get_children()
-
-        for f in frames:
-            c = f.get_child()
-            if source_name == c._channel_name:
-                source_frame = f
-                break
-
-        for f in frames:
-            c = f.get_child()
-            if dest_name == c._channel_name:
-                pos = len(frames) - 1 - frames.index(f)
-                channel_box.reorder_child(source_frame, pos)
-                break
+        self.reorder_channels(self.hbox_outputs, source_name, dest_name, reverse=True)
 
         for frame in self.hbox_outputs.get_children():
-            c = frame.get_child()
-            self.output_channels.append(c)
+            self.output_channels.append(frame.get_child())
+
+        for menu in (self.channel_edit_output_menu, self.channel_remove_output_menu):
+            self.reorder_menu_item(menu, source_name, dest_name)
 
     def on_channels_clear(self, widget):
         dlg = Gtk.MessageDialog(

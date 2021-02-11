@@ -113,6 +113,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.mute.get_style_context().add_class("mute")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
+        self.mute.connect("button-press-event", self.on_mute_button_pressed)
         self.hbox_mutesolo.pack_start(self.mute, True, True, 0)
 
         self.pack_start(self.hbox_mutesolo, False, False, 0)
@@ -370,6 +371,10 @@ class Channel(Gtk.Box, SerializedObject):
     def on_mute_toggled(self, button):
         self.channel.out_mute = self.mute.get_active()
 
+    def on_mute_button_pressed(self, button, event, *args):
+        # should be overwritten by sub-class
+        pass
+
     def on_monitor_button_toggled(self, button):
         if button.get_active():
             for channel in self.app.channels + self.app.output_channels:
@@ -547,7 +552,6 @@ class InputChannel(Channel):
         self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
         self.solo.connect("button-press-event", self.on_solo_button_pressed)
-        self.mute.connect("button-press-event", self.on_mute_button_pressed)
         self.hbox_mutesolo.pack_start(self.solo, True, True, 0)
 
     def realize(self):
@@ -640,8 +644,14 @@ class InputChannel(Channel):
             super().on_midi_event_received()
 
     def on_mute_button_pressed(self, button, event, *args):
-        if event.button == 3:
-            # right click on the mute button, act on all output channels
+        if event.button == 1 and event.state & Gdk.ModifierType.CONTROL_MASK:
+            # Ctrlr+left-click: exclusive (between input channels) mute
+            for channel in self.app.channels:
+                if channel is not self:
+                    channel.mute.set_active(False)
+            return button.get_active()
+        elif event.button == 3:
+            # Right-click on the mute button: act on all output channels
             if button.get_active():  # was muted
                 button.set_active(False)
                 if hasattr(button, "touched_channels"):
@@ -666,8 +676,14 @@ class InputChannel(Channel):
         self.channel.solo = self.solo.get_active()
 
     def on_solo_button_pressed(self, button, event, *args):
-        if event.button == 3:
-            # right click on the solo button, act on all output channels
+        if event.button == 1 and event.state & Gdk.ModifierType.CONTROL_MASK:
+            # Ctrlr+left-click: exclusive solo
+            for channel in self.app.channels:
+                if channel is not self:
+                    channel.solo.set_active(False)
+            return button.get_active()
+        elif event.button == 3:
+            # Right click on the solo button: act on all output channels
             if button.get_active():  # was soloed
                 button.set_active(False)
                 if hasattr(button, "touched_channels"):
@@ -793,6 +809,14 @@ class OutputChannel(Channel):
         if source_name == self._channel_name:
             return
         self.emit("output-channel-order-changed", source_name, self._channel_name)
+
+    def on_mute_button_pressed(self, button, event, *args):
+        if event.button == 1 and event.state & Gdk.ModifierType.CONTROL_MASK:
+            # Ctrlr+left-click: exclusive (between output channels) mute
+            for channel in self.app.output_channels:
+                if channel is not self:
+                    channel.mute.set_active(False)
+            return button.get_active()
 
     def midi_events_check(self):
         if self.channel is not None and self.channel.midi_in_got_events:
@@ -1222,27 +1246,33 @@ class ControlGroup(Gtk.Alignment):
         self.label.get_style_context().add_class("label")
         self.label.set_max_width_chars(self.input_channel.label_chars_narrow)
         self.label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+
         if len(name) > self.input_channel.label_chars_narrow:
             self.label.set_tooltip_text(name)
+
         self.hbox.pack_start(self.label, False, False, BUTTON_PADDING)
         self.hbox.pack_end(self.buttons_box, False, False, BUTTON_PADDING)
-        mute = Gtk.ToggleButton("M")
+
+        self.mute = mute = Gtk.ToggleButton("M")
         mute.get_style_context().add_class("mute")
         mute.set_tooltip_text("Mute output channel send")
+        mute.connect("button-press-event", self.on_mute_button_pressed)
         mute.connect("toggled", self.on_mute_toggled)
-        self.mute = mute
-        solo = Gtk.ToggleButton("S")
+
+        self.solo = solo = Gtk.ToggleButton("S")
         solo.get_style_context().add_class("solo")
         solo.set_tooltip_text("Solo output send")
+        solo.connect("button-press-event", self.on_solo_button_pressed)
         solo.connect("toggled", self.on_solo_toggled)
-        self.solo = solo
-        pre = Gtk.ToggleButton("P")
+
+        self.prefader = pre = Gtk.ToggleButton("P")
         pre.get_style_context().add_class("prefader")
         pre.set_tooltip_text("Pre (on) / Post (off) fader send")
         pre.connect("toggled", self.on_prefader_toggled)
-        self.prefader = pre
+
         self.buttons_box.pack_start(pre, True, True, BUTTON_PADDING)
         self.buttons_box.pack_start(mute, True, True, BUTTON_PADDING)
+
         if self.output_channel.display_solo_buttons:
             self.buttons_box.pack_start(solo, True, True, BUTTON_PADDING)
 
@@ -1266,9 +1296,27 @@ class ControlGroup(Gtk.Alignment):
         self.output_channel.channel.set_muted(self.input_channel.channel, button.get_active())
         self.app.update_monitor(self.output_channel)
 
+    def on_mute_button_pressed(self, button, event, *args):
+        if event.button == 1 and event.state & Gdk.ModifierType.CONTROL_MASK:
+            # Ctrlr+left-click => exclusive mute for output
+            for channel in self.app.channels:
+                if channel is not self.input_channel:
+                    ctlgroup = channel.get_control_group(self.output_channel)
+                    ctlgroup.mute.set_active(False)
+            return button.get_active()
+
     def on_solo_toggled(self, button):
         self.output_channel.channel.set_solo(self.input_channel.channel, button.get_active())
         self.app.update_monitor(self.output_channel)
+
+    def on_solo_button_pressed(self, button, event, *args):
+        if event.button == 1 and event.state & Gdk.ModifierType.CONTROL_MASK:
+            # Ctrlr+left-click => exclusive solo for output
+            for channel in self.app.channels:
+                if channel is not self.input_channel:
+                    ctlgroup = channel.get_control_group(self.output_channel)
+                    ctlgroup.solo.set_active(False)
+            return button.get_active()
 
     def on_prefader_toggled(self, button):
         self.output_channel.channel.set_in_prefader(

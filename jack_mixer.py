@@ -327,9 +327,11 @@ class JackMixer(SerializedObject):
     # ---------------------------------------------------------------------------------------------
     # Channel creation
 
-    def add_channel(self, name, stereo, volume_cc, balance_cc, mute_cc, solo_cc, value):
+    def add_channel(
+        self, name, stereo, direct_output, volume_cc, balance_cc, mute_cc, solo_cc, value
+    ):
         try:
-            channel = InputChannel(self, name, stereo, value)
+            channel = InputChannel(self, name, stereo, direct_output, value)
             self.add_channel_precreated(channel)
         except Exception:
             error_dialog(self.window, "Input channel creation failed.")
@@ -359,14 +361,20 @@ class JackMixer(SerializedObject):
         for outputchannel in self.output_channels:
             channel.add_control_group(outputchannel)
 
+        if channel.wants_direct_output:
+            self.add_direct_output(channel)
+
+        channel.connect("input-channel-order-changed", self.on_input_channel_order_changed)
+
+    def add_direct_output(self, channel, name=None):
+        if not name:
+            name = channel.channel.name + " Out"
         # create post fader output channel matching the input channel
         channel.post_fader_output_channel = self.mixer.add_output_channel(
-            channel.channel.name + " Out", channel.channel.is_stereo, True
+            name, channel.channel.is_stereo, True
         )
         channel.post_fader_output_channel.volume = 0
         channel.post_fader_output_channel.set_solo(channel.channel, True)
-
-        channel.connect("input-channel-order-changed", self.on_input_channel_order_changed)
 
     def add_output_channel(
         self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons, color, value

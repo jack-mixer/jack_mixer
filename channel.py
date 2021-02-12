@@ -40,7 +40,7 @@ class Channel(Gtk.Box, SerializedObject):
 
     num_instances = 0
 
-    def __init__(self, app, name, stereo, value=None):
+    def __init__(self, app, name, stereo=True, direct_output=True, value=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.mixer = app.mixer
@@ -53,6 +53,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
         self.balance_adjustment = slider.BalanceAdjustment()
+        self.wants_direct_output = direct_output
         self.post_fader_output_channel = None
         self.future_out_mute = None
         self.future_volume_midi_cc = None
@@ -713,6 +714,7 @@ class InputChannel(Channel):
             object_backend.add_property("type", "stereo")
         else:
             object_backend.add_property("type", "mono")
+        object_backend.add_property("direct_output", "%s" % str(self.wants_direct_output))
         super().serialize(object_backend)
 
     def unserialize_property(self, name, value):
@@ -726,6 +728,9 @@ class InputChannel(Channel):
             if value == "mono":
                 self.stereo = False
                 return True
+        if name == "direct_output":
+            self.wants_direct_output = value == "True"
+            return True
         return super().unserialize_property(name, value)
 
 
@@ -997,6 +1002,17 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.button_sense_midi_mute.connect("clicked", self.on_sense_midi_mute_clicked)
         grid.attach(self.button_sense_midi_mute, 2, 2, 1, 1)
 
+        if isinstance(self, NewInputChannelDialog) or (
+            self.channel and isinstance(self.channel, InputChannel)
+        ):
+            direct_output_label = Gtk.Label.new_with_mnemonic("_Direct Out(s)")
+            direct_output_label.set_halign(Gtk.Align.START)
+            self.properties_grid.attach(direct_output_label, 0, 3, 1, 1)
+            self.direct_output = Gtk.CheckButton()
+            direct_output_label.set_mnemonic_widget(self.direct_output)
+            self.direct_output.set_tooltip_text("Add direct post-fader output(s) for channel.")
+            self.properties_grid.attach(self.direct_output, 1, 3, 1, 1)
+
         if isinstance(self, NewChannelDialog) or (
             self.channel and isinstance(self.channel, InputChannel)
         ):
@@ -1025,6 +1041,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.entry_balance_cc.set_value(self.channel.channel.balance_midi_cc)
         self.entry_mute_cc.set_value(self.channel.channel.mute_midi_cc)
         if self.channel and isinstance(self.channel, InputChannel):
+            self.direct_output.set_active(self.channel.wants_direct_output)
             self.entry_solo_cc.set_value(self.channel.channel.solo_midi_cc)
 
     def sense_popup_dialog(self, entry):
@@ -1073,10 +1090,20 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         self.sense_popup_dialog(self.entry_solo_cc)
 
     def on_response_cb(self, dlg, response_id, *args):
-        name = self.entry_name.get_text()
         if response_id == Gtk.ResponseType.APPLY:
+            name = self.entry_name.get_text()
+
             if name != self.channel.channel_name:
                 self.channel.channel_name = name
+
+            if self.direct_output.get_active() and not self.channel.post_fader_output_channel:
+                self.channel.wants_direct_output = True
+                self.app.add_direct_output(self.channel)
+            elif not self.direct_output.get_active() and self.channel.post_fader_output_channel:
+                self.channel.wants_direct_output = False
+                self.channel.post_fader_output_channel.remove()
+                self.channel.post_fader_output_channel = None
+
             for control in ("volume", "balance", "mute", "solo"):
                 widget = getattr(self, "entry_{}_cc".format(control), None)
                 if widget is not None:
@@ -1126,6 +1153,7 @@ class NewInputChannelDialog(NewChannelDialog):
 
     def fill_ui(self, **values):
         self.entry_name.set_text(values.get("name", ""))
+        self.direct_output.set_active(values.get("direct_output", True))
         # don't set MIDI CCs to previously used values, because they
         # would overwrite existing mappings, if accepted.
         self.entry_volume_cc.set_value(-1)
@@ -1140,6 +1168,7 @@ class NewInputChannelDialog(NewChannelDialog):
         return {
             "name": self.entry_name.get_text(),
             "stereo": self.stereo.get_active(),
+            "direct_output": self.direct_output.get_active(),
             "volume_cc": int(self.entry_volume_cc.get_value()),
             "balance_cc": int(self.entry_balance_cc.get_value()),
             "mute_cc": int(self.entry_mute_cc.get_value()),

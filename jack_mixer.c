@@ -133,6 +133,9 @@ struct jack_mixer {
 
   jack_port_t * port_midi_in;
   jack_port_t * port_midi_out;
+
+  bool kmetering;
+
   int8_t last_midi_cc;
   enum midi_behavior_mode midi_behavior;
 
@@ -1058,9 +1061,12 @@ mix_one(
           mix_channel->right_buffer_ptr[i] = mix_channel->tmp_mixed_frames_right[i];
     }
   }
+
   /* Calculate k-metering for output channel*/
-  kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
-  kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
+  if (mix_channel->mixer_ptr->kmetering) {
+    kmeter_process(&mix_channel->kmeter_left, mix_channel->tmp_mixed_frames_left, start, end);
+    kmeter_process(&mix_channel->kmeter_right, mix_channel->tmp_mixed_frames_right, start, end);
+  }
 }
 
 static inline void
@@ -1227,9 +1233,12 @@ calc_channel_frames(
   }
 
   /* Calculate k-metering for input channel */
-  kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
-  if (channel_ptr->stereo)
-    kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
+  if (channel_ptr->mixer_ptr->kmetering) {
+    kmeter_process(&channel_ptr->kmeter_left, channel_ptr->frames_left, start, end);
+    if (channel_ptr->stereo) {
+      kmeter_process(&channel_ptr->kmeter_right, channel_ptr->frames_right, start, end);
+    }
+  }
 }
 
 static inline void
@@ -1556,6 +1565,8 @@ create(
 
   mixer_ptr->soloed_channels = NULL;
 
+  mixer_ptr->kmetering = true;
+
   mixer_ptr->last_midi_cc = -1;
 
   mixer_ptr->midi_behavior = Jump_To_Value;
@@ -1655,6 +1666,21 @@ get_client_name(
   jack_mixer_t mixer)
 {
   return jack_get_client_name(mixer_ctx_ptr->jack_client);
+}
+
+bool
+get_kmetering(
+  jack_mixer_t mixer)
+{
+  return mixer_ctx_ptr->kmetering;
+}
+
+void
+set_kmetering(
+  jack_mixer_t mixer,
+  bool flag)
+{
+  mixer_ctx_ptr->kmetering = flag;
 }
 
 int8_t

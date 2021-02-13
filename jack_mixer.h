@@ -78,6 +78,15 @@ const char*
 get_client_name(
   jack_mixer_t mixer);
 
+bool
+get_kmetering(
+  jack_mixer_t mixer);
+
+void
+set_kmetering(
+  jack_mixer_t mixer,
+  bool flag);
+
 int8_t
 get_last_midi_cc(
   jack_mixer_t mixer);
@@ -150,8 +159,6 @@ channel_mono_kmeter_read(
   jack_mixer_channel_t channel,
   double * mono_ptr,
   double * mono_rms_ptr);
-
-
 
 bool
 channel_is_stereo(

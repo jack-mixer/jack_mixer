@@ -59,3 +59,10 @@ endif
 if get_option('gui').enabled() and not get_option('wheel')
     meson.add_install_script('meson_postinstall.py')
 endif
+
+summary({
+    'Build jack_mixer GUI': get_option('gui').enabled(),
+    'JACK MIDI support': get_option('jack-midi').enabled(),
+    'Debug messages (verbose)': get_option('verbose'),
+    'Build for wheel': get_option('wheel'),
+}, section: 'Configuration')

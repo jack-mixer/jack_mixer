@@ -24,17 +24,24 @@ executable(
 
 # Generate extension module C source from Cython sources
 if get_option('gui').enabled()
-    cython = find_program('cython')
-
     jack_mixer_mod_pyx = '_jack_mixer.pyx'
-    jack_mixer_mod_pxd = '_jack_mixer.pxd'
     jack_mixer_mod_c = '_jack_mixer.c'
 
-    jack_mixer_cython = custom_target(
-        'jack_mixer_cython',
-        output: jack_mixer_mod_c,
-        input: jack_mixer_mod_pyx,
-        depend_files: [jack_mixer_mod_pyx, jack_mixer_mod_pxd],
-        command: [cython, '-o', '@OUTPUT@', '@INPUT@'],
-    )
+    cython = find_program('cython', required: false)
+
+    if cython.found()
+        jack_mixer_mod_pxd = '_jack_mixer.pxd'
+
+        jack_mixer_cython = custom_target(
+            'jack_mixer_cython',
+            output: jack_mixer_mod_c,
+            input: jack_mixer_mod_pyx,
+            depend_files: [jack_mixer_mod_pyx, jack_mixer_mod_pxd],
+            command: [cython, '-o', '@OUTPUT@', '@INPUT@'],
+        )
+    else
+        jack_mixer_cython = files(jack_mixer_mod_c)
+    endif
+
+    meson.add_dist_script('meson_dist_cython.py', jack_mixer_mod_pyx)
 endif

@@ -87,7 +87,7 @@ cdef class Mixer:
             mixer_destroy(self._mixer)
 
     def destroy(self):
-        """Close mixer Jack client and detroy mixer instance.
+        """Close mixer Jack client and destroy mixer instance.
 
         The instance must not be used anymore after calling this
         method.
@@ -130,7 +130,8 @@ cdef class Mixer:
     cpdef add_channel(self, channel_name, stereo=None):
         """Add a stereo or mono input channel with given name to the mixer.
 
-        Returns a `Channel` instance.
+        Returns a `Channel` instance when successfull or `None` if channel
+        creation failed.
         """
         cdef jack_mixer_channel_t chan_ptr
         if stereo is None:
@@ -145,7 +146,8 @@ cdef class Mixer:
     cpdef add_output_channel(self, channel_name, stereo=None, system=False):
         """Add a stereo or mono output channel with given name to the mixer.
 
-        Returns a `OutputChannel` instance.
+        Returns a `OutputChannel` instance when successfull or `None` if
+        channel creation failed.
         """
         cdef jack_mixer_output_channel_t chan_ptr
 

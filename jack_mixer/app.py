@@ -38,12 +38,7 @@ from gi.repository import GLib
 from . import gui
 from . import scale
 from ._jack_mixer import Mixer
-from .channel import (
-    InputChannel,
-    NewInputChannelDialog,
-    NewOutputChannelDialog,
-    OutputChannel
-)
+from .channel import InputChannel, NewInputChannelDialog, NewOutputChannelDialog, OutputChannel
 from .nsmclient import NSMClient
 from .preferences import PreferencesDialog
 from .serialization_xml import XmlSerialization
@@ -326,10 +321,20 @@ class JackMixer(SerializedObject):
     # Channel creation
 
     def add_channel(
-        self, name, stereo, direct_output, volume_cc, balance_cc, mute_cc, solo_cc, value
+        self,
+        name,
+        stereo=True,
+        direct_output=True,
+        volume_cc=-1,
+        balance_cc=-1,
+        mute_cc=-1,
+        solo_cc=-1,
+        value=-1,
     ):
         try:
-            channel = InputChannel(self, name, stereo, direct_output, value)
+            channel = InputChannel(
+                self, name, stereo=stereo, direct_output=direct_output, value=value
+            )
             self.add_channel_precreated(channel)
         except Exception:
             error_dialog(self.window, "Input channel creation failed.")
@@ -375,10 +380,18 @@ class JackMixer(SerializedObject):
         channel.post_fader_output_channel.set_solo(channel.channel, True)
 
     def add_output_channel(
-        self, name, stereo, volume_cc, balance_cc, mute_cc, display_solo_buttons, color, value
+        self,
+        name,
+        stereo=True,
+        volume_cc=-1,
+        balance_cc=-1,
+        mute_cc=-1,
+        display_solo_buttons=False,
+        color="#fff",
+        value=True,
     ):
         try:
-            channel = OutputChannel(self, name, stereo, value)
+            channel = OutputChannel(self, name, stereo=stereo, value=value)
             channel.display_solo_buttons = display_solo_buttons
             channel.color = color
             self.add_output_channel_precreated(channel)

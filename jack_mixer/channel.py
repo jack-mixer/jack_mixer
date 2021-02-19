@@ -743,6 +743,7 @@ class OutputChannel(Channel):
         self._init_muted_channels = None
         self._init_solo_channels = None
         self._init_prefader_channels = None
+        self._color = Gdk.RGBA()
 
     @property
     def display_solo_buttons(self):
@@ -754,6 +755,19 @@ class OutputChannel(Channel):
         # notifying control groups
         for inputchannel in self.app.channels:
             inputchannel.update_control_group(self)
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, value):
+        if isinstance(value, Gdk.RGBA):
+            self._color = value
+        else:
+            c = Gdk.RGBA()
+            c.parse(value)
+            self._color = c
 
     def realize(self):
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)

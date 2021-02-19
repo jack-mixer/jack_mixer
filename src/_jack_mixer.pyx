@@ -3,7 +3,7 @@
 #
 """Python bindings for jack_mixer.c and scale.c using Cython."""
 
-__all__ = ("Scale", "Mixer")
+__all__ = ("Scale", "MidiBehaviour", "Mixer")
 
 import enum
 

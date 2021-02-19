@@ -132,22 +132,33 @@ cdef class Mixer:
 
         Returns a `Channel` instance.
         """
+        cdef jack_mixer_channel_t chan_ptr
         if stereo is None:
             stereo = self._stereo
 
-        return Channel.new(mixer_add_channel(self._mixer, channel_name.encode('utf-8'), stereo))
+        chan_ptr = mixer_add_channel(self._mixer, channel_name.encode('utf-8'), stereo)
+        if chan_ptr == NULL:
+            return None
+
+        return Channel.new(chan_ptr)
 
     cpdef add_output_channel(self, channel_name, stereo=None, system=False):
         """Add a stereo or mono output channel with given name to the mixer.
 
         Returns a `OutputChannel` instance.
         """
+        cdef jack_mixer_output_channel_t chan_ptr
+
         if stereo is None:
             stereo = self._stereo
 
-        return OutputChannel.new(mixer_add_output_channel(self._mixer,
-                                                          channel_name.encode('utf-8'),
-                                                          stereo, system))
+        chan_ptr = mixer_add_output_channel(self._mixer, channel_name.encode('utf-8'), stereo,
+                                            system)
+
+        if chan_ptr == NULL:
+            return None
+
+        return OutputChannel.new(chan_ptr)
 
 
 cdef class Channel:
@@ -166,7 +177,7 @@ cdef class Channel:
     cdef Channel new(jack_mixer_channel_t chan_ptr):
         """Create a new Channel instance.
 
-        A pointer to an initialzed `jack_mixer_channel_t` struct must be
+        A pointer to an initialized `jack_mixer_channel_t` struct must be
         passed in.
 
         This should not be called directly but only via `Mixer.add_channel()`.

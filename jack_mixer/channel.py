@@ -211,11 +211,10 @@ class Channel(Gtk.Box, SerializedObject):
         self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
         self.on_vumeter_color_changed(self.gui_factory)
 
-        if self.initial_value is not None:
-            if self.initial_value is True:
-                self.slider_adjustment.set_value(0)
-            else:
-                self.slider_adjustment.set_value_db(0)
+        if not self.initial_value:
+            self.slider_adjustment.set_value_db(0)
+        else:
+            self.slider_adjustment.set_value(0)
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
         self.slider_adjustment.connect(

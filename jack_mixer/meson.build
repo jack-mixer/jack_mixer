@@ -29,6 +29,14 @@ module = python.extension_module(
     subdir: 'jack_mixer',
 )
 
+version_py = configure_file(
+    input: 'version.py.in',
+    output: 'version.py',
+    configuration: {
+        'VERSION': meson.project_version()
+    }
+)
+
 
 # Pure Python sources
 python_sources = files([
@@ -45,13 +53,13 @@ python_sources = files([
     'serialization_xml.py',
     'slider.py',
     'styling.py',
-    'version.py',
 ])
 
 
 # Install pure Python modules
 python.install_sources(
     python_sources,
+    version_py,
     pure: false,
     subdir: 'jack_mixer',
 )

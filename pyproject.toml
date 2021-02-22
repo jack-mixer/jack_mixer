@@ -24,7 +24,7 @@ license = "GPL2+"
 author = "Nedko Arnaudov"
 author-email = "nedko (a.t) arnaudov (dot) name"
 maintainer = "Christopher Arndt"
-maintainer-email = "inf@chrisarndt.de"
+maintainer-email = "info (a.t.) chrisarndt.de"
 home-page = "https://rdio.space/jackmixer/"
 project-urls = [
     "Source, https://github.com/jack-mixer/jack-mixer",

@@ -13,9 +13,8 @@ project(
 cc = meson.get_compiler('c')
 glib_dep = dependency('glib-2.0')
 math_dep = cc.find_library('m', required: false)
-jack1_dep = dependency('jack', version:'>=0.125.0, <1.0', required: false)
 jack2_dep = dependency('jack', version:'>=1.9.11', required: false)
-jack_dep = dependency('', required: false)
+jack1_dep = dependency('jack', version:'>=0.125.0, <1.0', required: false)
 
 if not jack2_dep.found() and jack1_dep.found()
     jack_dep = jack1_dep

@@ -5,7 +5,8 @@ project(
     license: 'GPL2+',
     default_options: [
         'warning_level=2'
-    ]
+    ],
+    meson_version: '>=0.53.0'
 )
 
 # Dependencies
@@ -29,7 +30,6 @@ if get_option('gui').disabled() and get_option('jack-midi').disabled()
 endif
 
 if get_option('gui').enabled()
-    # https://mesonbuild.com/Python-module.html
     pymod = import('python')
     python = pymod.find_installation('python3', required: true)
 endif

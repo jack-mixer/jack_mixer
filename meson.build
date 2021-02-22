@@ -31,7 +31,11 @@ endif
 
 if get_option('gui').enabled()
     pymod = import('python')
-    python = pymod.find_installation('python3', required: true)
+    python = pymod.find_installation(
+        'python3',
+        required: true,
+        modules: get_option('check-py-modules') ? ['gi', 'cairo', 'xdg'] : []
+    )
 endif
 
 # Installation directories

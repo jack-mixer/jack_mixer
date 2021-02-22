@@ -8,6 +8,11 @@ option('jack-midi',
     value: 'enabled',
     description: 'Enable JACK MIDI support'
 )
+option('check-py-modules',
+    type: 'boolean',
+    value: true,
+    description: 'Check whether required Python modules are installed'
+)
 option('verbose',
     type: 'boolean',
     value: false,

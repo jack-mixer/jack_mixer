@@ -27,7 +27,7 @@ New:
 
 * A man page for `jack_mixer` was added.
 
-* `jack_mix_box`now supports the `-p|--pickup` command line option to enable
+* `jack_mix_box` now supports the `-p|--pickup` command line option to enable
   MIDI pickup mode, to prevent sudden volume or balance value jumps.
 
 
@@ -39,7 +39,7 @@ Fixed:
 
 * Volume and balance level and mute and solo state changes originating from
   the UI now send the correct assigned MIDI CCs, allowing for MIDI feedback
-  to controllers. Same for changes originating from reception of assigend MIDI
+  to controllers. Same for changes originating from reception of assigned MIDI
   CCs.
 
 * The handler for right-clicking the input channel mute/solo buttons, was
@@ -55,11 +55,11 @@ Fixed:
 * Saving the current project on reception of the `SIGUSR1` signal, which is a
   requirement for LADISH level L1 support, was broken in version 14.
 
-* When re-ording channels via drag-and-drop, the order of the edit / remove
+* When re-ordering channels via drag-and-drop, the order of the edit / remove
   channel menu items were not updated.
 
 * When creating an output channel, it could happen that the initial channel
-  volume would ranmdomly be set to -inf or 0 dB, regardless of what was
+  volume would randomly be set to -inf or 0 dB, regardless of what was
   selected in new channel dialog.
 
 
@@ -70,7 +70,7 @@ Changed:
 * The `jack_mix_box` command line usage help message was improved.
 
 * The channel strip buttons (solo, mute, etc.) now have more distinctive colors
-  when activated or the mouse hovers over them
+  when activated or the mouse hovers over them.
 
 * The balance slider step size was increased slightly so right-clicking the
   slider changes the value more rapidly.
@@ -96,11 +96,11 @@ Project infrastructure and internals:
   which improves build times and maintainability markedly. See the file
   [INSTALL.md] for updated build and installation instructions.
 
-* A build option to allow buidling only `jack_mix_box` was added (`-Dgui=disabled`).
+* A build option to allow building only `jack_mix_box` was added (`-Dgui=disabled`).
 
 * All Python code was re-formatted with [black].
 
-* All errors and warings reported by [flake8] were fixed or are expressivley and
+* All errors and warnings reported by [flake8] were fixed or are explicitly and
   selectively ignored.
 
 * The file `version.py` is now generated from the version set in the project

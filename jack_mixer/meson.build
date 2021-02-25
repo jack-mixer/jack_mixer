@@ -60,7 +60,7 @@ python_sources = files([
 python.install_sources(
     python_sources,
     version_py,
-    pure: false,
+    pure: true,
     subdir: 'jack_mixer',
 )
 

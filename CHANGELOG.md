@@ -2,6 +2,122 @@ Change Log
 ==========
 
 
+## Version 15 (2021-02-25)
+
+**Important change:** `jack_mixer` now uses [meson] for building and
+installation. See [INSTALL.md] for new build instructions.
+
+
+New:
+
+* A global setting for default project file path was added and can be changed
+  in the preference dialog.
+
+    The default value is `$XDG_DATA_HOME/jack_mixer` (which is normally
+    `~/.local/share/jack_mixer`).
+
+* A "Recent projects" menu was added, to allow loading recently used / saved
+  projects more quickly.
+
+* Direct channel output ports are now optional and can be enabled/disabled in
+  the channel preferences dialog.
+
+* Ctrl+left-click on the mute ("M") or solo ("S") channel buttons now activates
+  exclusive mute resp. solo.
+
+* A man page for `jack_mixer` was added.
+
+* `jack_mix_box`now supports the `-p|--pickup` command line option to enable
+  MIDI pickup mode, to prevent sudden volume or balance value jumps.
+
+
+Fixed:
+
+* Activating the solo function on an input channel could cause its
+  output signal be sent to the monitor outputs instead of the signal
+  from the channel, which had monitoring activated.
+
+* Volume and balance level and mute and solo state changes originating from
+  the UI now send the correct assigned MIDI CCs, allowing for MIDI feedback
+  to controllers. Same for changes originating from reception of assigend MIDI
+  CCs.
+
+* The handler for right-clicking the input channel mute/solo buttons, was
+  accidentally removed and is now re-instated.
+
+* Creating a new output channel assigns it a randomly chosen color,
+  which can be changed in the new channel dialog (used to work
+  some releases ago, but was broken at some point).
+
+* The `jack_mix_box` command line options `--help` and `--stereo`
+  erroneously required an argument.
+
+* Saving the current project on reception of the `SIGUSR1` signal, which is a
+  requirement for LADISH level L1 support, was broken in version 14.
+
+* When re-ording channels via drag-and-drop, the order of the edit / remove
+  channel menu items were not updated.
+
+* When creating an output channel, it could happen that the initial channel
+  volume would ranmdomly be set to -inf or 0 dB, regardless of what was
+  selected in new channel dialog.
+
+
+Changed:
+
+* The minimum supported Python version is now 3.6.
+
+* The `jack_mix_box` command line usage help message was improved.
+
+* The channel strip buttons (solo, mute, etc.) now have more distinctive colors
+  when activated or the mouse hovers over them
+
+* The balance slider step size was increased slightly so right-clicking the
+  slider changes the value more rapidly.
+
+* When using the "Save as..." function, `jack_mixer` now sets the default
+  filename and directory for file chooser to the last ones used.
+
+* A window title was added to the preferences dialog.
+
+* MIDI control for mute and solo now interprets control value 0-63 as off
+  and 64-127 as on, instead of toggling the state on reception of any
+  controller value.
+
+
+Project infrastructure and internals:
+
+* The `jack_mixer_c` Python extension module, which was originally implemented
+  in hand-written C code using the PYTHON C API, was replaced with the
+  `_jack_mixer` extension module implemented in [Cython], which generates the C
+  code in `_jack_mixer.c`.
+
+* The autotools build toolchain was replaced with a build setup using [meson],
+  which improves build times and maintainability markedly. See the file
+  [INSTALL.md] for updated build and installation instructions.
+
+* A build option to allow buidling only `jack_mix_box` was added (`-Dgui=disabled`).
+
+* All Python code was re-formatted with [black].
+
+* All errors and warings reported by [flake8] were fixed or are expressivley and
+  selectively ignored.
+
+* The file `version.py` is now generated from the version set in the project
+  definition in the top-level `meson.build` file, leaving this as the only
+  place where the version number needs to be updated before a release.
+
+* The `NEWS` file was renamed to `CHANGELOG.md` and converted to Markdown
+  format.
+
+
+[INSTALL.md]: ./INSTALL.md
+[black]: https://pypi.org/project/black/
+[Cython]: https://cython.org/
+[meson]: https://mesonbuild.com/
+[flake8]:  https://pypi.org/project/flake8/
+
+
 ## Version 14 (2020-10-15)
 
 * Changes to channel fader/meter layout and features:

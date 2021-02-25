@@ -110,6 +110,9 @@ Project infrastructure and internals:
 * The `NEWS` file was renamed to `CHANGELOG.md` and converted to Markdown
   format.
 
+This release was created by Christopher Arndt. With a contribution from
+Athanasios Silis.
+
 
 [INSTALL.md]: ./INSTALL.md
 [black]: https://pypi.org/project/black/

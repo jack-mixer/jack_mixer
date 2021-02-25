@@ -14,7 +14,7 @@ Build requirements:
  * [ninja]
  * Python headers (`python3-dev`)
  * [JACK] headers (`libjack-jackd2-dev` (recommended) or `libjack-dev`)
- * glib2 headers (`libglib-2.0-dev`)
+ * glib2 headers (`libglib2.0-dev`)
  * [Cython] (optional, required if building from a Git checkout)
  * [docutils] (optional, `rst2man` required if building from a Git checkout)
 
@@ -29,6 +29,10 @@ Optional run-time dependencies:
 
 * [pyxdg] - For saving your preferences (strongly recommended)
 * [NSM] - For NSM session management support
+
+The run-time Python dependencies are checked by meson when setting up the
+build directory. To disable this, use the `-Dcheck-py-modules=false` option to
+`meson setup.`
 
 
 ## Building
@@ -87,7 +91,8 @@ meson configure builddir -Dgui=disabled
 
 ## Building a Python wheel (for maintainers)
 
-1. Make sure you have Python 3, `git` and [pip] installed:
+1. Make sure you have Python 3, `git` and [pip] installed and your internet
+   connection is online.
 2. Run the following command to build a binary wheel:
 
 ```console

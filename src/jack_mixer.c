@@ -248,7 +248,8 @@ channel_rename(
     ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left, port_name);
     if (ret != 0)
     {
-      /* what could we do here? */
+      /* what else could we do here? */
+      LOG_ERROR("Renaming JACK port '%s' -> '%s' for left channel failed.");
     }
 
     port_name[channel_name_size+1] = 'R';
@@ -256,7 +257,8 @@ channel_rename(
     ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_right, port_name);
     if (ret != 0)
     {
-      /* what could we do here? */
+      /* what else could we do here? */
+      LOG_ERROR("Renaming JACK port for right channel failed.");
     }
 
     free(port_name);
@@ -266,7 +268,8 @@ channel_rename(
     ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left, name);
     if (ret != 0)
     {
-      /* what could we do here? */
+      /* what else could we do here? */
+      LOG_ERROR("Renaming JACK port for channel failed.");
     }
   }
 }

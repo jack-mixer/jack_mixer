@@ -103,10 +103,10 @@ cdef extern from "jack_mixer.h":
         void * user_data)
     cdef bool channel_get_midi_in_got_events(jack_mixer_channel_t channel)
 
-    cdef void channel_autoset_balance_midi_cc(jack_mixer_channel_t channel)
-    cdef void channel_autoset_mute_midi_cc(jack_mixer_channel_t channel)
-    cdef void channel_autoset_solo_midi_cc(jack_mixer_channel_t channel)
-    cdef void channel_autoset_volume_midi_cc(jack_mixer_channel_t channel)
+    cdef int channel_autoset_balance_midi_cc(jack_mixer_channel_t channel)
+    cdef int channel_autoset_mute_midi_cc(jack_mixer_channel_t channel)
+    cdef int channel_autoset_solo_midi_cc(jack_mixer_channel_t channel)
+    cdef int channel_autoset_volume_midi_cc(jack_mixer_channel_t channel)
 
     cdef int channel_get_balance_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_get_mute_midi_cc(jack_mixer_channel_t channel)

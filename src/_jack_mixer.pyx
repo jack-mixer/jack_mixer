@@ -368,19 +368,19 @@ cdef class Channel:
 
     def autoset_balance_midi_cc(self):
         """Auto assign MIDI CC for channel balance."""
-        channel_autoset_balance_midi_cc(self._channel)
+        return channel_autoset_balance_midi_cc(self._channel)
 
     def autoset_mute_midi_cc(self):
         """Auto assign MIDI CC for channel mute status."""
-        channel_autoset_mute_midi_cc(self._channel)
+        return channel_autoset_mute_midi_cc(self._channel)
 
     def autoset_solo_midi_cc(self):
         """Auto assign MIDI CC for channel solo status."""
-        channel_autoset_solo_midi_cc(self._channel)
+        return channel_autoset_solo_midi_cc(self._channel)
 
     def autoset_volume_midi_cc(self):
         """Auto assign MIDI CC for channel volume."""
-        channel_autoset_volume_midi_cc(self._channel)
+        return channel_autoset_volume_midi_cc(self._channel)
 
     def remove(self):
         """Remove channel."""

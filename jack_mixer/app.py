@@ -1085,7 +1085,13 @@ def main():
     parser.add_argument(
         "-c", "--config", metavar="FILE", help="load mixer project configuration from FILE"
     )
-    parser.add_argument("-d", "--debug", action="store_true", help="enable debug logging messages")
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        default="JACK_MIXER_DEBUG" in os.environ,
+        help="enable debug logging messages",
+    )
     parser.add_argument(
         "client_name", metavar="NAME", nargs="?", default="jack_mixer", help="set JACK client name"
     )

@@ -20,14 +20,14 @@ Build requirements:
 
 Runtime requirements:
 
- * Python (at least 3.6)
- * [Pygobject]
- * [pycairo]
- * `libjack` and JACK server (`jackd2` (recommended) or `jackd`)
+ * Python (at least version 3.6)
+ * [Pygobject] (`python3-gi`)
+ * [pycairo] (`python3-cairo`)
+ * JACK library (`libjack-jack2-0` or `libjack0`) and server (`jackd2` or `jackd1`)
 
 Optional run-time dependencies:
 
-* [pyxdg] - For saving your preferences (strongly recommended)
+* [pyxdg] (`python-xdg`) - For saving your preferences (strongly recommended)
 * [NSM] - For NSM session management support
 
 The run-time Python dependencies are checked by meson when setting up the

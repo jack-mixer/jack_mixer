@@ -9,26 +9,26 @@ system for building, installation and packaging.
 
 Build requirements:
 
- * GCC (version 9.x or 10.x recommended, package `build-essential` on Debian/Ubuntu)
+ * GCC (version 9.x or 10.x recommended)
  * meson >= 0.54.0[<sup>1</sup>](#1)
  * [ninja]
- * Python headers (`python3-dev`)
- * [JACK] headers (`libjack-jackd2-dev` (recommended) or `libjack-dev`)
- * glib2 headers (`libglib2.0-dev`)
+ * Python headers
+ * [JACK] headers
+ * glib2 headers
  * [Cython] (optional, required if building from a Git checkout)
  * [docutils] (optional, `rst2man` required if building from a Git checkout)
 
 Runtime requirements:
 
- * Python (at least version 3.6)
- * [Pygobject] (`python3-gi`)
- * [pycairo] (`python3-cairo`)
- * JACK library (`libjack-jack2-0` or `libjack0`) and server (`jackd2` or `jackd1`)
+ * Python >= 3.6
+ * [Pygobject]
+ * [pycairo]
+ * JACK library and server
 
 Optional run-time dependencies:
 
-* [pyxdg] (`python-xdg`) - For saving your preferences (strongly recommended)
-* [NSM] - For NSM session management support
+* [pyxdg] (for saving your preferences, strongly recommended)
+* [NSM] (for NSM session management support)
 
 The run-time Python dependencies are checked by meson when setting up the
 build directory. To disable this, use the `-Dcheck-py-modules=false` option to
@@ -54,6 +54,10 @@ Then build the software with:
 ```console
 meson compile -C builddir
 ```
+
+**Note:** *For building **jack_mixer** from source on **debian / Ubuntu**
+derrived Linux distributions, please refer to this [wiki page]. If possible,
+use your distribution's package manager to install **jack_mixer**.*
 
 
 ## Installation
@@ -126,3 +130,4 @@ The wheel can be installed with `pip install jack_mixer-*.whl`.
 [PEP-517]: https://www.python.org/dev/peps/pep-0517/
 [pyproject.toml]: ./pyproject.toml
 [standard meson options]: https://mesonbuild.com/Builtin-options.html
+[wiki page]: https://github.com/jack-mixer/jack_mixer/wiki/Installing-on-debian---Ubuntu

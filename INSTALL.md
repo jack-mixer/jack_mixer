@@ -10,7 +10,7 @@ system for building, installation and packaging.
 Build requirements:
 
  * GCC (version 9.x or 10.x recommended, package `build-essential` on Debian/Ubuntu)
- * meson
+ * meson >= 0.54.0[<sup>1</sup>](#1)
  * [ninja]
  * Python headers (`python3-dev`)
  * [JACK] headers (`libjack-jackd2-dev` (recommended) or `libjack-dev`)
@@ -33,6 +33,11 @@ Optional run-time dependencies:
 The run-time Python dependencies are checked by meson when setting up the
 build directory. To disable this, use the `-Dcheck-py-modules=false` option to
 `meson setup.`
+
+<a class="anchor" id="1"></a>
+
+<sup>1</sup> *meson 0.53.0 also works if you use `ninja compile` and
+`ninja install` instead of  `meson compile` and `meson install`.*
 
 
 ## Building

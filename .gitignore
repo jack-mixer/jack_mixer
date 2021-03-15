@@ -10,6 +10,8 @@ jack_mixer.1
 
 # Mixer configuration files
 *.xml
+
+# Geany editor project files
 *.geany
 
 # general Python stuff
@@ -20,6 +22,8 @@ __pycached__/
 build/
 dist/
 *.egg-info
+# wheels downloaded when build wheel
+*.whl
 
 # Cython stuff
 _jack_mixer.c

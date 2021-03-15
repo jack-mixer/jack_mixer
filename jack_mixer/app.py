@@ -329,11 +329,11 @@ class JackMixer(SerializedObject):
         balance_cc=-1,
         mute_cc=-1,
         solo_cc=-1,
-        value=-1,
+        initial_vol=-1,
     ):
         try:
             channel = InputChannel(
-                self, name, stereo=stereo, direct_output=direct_output, value=value
+                self, name, stereo=stereo, direct_output=direct_output, initial_vol=initial_vol
             )
             self.add_channel_precreated(channel)
         except Exception:
@@ -388,10 +388,10 @@ class JackMixer(SerializedObject):
         mute_cc=-1,
         display_solo_buttons=False,
         color="#fff",
-        value=True,
+        initial_vol=-1,
     ):
         try:
-            channel = OutputChannel(self, name, stereo=stereo, value=value)
+            channel = OutputChannel(self, name, stereo=stereo, initial_vol=initial_vol)
             channel.display_solo_buttons = display_solo_buttons
             channel.color = color
             self.add_output_channel_precreated(channel)
@@ -1012,15 +1012,16 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             self.width = int(width)
             self.height = int(height)
             return True
-        if name == "solo_channels":
+        elif name == "solo_channels":
             self._init_solo_channels = value.split("|")
             return True
-        if name == "visible":
+        elif name == "visible":
             self.visible = value == "True"
             return True
-        if name == "paned_position":
+        elif name == "paned_position":
             self.paned_position = int(value)
             return True
+
         return False
 
     def unserialize_child(self, name):
@@ -1028,13 +1029,11 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             channel = InputChannel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
-
-        if name == OutputChannel.serialization_name():
+        elif name == OutputChannel.serialization_name():
             channel = OutputChannel(self, "", True)
             self.unserialized_channels.append(channel)
             return channel
-
-        if name == gui.Factory.serialization_name():
+        elif name == gui.Factory.serialization_name():
             return self.gui_factory
 
     def serialization_get_childs(self):

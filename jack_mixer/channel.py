@@ -40,7 +40,7 @@ class Channel(Gtk.Box, SerializedObject):
 
     num_instances = 0
 
-    def __init__(self, app, name, stereo=True, direct_output=True, value=None):
+    def __init__(self, app, name, stereo=True, direct_output=True, initial_vol=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.mixer = app.mixer
@@ -48,7 +48,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.gui_factory = app.gui_factory
         self._channel_name = name
         self.stereo = stereo
-        self.initial_value = value
+        self.initial_vol = initial_vol
         self.meter_scale = self.gui_factory.get_default_meter_scale()
         self.slider_scale = self.gui_factory.get_default_slider_scale()
         self.slider_adjustment = slider.AdjustmentdBFS(self.slider_scale, 0.0, 0.02)
@@ -211,10 +211,19 @@ class Channel(Gtk.Box, SerializedObject):
         self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
         self.on_vumeter_color_changed(self.gui_factory)
 
-        if not self.initial_value:
-            self.slider_adjustment.set_value_db(0)
-        else:
-            self.slider_adjustment.set_value(0)
+        # If channel is created via UI, the initial volume is passed to the
+        # init method and saved in the `initial_vol` attribute.
+        # If channel is created from a project XML file, no initial volume is
+        # passsed to init, `initial_vol` will be `None` and the volume slider
+        # adjustment is set via the `unserialize_property` method.
+        # In both cases the engine volume (and balance) will be synchronized
+        # with the slider adjustment by the overwritten `realize` method in
+        # Channel sub-classes.
+        if self.initial_vol is not None:
+            if self.initial_vol == -1:
+                self.slider_adjustment.set_value(0)
+            else:
+                self.slider_adjustment.set_value_db(self.initial_vol)
 
         self.slider_adjustment.connect("volume-changed", self.on_volume_changed)
         self.slider_adjustment.connect(
@@ -340,11 +349,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.update_volume(True, from_midi=True)
 
     def on_balance_changed(self, adjustment):
-        balance = self.balance_adjustment.get_value()
-        log.debug("%s balance: %f", self.channel_name, balance)
-        self.channel.balance = balance
-        self.channel.set_midi_cc_balance_picked_up(False)
-        self.app.update_monitor(self)
+        self.update_balance(True)
 
     def on_key_pressed(self, widget, event):
         if event.keyval == Gdk.KEY_Up:
@@ -481,8 +486,19 @@ class Channel(Gtk.Box, SerializedObject):
 
         self.abspeak.set_peak(self.channel.abspeak)
 
+    def update_balance(self, update_engine, from_midi=False):
+        balance = self.balance_adjustment.get_value()
+        log.debug("%s balance: %f", self.channel_name, balance)
+
+        if update_engine:
+            if not from_midi:
+                self.channel.balance = balance
+                self.channel.set_midi_cc_balance_picked_up(False)
+            self.app.update_monitor(self)
+
     def update_volume(self, update_engine, from_midi=False):
         db = self.slider_adjustment.get_value_db()
+        log.debug("%s volume: %.2f dB", self.channel_name, db)
 
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
@@ -516,27 +532,28 @@ class Channel(Gtk.Box, SerializedObject):
         if name == "volume":
             self.slider_adjustment.set_value_db(float(value))
             return True
-        if name == "balance":
+        elif name == "balance":
             self.balance_adjustment.set_value(float(value))
             return True
-        if name == "out_mute":
+        elif name == "out_mute":
             self.future_out_mute = value == "True"
             return True
-        if name == "volume_midi_cc":
+        elif name == "volume_midi_cc":
             self.future_volume_midi_cc = int(value)
             return True
-        if name == "balance_midi_cc":
+        elif name == "balance_midi_cc":
             self.future_balance_midi_cc = int(value)
             return True
-        if name == "mute_midi_cc":
+        elif name == "mute_midi_cc":
             self.future_mute_midi_cc = int(value)
             return True
-        if name == "solo_midi_cc":
+        elif name == "solo_midi_cc":
             self.future_solo_midi_cc = int(value)
             return True
-        if name == "wide":
+        elif name == "wide":
             self.wide = value == "True"
             return True
+
         return False
 
 
@@ -576,8 +593,8 @@ class InputChannel(Channel):
 
         self.channel.midi_scale = self.slider_scale.scale
 
-        self.on_volume_changed(self.slider_adjustment)
-        self.on_balance_changed(self.balance_adjustment)
+        self.update_volume(update_engine=True)
+        self.update_balance(update_engine=True)
 
         self.create_fader()
         self.create_buttons()
@@ -722,16 +739,17 @@ class InputChannel(Channel):
         if name == "name":
             self.channel_name = str(value)
             return True
-        if name == "type":
+        elif name == "type":
             if value == "stereo":
                 self.stereo = True
                 return True
-            if value == "mono":
+            elif value == "mono":
                 self.stereo = False
                 return True
-        if name == "direct_output":
+        elif name == "direct_output":
             self.wants_direct_output = value == "True"
             return True
+
         return super().unserialize_property(name, value)
 
 
@@ -783,10 +801,11 @@ class OutputChannel(Channel):
             self.channel.balance_midi_cc = self.future_balance_midi_cc
         if self.future_mute_midi_cc is not None:
             self.channel.mute_midi_cc = self.future_mute_midi_cc
+
         self.channel.midi_scale = self.slider_scale.scale
 
-        self.on_volume_changed(self.slider_adjustment)
-        self.on_balance_changed(self.balance_adjustment)
+        self.update_volume(update_engine=True)
+        self.update_balance(update_engine=True)
 
         set_background_color(self.label_name_event_box, self.css_name, self.color)
 
@@ -883,31 +902,32 @@ class OutputChannel(Channel):
         if name == "name":
             self.channel_name = str(value)
             return True
-        if name == "type":
+        elif name == "type":
             if value == "stereo":
                 self.stereo = True
                 return True
-            if value == "mono":
+            elif value == "mono":
                 self.stereo = False
                 return True
-        if name == "solo_buttons":
+        elif name == "solo_buttons":
             if value == "true":
                 self.display_solo_buttons = True
                 return True
-        if name == "muted_channels":
+        elif name == "muted_channels":
             self._init_muted_channels = value.split("|")
             return True
-        if name == "solo_channels":
+        elif name == "solo_channels":
             self._init_solo_channels = value.split("|")
             return True
-        if name == "prefader_channels":
+        elif name == "prefader_channels":
             self._init_prefader_channels = value.split("|")
             return True
-        if name == "color":
+        elif name == "color":
             c = Gdk.RGBA()
             c.parse(value)
             self.color = c
             return True
+
         return super().unserialize_property(name, value)
 
 
@@ -1147,7 +1167,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
 class NewChannelDialog(ChannelPropertiesDialog):
     def create_ui(self):
         super().create_ui()
-        self.add_initial_value_radio()
+        self.add_initial_vol_radio()
         self.vbox.show_all()
 
     def add_buttons(self):
@@ -1156,7 +1176,7 @@ class NewChannelDialog(ChannelPropertiesDialog):
         self.ok_button.set_sensitive(False)
         self.set_default_response(Gtk.ResponseType.OK)
 
-    def add_initial_value_radio(self):
+    def add_initial_vol_radio(self):
         grid = self.properties_grid
         grid.attach(Gtk.Label(label="Value", halign=Gtk.Align.START), 0, 2, 1, 1)
         self.minus_inf = Gtk.RadioButton.new_with_mnemonic(None, "-_Inf")
@@ -1179,7 +1199,7 @@ class NewInputChannelDialog(NewChannelDialog):
         self.entry_mute_cc.set_value(-1)
         self.entry_solo_cc.set_value(-1)
         self.stereo.set_active(values.get("stereo", True))
-        self.minus_inf.set_active(values.get("value", False))
+        self.minus_inf.set_active(values.get("initial_vol", -1) == -1)
         self.entry_name.grab_focus()
 
     def get_result(self):
@@ -1191,7 +1211,7 @@ class NewInputChannelDialog(NewChannelDialog):
             "balance_cc": int(self.entry_balance_cc.get_value()),
             "mute_cc": int(self.entry_mute_cc.get_value()),
             "solo_cc": int(self.entry_solo_cc.get_value()),
-            "value": self.minus_inf.get_active(),
+            "initial_vol": 0 if self.zero_dB.get_active() else -1,
         }
 
 
@@ -1249,7 +1269,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)
         self.stereo.set_active(values.get("stereo", True))
-        self.minus_inf.set_active(values.get("value", False))
+        self.minus_inf.set_active(values.get("initial_vol", -1) == -1)
         # choose a new random color for each new output channel
         self.color_chooser_button.set_rgba(random_color())
         self.display_solo_buttons.set_active(values.get("display_solo_buttons", False))
@@ -1264,7 +1284,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
             "mute_cc": int(self.entry_mute_cc.get_value()),
             "display_solo_buttons": self.display_solo_buttons.get_active(),
             "color": self.color_chooser_button.get_rgba(),
-            "value": self.minus_inf.get_active(),
+            "initial_vol": 0 if self.zero_dB.get_active() else -1,
         }
 
 

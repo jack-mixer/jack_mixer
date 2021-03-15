@@ -3,6 +3,7 @@
 build-backend = "mesonpep517.buildapi"
 requires = [
     "cython",
+    "docutils",
     "wheel",
     "mesonpep517 @ git+https://gitlab.com/SpotlightKid/mesonpep517@allfixes",
     "ninja"

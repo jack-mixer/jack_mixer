@@ -8,7 +8,7 @@ A graphical multi-channel audio mixer for JACK
 
 :Author: Nedko Arnaudov <nedko@arnaudov.name> (original author),
     Frédéric Peters <fpeters@0d.be> (current maintainer).
-:Date: 2021-02-18
+:Date: 2021-03-15
 :Copyright: GNU General Public License Version 2
 :Version: @VERSION@
 :Manual section: 1
@@ -247,6 +247,10 @@ ENVIRONMENT
 ``NSM_URL``
     When this environment variable is set, **jack_mixer** will act as a New
     Session Manager (NSM) session client.
+``JACK_MIXER_DEBUG``
+    When this environment variable is set, the logging level in the Python
+    layer is set to ``DEBUG`` unless it is overwritten by the ``-d|--debug``
+    command line switch.
 
 
 SIGNALS

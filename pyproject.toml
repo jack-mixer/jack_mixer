@@ -5,7 +5,7 @@ requires = [
     "cython",
     "docutils",
     "wheel",
-    "mesonpep517 @ git+https://gitlab.com/SpotlightKid/mesonpep517@allfixes",
+    "mesonpep517>=0.2",
     "ninja"
 ]
 

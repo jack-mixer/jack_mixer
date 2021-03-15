@@ -2,6 +2,40 @@ Change Log
 ==========
 
 
+## Version 15.1 (2021-03-15)
+
+**Bugfix release**
+
+Fixed:
+
+* In fixing issue #81 a regression was introduced in version 15, which caused
+  channel volume levels to not be restored when loading a project XML file.
+
+* The `Channel.autoset_*_midi_cc` methods in the Cython extension module didn't
+  return the int result from the C functions they call, causing mis-leading
+  debug log messages.
+
+
+Project infrastructure and internals:
+
+* A [wiki] was added to the `jack_mixer` GitHub project and a page with
+  instructions on how to install from source on debian / Ubuntu.
+
+* The dependencies for building a Python wheel via `pip` were updated.
+
+* When building from a Git checkout, the `cython` program is also found when it
+  is installed as `cython3`.
+
+* Debug logging can be enabled by setting the `JACK_MIXER_DEBUG` environment
+  variable (for when the `-d` command line switch can't be used, e.g. when run
+  via NSM).
+
+This release was created by Christopher Arndt.
+
+
+[wiki]: https://github.com/jack-mixer/jack_mixer/wiki
+
+
 ## Version 15 (2021-02-25)
 
 **Important change:** `jack_mixer` now uses [meson] for building and

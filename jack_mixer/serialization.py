@@ -94,7 +94,7 @@ class Serializator:
         log.debug("Unserializing %r.", object)
         properties = backend_object.get_properties()
         for name, value in properties.items():
-            log.debug("%s = %s", name, value)
+            log.debug("Property %s = %s", name, value)
             if not object.unserialize_property(name, value):
                 return False
 

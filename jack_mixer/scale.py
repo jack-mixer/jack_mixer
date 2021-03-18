@@ -75,7 +75,7 @@ class Base:
 
 
 # IEC 60268-18 Peak programme level meters - Digital audio peak level meter
-# Adapted from meterbridge, may be wrong, I'm not buying standards, event if they cost $45
+# Adapted from meterbridge, may be wrong, I'm not buying standards, even if they cost $45
 # If someone has the standard, please either share it with me or fix the code.
 class IEC268(Base):
     """IEC 60268-18 Peak programme level meters - Digital audio peak level meter"""

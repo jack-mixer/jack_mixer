@@ -87,7 +87,7 @@ class Channel(Gtk.Box, SerializedObject):
         if self.channel:
             self.channel.name = name
         if self.post_fader_output_channel:
-            self.post_fader_output_channel.name = "%s Out" % name
+            self.post_fader_output_channel.name = _("{channel_name} Out").format(channel_name=name)
 
     # ---------------------------------------------------------------------------------------------
     # UI creation and (de-)initialization
@@ -110,7 +110,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.hbox_mutesolo = Gtk.Box(False, 0, orientation=Gtk.Orientation.HORIZONTAL)
 
         self.mute = Gtk.ToggleButton()
-        self.mute.set_label("M")
+        self.mute.set_label(_("M"))
         self.mute.get_style_context().add_class("mute")
         self.mute.set_active(self.channel.out_mute)
         self.mute.connect("toggled", self.on_mute_toggled)
@@ -119,7 +119,7 @@ class Channel(Gtk.Box, SerializedObject):
 
         self.pack_start(self.hbox_mutesolo, False, False, 0)
 
-        self.monitor_button = Gtk.ToggleButton("MON")
+        self.monitor_button = Gtk.ToggleButton(_("MON"))
         self.monitor_button.get_style_context().add_class("monitor")
         self.monitor_button.connect("toggled", self.on_monitor_button_toggled)
         self.pack_start(self.monitor_button, False, False, 0)
@@ -320,7 +320,7 @@ class Channel(Gtk.Box, SerializedObject):
             db_text = self.volume_digits.get_text()
             try:
                 db = float(db_text)
-                log.debug('Volume digits confirmation "%f dBFS".', db)
+                log.debug("Volume digits confirmation '%f dBFS'.", db)
             except ValueError:
                 log.debug("Volume digits confirmation ignore, reset to current.")
                 self.update_volume(False)
@@ -500,6 +500,7 @@ class Channel(Gtk.Box, SerializedObject):
         db = self.slider_adjustment.get_value_db()
         log.debug("%s volume: %.2f dB", self.channel_name, db)
 
+        # TODO l10n
         db_text = "%.2f" % db
         self.volume_digits.set_text(db_text)
 
@@ -565,7 +566,7 @@ class InputChannel(Channel):
     def create_buttons(self):
         super().create_buttons()
         self.solo = Gtk.ToggleButton()
-        self.solo.set_label("S")
+        self.solo.set_label(_("S"))
         self.solo.get_style_context().add_class("solo")
         self.solo.set_active(self.channel.solo)
         self.solo.connect("toggled", self.on_solo_toggled)
@@ -576,7 +577,7 @@ class InputChannel(Channel):
         self.channel = self.mixer.add_channel(self.channel_name, self.stereo)
 
         if self.channel is None:
-            raise Exception("Cannot create a channel")
+            raise Exception(_("Cannot create a channel"))
 
         super().realize()
 
@@ -791,7 +792,7 @@ class OutputChannel(Channel):
         self.channel = self.mixer.add_output_channel(self.channel_name, self.stereo)
 
         if self.channel is None:
-            raise Exception("Cannot create a channel")
+            raise Exception(_("Cannot create an output channel"))
 
         super().realize()
 
@@ -936,7 +937,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         if not title:
             if not channel:
                 raise ValueError("Either 'title' or 'channel' must be passed.")
-            title = 'Channel "%s" Properties' % channel.channel_name
+            title = _("Channel '{name}' Properties").format(name=channel.channel_name)
 
         super().__init__(title, app.window)
         self.channel = channel
@@ -977,12 +978,12 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         vbox = self.get_content_area()
 
         self.properties_grid = grid = Gtk.Grid()
-        vbox.pack_start(self.create_frame("Properties", grid), True, True, 0)
+        vbox.pack_start(self.create_frame(_("Properties"), grid), True, True, 0)
         grid.set_row_spacing(8)
         grid.set_column_spacing(8)
         grid.set_column_homogeneous(True)
 
-        name_label = Gtk.Label.new_with_mnemonic("_Name")
+        name_label = Gtk.Label.new_with_mnemonic(_("_Name"))
         name_label.set_halign(Gtk.Align.START)
         grid.attach(name_label, 0, 0, 1, 1)
         self.entry_name = Gtk.Entry()
@@ -991,74 +992,76 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         name_label.set_mnemonic_widget(self.entry_name)
         grid.attach(self.entry_name, 1, 0, 2, 1)
 
-        grid.attach(Gtk.Label(label="Mode", halign=Gtk.Align.START), 0, 1, 1, 1)
-        self.mono = Gtk.RadioButton.new_with_mnemonic(None, "_Mono")
-        self.stereo = Gtk.RadioButton.new_with_mnemonic_from_widget(self.mono, "_Stereo")
+        grid.attach(Gtk.Label(label=_("Mode"), halign=Gtk.Align.START), 0, 1, 1, 1)
+        self.mono = Gtk.RadioButton.new_with_mnemonic(None, _("_Mono"))
+        self.stereo = Gtk.RadioButton.new_with_mnemonic_from_widget(self.mono, _("_Stereo"))
         grid.attach(self.mono, 1, 1, 1, 1)
         grid.attach(self.stereo, 2, 1, 1, 1)
 
         grid = Gtk.Grid()
-        vbox.pack_start(self.create_frame("MIDI Control Changes", grid), True, True, 0)
+        vbox.pack_start(self.create_frame(_("MIDI Control Changes"), grid), True, True, 0)
         grid.set_row_spacing(8)
         grid.set_column_spacing(8)
         grid.set_column_homogeneous(True)
 
-        cc_tooltip = "{} MIDI Control Change number (0-127, set to -1 to assign next free CC #)"
-        volume_label = Gtk.Label.new_with_mnemonic("_Volume")
+        cc_tooltip = _(
+            "{param} MIDI Control Change number " "(0-127, set to -1 to assign next free CC #)"
+        )
+        volume_label = Gtk.Label.new_with_mnemonic(_("_Volume"))
         volume_label.set_halign(Gtk.Align.START)
         grid.attach(volume_label, 0, 0, 1, 1)
         self.entry_volume_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
-        self.entry_volume_cc.set_tooltip_text(cc_tooltip.format("Volume"))
+        self.entry_volume_cc.set_tooltip_text(cc_tooltip.format(param=_("Volume")))
         volume_label.set_mnemonic_widget(self.entry_volume_cc)
         grid.attach(self.entry_volume_cc, 1, 0, 1, 1)
-        self.button_sense_midi_volume = Gtk.Button("Learn")
+        self.button_sense_midi_volume = Gtk.Button(_("Learn"))
         self.button_sense_midi_volume.connect("clicked", self.on_sense_midi_volume_clicked)
         grid.attach(self.button_sense_midi_volume, 2, 0, 1, 1)
 
-        balance_label = Gtk.Label.new_with_mnemonic("_Balance")
+        balance_label = Gtk.Label.new_with_mnemonic(_("_Balance"))
         balance_label.set_halign(Gtk.Align.START)
         grid.attach(balance_label, 0, 1, 1, 1)
         self.entry_balance_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
-        self.entry_balance_cc.set_tooltip_text(cc_tooltip.format("Balance"))
+        self.entry_balance_cc.set_tooltip_text(cc_tooltip.format(param=_("Balance")))
         balance_label.set_mnemonic_widget(self.entry_balance_cc)
         grid.attach(self.entry_balance_cc, 1, 1, 1, 1)
-        self.button_sense_midi_balance = Gtk.Button("Learn")
+        self.button_sense_midi_balance = Gtk.Button(_("Learn"))
         self.button_sense_midi_balance.connect("clicked", self.on_sense_midi_balance_clicked)
         grid.attach(self.button_sense_midi_balance, 2, 1, 1, 1)
 
-        mute_label = Gtk.Label.new_with_mnemonic("M_ute")
+        mute_label = Gtk.Label.new_with_mnemonic(_("M_ute"))
         mute_label.set_halign(Gtk.Align.START)
         grid.attach(mute_label, 0, 2, 1, 1)
         self.entry_mute_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
-        self.entry_mute_cc.set_tooltip_text(cc_tooltip.format("Mute"))
+        self.entry_mute_cc.set_tooltip_text(cc_tooltip.format(param=_("Mute")))
         mute_label.set_mnemonic_widget(self.entry_mute_cc)
         grid.attach(self.entry_mute_cc, 1, 2, 1, 1)
-        self.button_sense_midi_mute = Gtk.Button("Learn")
+        self.button_sense_midi_mute = Gtk.Button(_("Learn"))
         self.button_sense_midi_mute.connect("clicked", self.on_sense_midi_mute_clicked)
         grid.attach(self.button_sense_midi_mute, 2, 2, 1, 1)
 
         if isinstance(self, NewInputChannelDialog) or (
             self.channel and isinstance(self.channel, InputChannel)
         ):
-            direct_output_label = Gtk.Label.new_with_mnemonic("_Direct Out(s)")
+            direct_output_label = Gtk.Label.new_with_mnemonic(_("_Direct Out(s)"))
             direct_output_label.set_halign(Gtk.Align.START)
             self.properties_grid.attach(direct_output_label, 0, 3, 1, 1)
             self.direct_output = Gtk.CheckButton()
             direct_output_label.set_mnemonic_widget(self.direct_output)
-            self.direct_output.set_tooltip_text("Add direct post-fader output(s) for channel.")
+            self.direct_output.set_tooltip_text(_("Add direct post-fader output(s) for channel."))
             self.properties_grid.attach(self.direct_output, 1, 3, 1, 1)
 
         if isinstance(self, NewChannelDialog) or (
             self.channel and isinstance(self.channel, InputChannel)
         ):
-            solo_label = Gtk.Label.new_with_mnemonic("S_olo")
+            solo_label = Gtk.Label.new_with_mnemonic(_("S_olo"))
             solo_label.set_halign(Gtk.Align.START)
             grid.attach(solo_label, 0, 3, 1, 1)
             self.entry_solo_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
-            self.entry_solo_cc.set_tooltip_text(cc_tooltip.format("Solo"))
+            self.entry_solo_cc.set_tooltip_text(cc_tooltip.format(param=_("Solo")))
             solo_label.set_mnemonic_widget(self.entry_solo_cc)
             grid.attach(self.entry_solo_cc, 1, 3, 1, 1)
-            self.button_sense_midi_solo = Gtk.Button("Learn")
+            self.button_sense_midi_solo = Gtk.Button(_("Learn"))
             self.button_sense_midi_solo.connect("clicked", self.on_sense_midi_solo_clicked)
             grid.attach(self.button_sense_midi_solo, 2, 3, 1, 1)
 
@@ -1091,14 +1094,18 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         vbox = Gtk.Box(10, orientation=Gtk.Orientation.VERTICAL)
         window.add(vbox)
         window.timeout = 5
-        label = Gtk.Label(label="Please move the MIDI control you want to use for this function.")
+        label = Gtk.Label(
+            label=_("Please move the MIDI control you want to use for this function.")
+        )
         vbox.pack_start(label, True, True, 0)
-        timeout_label = Gtk.Label(label="This window will close in 5 seconds")
+        timeout_label = Gtk.Label(label=_("This window will close in 5 seconds."))
         vbox.pack_start(timeout_label, True, True, 0)
 
         def close_sense_timeout(window, entry):
             window.timeout -= 1
-            timeout_label.set_text("This window will close in %d seconds." % window.timeout)
+            timeout_label.set_text(
+                _("This window will close in {seconds} seconds.").format(seconds=window.timeout)
+            )
             if window.timeout == 0:
                 window.destroy()
                 entry.set_value(self.mixer.last_midi_cc)
@@ -1178,16 +1185,16 @@ class NewChannelDialog(ChannelPropertiesDialog):
 
     def add_initial_vol_radio(self):
         grid = self.properties_grid
-        grid.attach(Gtk.Label(label="Value", halign=Gtk.Align.START), 0, 2, 1, 1)
-        self.minus_inf = Gtk.RadioButton.new_with_mnemonic(None, "-_Inf")
-        self.zero_dB = Gtk.RadioButton.new_with_mnemonic_from_widget(self.minus_inf, "_0dB")
+        grid.attach(Gtk.Label(label=_("Value"), halign=Gtk.Align.START), 0, 2, 1, 1)
+        self.minus_inf = Gtk.RadioButton.new_with_mnemonic(None, _("-_Inf"))
+        self.zero_dB = Gtk.RadioButton.new_with_mnemonic_from_widget(self.minus_inf, _("_0dB"))
         grid.attach(self.minus_inf, 1, 2, 1, 1)
         grid.attach(self.zero_dB, 2, 2, 1, 1)
 
 
 class NewInputChannelDialog(NewChannelDialog):
-    def __init__(self, app, title="New Input Channel"):
-        super().__init__(app, title=title)
+    def __init__(self, app, title=None):
+        super().__init__(app, title=title or _("New Input Channel"))
 
     def fill_ui(self, **values):
         self.entry_name.set_text(values.get("name", ""))
@@ -1220,7 +1227,7 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         super().create_ui()
 
         grid = self.properties_grid
-        color_label = Gtk.Label.new_with_mnemonic("_Color")
+        color_label = Gtk.Label.new_with_mnemonic(_("_Color"))
         color_label.set_halign(Gtk.Align.START)
         grid.attach(color_label, 0, 3, 1, 1)
         self.color_chooser_button = Gtk.ColorButton()
@@ -1229,9 +1236,9 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         grid.attach(self.color_chooser_button, 1, 3, 2, 1)
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.vbox.pack_start(self.create_frame("Input Channels", vbox), True, True, 0)
+        self.vbox.pack_start(self.create_frame(_("Input Channels"), vbox), True, True, 0)
 
-        self.display_solo_buttons = Gtk.CheckButton.new_with_mnemonic("_Display solo buttons")
+        self.display_solo_buttons = Gtk.CheckButton.new_with_mnemonic(_("_Display solo buttons"))
         vbox.pack_start(self.display_solo_buttons, True, True, 0)
 
         self.vbox.show_all()
@@ -1252,8 +1259,8 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
 
 
 class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
-    def __init__(self, app, title="New Output Channel"):
-        super().__init__(app, title=title)
+    def __init__(self, app, title=None):
+        super().__init__(app, title=title or _("New Output Channel"))
 
     def fill_ui(self, **values):
         self.entry_name.set_text(values.get("name", ""))
@@ -1319,21 +1326,21 @@ class ControlGroup(Gtk.Alignment):
         self.hbox.pack_start(self.label, False, False, BUTTON_PADDING)
         self.hbox.pack_end(self.buttons_box, False, False, BUTTON_PADDING)
 
-        self.mute = mute = Gtk.ToggleButton("M")
+        self.mute = mute = Gtk.ToggleButton(_("M"))
         mute.get_style_context().add_class("mute")
-        mute.set_tooltip_text("Mute output channel send")
+        mute.set_tooltip_text(_("Mute output channel send"))
         mute.connect("button-press-event", self.on_mute_button_pressed)
         mute.connect("toggled", self.on_mute_toggled)
 
         self.solo = solo = Gtk.ToggleButton("S")
         solo.get_style_context().add_class("solo")
-        solo.set_tooltip_text("Solo output send")
+        solo.set_tooltip_text(_("Solo output send"))
         solo.connect("button-press-event", self.on_solo_button_pressed)
         solo.connect("toggled", self.on_solo_toggled)
 
-        self.prefader = pre = Gtk.ToggleButton("P")
+        self.prefader = pre = Gtk.ToggleButton(_("P"))
         pre.get_style_context().add_class("prefader")
-        pre.set_tooltip_text("Pre (on) / Post (off) fader send")
+        pre.set_tooltip_text(_("Pre (on) / Post (off) fader send"))
         pre.connect("toggled", self.on_prefader_toggled)
 
         self.buttons_box.pack_start(pre, True, True, BUTTON_PADDING)

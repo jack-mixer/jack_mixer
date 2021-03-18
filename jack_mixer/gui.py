@@ -60,8 +60,8 @@ class Factory(GObject.GObject, SerializedObject):
                 self.write_preferences()
         else:
             log.warning(
-                "Cannot load PyXDG. Your preferences will not be preserved across "
-                "jack_mixer invocations"
+                _("Cannot load PyXDG. ")
+                + _("Your preferences will not be preserved across jack_mixer invocations")
             )
 
     def set_default_preferences(self):
@@ -138,7 +138,7 @@ class Factory(GObject.GObject, SerializedObject):
             self.emit("default-meter-scale-changed", self.default_meter_scale)
         else:
             log.warning(
-                'Ignoring default_meter_scale setting, because "%s" scale is not known.', scale
+                _("Ignoring default_meter_scale setting, because '%s' scale is not known."), scale
             )
 
     def set_default_project_path(self, path):
@@ -155,7 +155,7 @@ class Factory(GObject.GObject, SerializedObject):
             self.emit("default-slider-scale-changed", self.default_slider_scale)
         else:
             log.warning(
-                'Ignoring default_slider_scale setting, because "%s" scale is not known.', scale
+                _("Ignoring default_slider_scale setting, because '%s' scale is not known."), scale
             )
 
     def set_midi_behavior_mode(self, mode):

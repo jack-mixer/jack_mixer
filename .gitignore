@@ -31,3 +31,7 @@ _jack_mixer.*.so
 
 # recommended meson build directory
 builddir/
+
+# i18n
+data/locale/*/LC_MESSAGES/
+data/locale/*.po~

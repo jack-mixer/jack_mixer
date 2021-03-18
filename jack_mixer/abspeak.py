@@ -57,6 +57,7 @@ class AbspeakWidget(Gtk.EventBox):
             context.add_class("is_nan")
             self.label.set_text("NaN")
         else:
+            # TODO: l10n
             text = "%+.1f" % peak
             context.remove_class("is_nan")
 

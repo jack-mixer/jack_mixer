@@ -31,6 +31,7 @@ class Mark:
         self.db = db
         self.scale = scale
         if text is None:
+            # TODO: l10n
             self.text = "%.0f" % math.fabs(db)
         else:
             self.text = text
@@ -84,7 +85,7 @@ class IEC268(Base):
         Base.__init__(
             self,
             "iec_268",
-            "IEC 60268-18 Peak programme level meters - Digital audio peak level meter",
+            _("IEC 60268-18 Peak programme level meters - Digital audio peak level meter"),
         )
         self.add_threshold(-70.0, 0.0, False)
         self.add_threshold(-60.0, 0.05, True)
@@ -110,8 +111,10 @@ class IEC268Minimalistic(Base):
         Base.__init__(
             self,
             "iec_268_minimalistic",
-            "IEC 60268-18 Peak programme level meters - "
-            "Digital audio peak level meter, fewer marks",
+            _(
+                "IEC 60268-18 Peak programme level meters - "
+                "Digital audio peak level meter, fewer marks"
+            ),
         )
         self.add_threshold(-70.0, 0.0, False)
         self.add_threshold(-60.0, 0.05, True)
@@ -129,7 +132,7 @@ class Linear70dB(Base):
     """Linear scale with range from -70 to 0 dBFS"""
 
     def __init__(self):
-        Base.__init__(self, "linear_70dB", "Linear scale with range from -70 to 0 dBFS")
+        Base.__init__(self, "linear_70dB", _("Linear scale with range from -70 to 0 dBFS"))
         self.add_threshold(-70.0, 0.0, False)
         self.add_mark(-60.0)
         self.add_mark(-50.0)
@@ -150,7 +153,7 @@ class Linear30dB(Base):
     """Linear scale with range from -30 to +30 dBFS"""
 
     def __init__(self):
-        Base.__init__(self, "linear_30dB", "Linear scale with range from -30 to +30 dBFS")
+        Base.__init__(self, "linear_30dB", _("Linear scale with range from -30 to +30 dBFS"))
         self.add_threshold(-30.0, 0.0, False)
         self.add_threshold(+30.0, 1.0, True)
         self.calculate_coefficients()
@@ -161,7 +164,7 @@ class K20(Base):
     """K20 scale"""
 
     def __init__(self):
-        Base.__init__(self, "K20", "K20 scale")
+        Base.__init__(self, "K20", _("K20 scale"))
         self.add_mark(-200, "")
         self.add_mark(-60, "-40")
         self.add_mark(-55, "")
@@ -201,7 +204,7 @@ class K14(Base):
     """K14 scale"""
 
     def __init__(self):
-        Base.__init__(self, "K14", "K14 scale")
+        Base.__init__(self, "K14", _("K14 scale"))
         self.add_mark(-200, "")
         self.add_mark(-54, "-40")
         self.add_mark(-35 - 14, "")

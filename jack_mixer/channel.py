@@ -1159,7 +1159,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                 sensitive = True
             elif entry.get_text() not in [x.channel.name for x in self.app.channels] + [
                 x.channel.name for x in self.app.output_channels
-            ] + ["MAIN"]:
+            ]:
                 sensitive = True
         self.ok_button.set_sensitive(sensitive)
 

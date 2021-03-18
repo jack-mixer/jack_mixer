@@ -63,7 +63,7 @@ strogon14).
 
 ## Acknowledgements
 
-K-meter implemenatation taken from jkmeter, licensed under
+K-meter implementation taken from jkmeter, licensed under
 the GPL 2, by Fons Adriaensen.
 
 [COPYING]: ./COPYING

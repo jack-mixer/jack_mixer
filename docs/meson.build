@@ -27,7 +27,7 @@ if get_option('gui').enabled()
             install_dir: join_paths(get_option('mandir'), 'man1')
         )
     else
-        error('Pre-generated file \'jack_mixer.1\' and \'rst2man\' not found.\n' +
+        error('Pre-generated file \'@0@\' and \'rst2man\' not found.\n'.format(jack_mixer_man) +
               'Please install \'docutils\' from https://pypi.org/project/docutils.')
     endif
 

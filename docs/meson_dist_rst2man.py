@@ -29,7 +29,7 @@ for man in args.man_page:
     target = join("docs", man)
     dst = join(dist_root, "docs", man)
 
-    print("Creating man page '%s'" % target)
+    print("Creating man page '{}'".format(target))
     cmd = ["ninja"]
 
     if args.verbose:
@@ -41,6 +41,6 @@ for man in args.man_page:
     proc = run(cmd)
 
     if proc.returncode != 0:
-        sys.exit("'ninja' returned non-zero (%i) for target '%s'." % (proc.returncode, target))
+        sys.exit("'ninja' returned non-zero ({}) for target '{}'.".format(proc.returncode, target))
 
     shutil.copy(target, dst)

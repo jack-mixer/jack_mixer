@@ -28,7 +28,7 @@ for mod in args.mod_source:
     target = join("src", mod)
     dst = join(dist_root, "src", mod)
 
-    print("Updating Cython module C source '%s'..." % target)
+    print("Updating Cython module C source '{}'...".format(target))
     cmd = ["ninja"]
 
     if args.verbose:
@@ -40,6 +40,6 @@ for mod in args.mod_source:
     proc = run(cmd)
 
     if proc.returncode != 0:
-        sys.exit("'ninja' returned non-zero (%i) for target '%s'." % (proc.returncode, target))
+        sys.exit("'ninja' returned non-zero ({}) for target '{}'.".format(proc.returncode, target))
 
     shutil.copy(target, dst)

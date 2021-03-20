@@ -62,7 +62,8 @@ with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
 Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA
 """)
 
-# Delayed import to get argparse to use our translations
+# Hack argparse and delay its import to get it to use our translations
+gettext.gettext, gettext.ngettext = translation.gettext, translation.ngettext
 import argparse
 
 

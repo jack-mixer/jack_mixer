@@ -27,7 +27,7 @@ class PreferencesDialog(Gtk.Dialog):
     def __init__(self, parent):
         self.app = parent
         GObject.GObject.__init__(self)
-        self.set_title("Preferences")
+        self.set_title(_("Preferences"))
         self.create_ui()
         self.connect("response", self.on_response_cb)
         self.connect("delete-event", self.on_response_cb)
@@ -53,7 +53,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.path_entry.connect("changed", self.on_path_entry_changed)
         path_vbox.pack_start(self.path_entry, False, False, 3)
         self.project_path_chooser = Gtk.FileChooserButton(
-            title="Default Project Path", action=Gtk.FileChooserAction.SELECT_FOLDER
+            title=_("Default Project Path"), action=Gtk.FileChooserAction.SELECT_FOLDER
         )
         project_path = self.app.gui_factory.default_project_path
         path_vbox.pack_start(self.project_path_chooser, False, False, 3)
@@ -65,23 +65,23 @@ class PreferencesDialog(Gtk.Dialog):
                 self.project_path_chooser.set_current_folder(expanduser(project_path))
 
         self.project_path_chooser.connect("file-set", self.on_project_path_selected)
-        vbox.pack_start(self.create_frame("Default Project Path", path_vbox), True, True, 0)
+        vbox.pack_start(self.create_frame(_("Default Project Path"), path_vbox), True, True, 0)
 
         interface_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.confirm_quit_checkbutton = Gtk.CheckButton("Confirm quit")
+        self.confirm_quit_checkbutton = Gtk.CheckButton(_("Confirm quit"))
         self.confirm_quit_checkbutton.set_tooltip_text(
-            "Always ask for confirmation before " "quitting the application"
+            _("Always ask for confirmation before quitting the application")
         )
         self.confirm_quit_checkbutton.set_active(self.app.gui_factory.get_confirm_quit())
         self.confirm_quit_checkbutton.connect("toggled", self.on_confirm_quit_toggled)
         interface_vbox.pack_start(self.confirm_quit_checkbutton, True, True, 3)
 
-        self.custom_widgets_checkbutton = Gtk.CheckButton("Use custom widgets")
+        self.custom_widgets_checkbutton = Gtk.CheckButton(_("Use custom widgets"))
         self.custom_widgets_checkbutton.set_active(self.app.gui_factory.get_use_custom_widgets())
         self.custom_widgets_checkbutton.connect("toggled", self.on_custom_widget_toggled)
         interface_vbox.pack_start(self.custom_widgets_checkbutton, True, True, 3)
 
-        self.vumeter_color_checkbutton = Gtk.CheckButton("Use custom vumeter color")
+        self.vumeter_color_checkbutton = Gtk.CheckButton(_("Use custom vumeter color"))
         self.vumeter_color_checkbutton.set_active(
             self.app.gui_factory.get_vumeter_color_scheme() == "solid"
         )
@@ -92,7 +92,7 @@ class PreferencesDialog(Gtk.Dialog):
         interface_vbox.pack_start(hbox, True, True, 3)
 
         hbox.set_sensitive(self.vumeter_color_checkbutton.get_active())
-        hbox.pack_start(Gtk.Label("Custom color:"), False, True, 5)
+        hbox.pack_start(Gtk.Label(_("Custom color:")), False, True, 5)
         self.vumeter_color_picker = Gtk.ColorButton()
         self.vumeter_color_picker.set_color(
             Gdk.color_parse(self.app.gui_factory.get_vumeter_color())
@@ -100,31 +100,31 @@ class PreferencesDialog(Gtk.Dialog):
         self.vumeter_color_picker.connect("color-set", self.on_vumeter_color_change)
         hbox.pack_start(self.vumeter_color_picker, True, True, 0)
 
-        vbox.pack_start(self.create_frame("Interface", interface_vbox), True, True, 0)
+        vbox.pack_start(self.create_frame(_("Interface"), interface_vbox), True, True, 0)
 
         table = Gtk.Table(2, 2, False)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label="Meter scale"), 0, 1, 0, 1)
+        table.attach(Gtk.Label(label=_("Meter scale")), 0, 1, 0, 1)
         self.meter_scale_combo = self.create_meter_store_and_combo()
         table.attach(self.meter_scale_combo, 1, 2, 0, 1)
 
-        table.attach(Gtk.Label(label="Slider scale"), 0, 1, 1, 2)
+        table.attach(Gtk.Label(label=_("Slider scale")), 0, 1, 1, 2)
         self.slider_scale_combo = self.create_slider_store_and_combo()
         table.attach(self.slider_scale_combo, 1, 2, 1, 2)
 
-        vbox.pack_start(self.create_frame("Scales", table), True, True, 0)
+        vbox.pack_start(self.create_frame(_("Scales"), table), True, True, 0)
 
         table = Gtk.Table(1, 2, False)
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label="Control Behavior"), 0, 1, 0, 1)
+        table.attach(Gtk.Label(label=_("Control Behavior")), 0, 1, 0, 1)
         self.midi_behavior_combo = self.create_midi_behavior_combo()
         table.attach(self.midi_behavior_combo, 1, 2, 0, 1)
 
-        vbox.pack_start(self.create_frame("MIDI", table), True, True, 0)
+        vbox.pack_start(self.create_frame(_("MIDI"), table), True, True, 0)
         self.vbox.show_all()
 
         self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)

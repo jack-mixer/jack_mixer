@@ -246,9 +246,11 @@ class BalanceSlider(Gtk.Scale):
     def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip, *args):
         val = int(self.adjustment.get_value() * 50)
         if val == 0:
-            tooltip.set_text("Center")
+            tooltip.set_text(_("Center"))
         else:
-            tooltip.set_text("Left: %s / Right: %d" % (50 - val, val + 50))
+            tooltip.set_text(
+                _("Left: {left} / Right: {right}").format(left=50 - val, right=val + 50)
+            )
 
         return True
 

@@ -6,27 +6,16 @@
 # Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
 # Copyright (C) 2009-2021 Frederic Peters <fpeters@0d.be> et al.
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import getpass
+import gettext
 import logging
 import datetime
 import os
 import re
 import signal
 import sys
-from argparse import ArgumentParser
+from os.path import abspath, dirname, isdir, isfile, join
 from urllib.parse import urlparse
 
 import gi
@@ -47,7 +36,34 @@ from .styling import load_css_styles
 from .version import __version__
 
 
-log = logging.getLogger("jack_mixer")
+__program__ = "jack_mixer"
+# A "locale" directory present within the package take precedence
+_pkglocdir = join(abspath(dirname(__file__)), "locale")
+# unless overwritten by the "LOCALEDIR environment variable.
+# Fall back to the system default locale directory.
+_localedir = os.environ.get("LOCALEDIR", _pkglocdir if isdir(_pkglocdir) else None)
+translation = gettext.translation(__program__, _localedir, fallback=True)
+translation.install()
+log = logging.getLogger(__program__)
+__doc__ = _("A multi-channel audio mixer application for the JACK Audio Connection Kit.")
+__license__ = _("""\
+jack_mixer is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+jack_mixer is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
+Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA
+""")
+
+# Delayed import to get argparse to use our translations
+import argparse
 
 
 def add_number_suffix(s):
@@ -75,7 +91,7 @@ class JackMixer(SerializedObject):
     # scales suitable as volume slider scales
     slider_scales = [scale.Linear30dB(), scale.Linear70dB()]
 
-    def __init__(self, client_name="jack_mixer"):
+    def __init__(self, client_name=__program__):
         self.visible = False
         self.nsm_client = None
         # name of project file that is currently open
@@ -86,7 +102,7 @@ class JackMixer(SerializedObject):
 
         if os.environ.get("NSM_URL"):
             self.nsm_client = NSMClient(
-                prettyName="jack_mixer",
+                prettyName=__program__,
                 saveCallback=self.nsm_save_cb,
                 openOrNewCallback=self.nsm_open_cb,
                 supportsSaveStatus=False,
@@ -103,12 +119,12 @@ class JackMixer(SerializedObject):
     def create_mixer(self, client_name, with_nsm=True):
         self.mixer = Mixer(client_name)
         if not self.mixer:
-            raise RuntimeError("Failed to create Mixer instance.")
+            raise RuntimeError(_("Failed to create Mixer instance."))
 
         self.create_ui(with_nsm)
         self.window.set_title(client_name)
 
-        self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
+        self.monitor_channel = self.mixer.add_output_channel(_("Monitor"), True, True)
 
         GLib.timeout_add(33, self.read_meters)
         GLib.timeout_add(50, self.midi_events_check)
@@ -143,13 +159,14 @@ class JackMixer(SerializedObject):
 
     def create_recent_file_menu(self):
         def filter_func(item):
-            return item.mime_type in ("text/xml", "application/xml") and (
-                "jack_mixer.py" in item.applications or "jack_mixer" in item.applications
+            return (
+                item.mime_type in ("text/xml", "application/xml")
+                and __program__ in item.applications
             )
 
         filter_flags = Gtk.RecentFilterFlags.MIME_TYPE | Gtk.RecentFilterFlags.APPLICATION
         recentfilter = Gtk.RecentFilter()
-        recentfilter.set_name("jack_mixer XML files")
+        recentfilter.set_name(_("jack_mixer XML files"))
         recentfilter.add_custom(filter_flags, filter_func)
 
         recentchooser = Gtk.RecentChooserMenu.new_for_manager(self.recentmanager)
@@ -162,7 +179,7 @@ class JackMixer(SerializedObject):
         recentchooser.add_filter(recentfilter)
         recentchooser.connect("item-activated", self.on_recent_file_chosen)
 
-        recentmenu = Gtk.MenuItem.new_with_mnemonic("_Recent Projects")
+        recentmenu = Gtk.MenuItem.new_with_mnemonic(_("_Recent Projects"))
         recentmenu.set_submenu(recentchooser)
         return recentmenu
 
@@ -176,7 +193,7 @@ class JackMixer(SerializedObject):
         self.height = 420
         self.paned_position = 210
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_icon_name("jack_mixer")
+        self.window.set_icon_name(__program__)
         self.window.set_default_size(self.width, self.height)
 
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
@@ -196,11 +213,11 @@ class JackMixer(SerializedObject):
         self.menubar = Gtk.MenuBar()
         self.vbox_top.pack_start(self.menubar, False, True, 0)
 
-        mixer_menu_item = Gtk.MenuItem.new_with_mnemonic("_Mixer")
+        mixer_menu_item = Gtk.MenuItem.new_with_mnemonic(_("_Mixer"))
         self.menubar.append(mixer_menu_item)
-        edit_menu_item = Gtk.MenuItem.new_with_mnemonic("_Edit")
+        edit_menu_item = Gtk.MenuItem.new_with_mnemonic(_("_Edit"))
         self.menubar.append(edit_menu_item)
-        help_menu_item = Gtk.MenuItem.new_with_mnemonic("_Help")
+        help_menu_item = Gtk.MenuItem.new_with_mnemonic(_("_Help"))
         self.menubar.append(help_menu_item)
 
         # Mixer (and File) menu
@@ -208,61 +225,63 @@ class JackMixer(SerializedObject):
         mixer_menu_item.set_submenu(self.mixer_menu)
 
         self.mixer_menu.append(
-            self.new_menu_item("New _Input Channel", self.on_add_input_channel, "<Control>N")
+            self.new_menu_item(_("New _Input Channel"), self.on_add_input_channel, "<Control>N")
         )
         self.mixer_menu.append(
             self.new_menu_item(
-                "New Output _Channel", self.on_add_output_channel, "<Shift><Control>N"
+                _("New Output _Channel"), self.on_add_output_channel, "<Shift><Control>N"
             )
         )
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
         if not with_nsm:
-            self.mixer_menu.append(self.new_menu_item("_Open...", self.on_open_cb, "<Control>O"))
+            self.mixer_menu.append(
+                self.new_menu_item(_("_Open..."), self.on_open_cb, "<Control>O")
+            )
 
             # Recent files sub-menu
             self.mixer_menu.append(self.create_recent_file_menu())
 
-        self.mixer_menu.append(self.new_menu_item("_Save", self.on_save_cb, "<Control>S"))
+        self.mixer_menu.append(self.new_menu_item(_("_Save"), self.on_save_cb, "<Control>S"))
 
         if not with_nsm:
             self.mixer_menu.append(
-                self.new_menu_item("Save _As...", self.on_save_as_cb, "<Shift><Control>S")
+                self.new_menu_item(_("Save _As..."), self.on_save_as_cb, "<Shift><Control>S")
             )
 
         self.mixer_menu.append(Gtk.SeparatorMenuItem())
         if with_nsm:
-            self.mixer_menu.append(self.new_menu_item("_Hide", self.nsm_hide_cb, "<Control>W"))
+            self.mixer_menu.append(self.new_menu_item(_("_Hide"), self.nsm_hide_cb, "<Control>W"))
         else:
-            self.mixer_menu.append(self.new_menu_item("_Quit", self.on_quit_cb, "<Control>Q"))
+            self.mixer_menu.append(self.new_menu_item(_("_Quit"), self.on_quit_cb, "<Control>Q"))
 
         # Edit menu
         edit_menu = Gtk.Menu()
         edit_menu_item.set_submenu(edit_menu)
 
         self.channel_edit_input_menu_item = self.new_menu_item(
-            "_Edit Input Channel", enabled=False
+            _("_Edit Input Channel"), enabled=False
         )
         edit_menu.append(self.channel_edit_input_menu_item)
         self.channel_edit_input_menu = Gtk.Menu()
         self.channel_edit_input_menu_item.set_submenu(self.channel_edit_input_menu)
 
         self.channel_edit_output_menu_item = self.new_menu_item(
-            "E_dit Output Channel", enabled=False
+            _("E_dit Output Channel"), enabled=False
         )
         edit_menu.append(self.channel_edit_output_menu_item)
         self.channel_edit_output_menu = Gtk.Menu()
         self.channel_edit_output_menu_item.set_submenu(self.channel_edit_output_menu)
 
         self.channel_remove_input_menu_item = self.new_menu_item(
-            "_Remove Input Channel", enabled=False
+            _("_Remove Input Channel"), enabled=False
         )
         edit_menu.append(self.channel_remove_input_menu_item)
         self.channel_remove_input_menu = Gtk.Menu()
         self.channel_remove_input_menu_item.set_submenu(self.channel_remove_input_menu)
 
         self.channel_remove_output_menu_item = self.new_menu_item(
-            "Re_move Output Channel", enabled=False
+            _("Re_move Output Channel"), enabled=False
         )
         edit_menu.append(self.channel_remove_output_menu_item)
         self.channel_remove_output_menu = Gtk.Menu()
@@ -270,24 +289,26 @@ class JackMixer(SerializedObject):
 
         edit_menu.append(Gtk.SeparatorMenuItem())
         edit_menu.append(
-            self.new_menu_item("Shrink Channels", self.on_shrink_channels_cb, "<Control>minus")
+            self.new_menu_item(_("Shrink Channels"), self.on_shrink_channels_cb, "<Control>minus")
         )
         edit_menu.append(
-            self.new_menu_item("Expand Channels", self.on_expand_channels_cb, "<Control>plus")
+            self.new_menu_item(_("Expand Channels"), self.on_expand_channels_cb, "<Control>plus")
         )
         edit_menu.append(Gtk.SeparatorMenuItem())
 
-        edit_menu.append(self.new_menu_item("_Clear", self.on_channels_clear, "<Control>X"))
+        edit_menu.append(self.new_menu_item(_("_Clear"), self.on_channels_clear, "<Control>X"))
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         self.preferences_dialog = None
-        edit_menu.append(self.new_menu_item("_Preferences", self.on_preferences_cb, "<Control>P"))
+        edit_menu.append(
+            self.new_menu_item(_("_Preferences"), self.on_preferences_cb, "<Control>P")
+        )
 
         # Help menu
         help_menu = Gtk.Menu()
         help_menu_item.set_submenu(help_menu)
 
-        help_menu.append(self.new_menu_item("_About", self.on_about, "F1"))
+        help_menu.append(self.new_menu_item(_("_About"), self.on_about, "F1"))
 
         # Main panel
         self.hbox_top = Gtk.HBox()
@@ -337,7 +358,7 @@ class JackMixer(SerializedObject):
             )
             self.add_channel_precreated(channel)
         except Exception:
-            error_dialog(self.window, "Input channel creation failed.")
+            error_dialog(self.window, _("Input channel creation failed."))
             return
 
         channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc, solo_cc)
@@ -396,7 +417,7 @@ class JackMixer(SerializedObject):
             channel.color = color
             self.add_output_channel_precreated(channel)
         except Exception:
-            error_dialog(self.window, "Output channel creation failed")
+            error_dialog(self.window, _("Output channel creation failed."))
             return
 
         channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc)
@@ -448,21 +469,22 @@ class JackMixer(SerializedObject):
     def nsm_open_cb(self, path, session_name, client_name):
         self.create_mixer(client_name, with_nsm=True)
         self.current_filename = path + ".xml"
-        if os.path.isfile(self.current_filename):
+        if isfile(self.current_filename):
             try:
                 with open(self.current_filename, "r") as fp:
                     self.load_from_xml(fp, from_nsm=True)
             except Exception as exc:
                 # Re-raise with more meaningful error message
                 raise IOError(
-                    "Error loading project file '{}': {}".format(self.current_filename, exc)
+                    _("Error loading project file '{filename}': {msg}").format(
+                        filename=self.current_filename, msg=exc
+                    )
                 )
 
     def nsm_save_cb(self, path, session_name, client_name):
         self.current_filename = path + ".xml"
-        f = open(self.current_filename, "w")
-        self.save_to_xml(f)
-        f.close()
+        with open(self.current_filename, "w") as fp:
+            self.save_to_xml(fp)
 
     def nsm_exit_cb(self, path, session_name, client_name):
         Gtk.main_quit()
@@ -484,30 +506,15 @@ class JackMixer(SerializedObject):
 
     def on_about(self, *args):
         about = Gtk.AboutDialog()
-        about.set_name("jack_mixer")
-        about.set_program_name("jack_mixer")
+        about.set_name(__program__)
+        about.set_program_name(__program__)
         about.set_copyright(
             "Copyright © 2006-2021\n"
             "Nedko Arnaudov,\n"
             "Frédéric Péters, Arnout Engelen,\n"
             "Daniel Sheeler, Christopher Arndt"
         )
-        about.set_license(
-            """\
-jack_mixer is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2 of the License, or (at your
-option) any later version.
-
-jack_mixer is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with jack_mixer; if not, write to the Free Software Foundation, Inc., 51
-Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
-        )
+        about.set_license(__license__)
         about.set_authors(
             [
                 "Nedko Arnaudov <nedko@arnaudov.name>",
@@ -521,7 +528,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
                 "Athanasios Silis <athanasios.silis@gmail.com>",
             ]
         )
-        about.set_logo_icon_name("jack_mixer")
+        about.set_logo_icon_name(__program__)
         about.set_version(__version__)
         about.set_website("https://rdio.space/jackmixer/")
         about.run()
@@ -536,11 +543,11 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
 
     def add_file_filters(self, dialog):
         filter_xml = Gtk.FileFilter()
-        filter_xml.set_name("XML files")
+        filter_xml.set_name(_("XML files"))
         filter_xml.add_mime_type("text/xml")
         dialog.add_filter(filter_xml)
         filter_all = Gtk.FileFilter()
-        filter_all.set_name("All files")
+        filter_all.set_name(_("All files"))
         filter_all.add_pattern("*")
         dialog.add_filter(filter_all)
 
@@ -549,14 +556,19 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             with open(filename, "r") as fp:
                 self.load_from_xml(fp)
         except Exception as exc:
-            error_dialog(self.window, "Error loading project file '%s': %s", filename, exc)
+            error_dialog(
+                self.window,
+                _("Error loading project file '{filename}': {msg}").format(
+                    filename=filename, msg=exc
+                ),
+            )
         else:
             self.current_filename = filename
             return True
 
     def on_open_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
-            title="Open project", parent=self.window, action=Gtk.FileChooserAction.OPEN
+            title=_("Open project"), parent=self.window, action=Gtk.FileChooserAction.OPEN
         )
         dlg.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK
@@ -566,7 +578,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         default_project_path = self.gui_factory.get_default_project_path()
 
         if self.current_filename:
-            dlg.set_current_folder(os.path.dirname(self.current_filename))
+            dlg.set_current_folder(dirname(self.current_filename))
         else:
             dlg.set_current_folder(self.last_project_path or default_project_path or os.getcwd())
 
@@ -578,7 +590,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
         if dlg.run() == Gtk.ResponseType.OK:
             filename = dlg.get_filename()
             if self._open_project(filename):
-                self.recentmanager.add_item("file://" + os.path.abspath(filename))
+                self.recentmanager.add_item("file://" + abspath(filename))
 
         dlg.destroy()
 
@@ -603,12 +615,15 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             self._save_project(self.current_filename)
         except Exception as exc:
             error_dialog(
-                self.window, "Error saving project file '%s': %s", self.current_filename, exc
+                self.window,
+                _("Error saving project file '{filename}': {msg}").format(
+                    filename=self.current_filename, msg=exc
+                ),
             )
 
     def on_save_as_cb(self, *args):
         dlg = Gtk.FileChooserDialog(
-            title="Save project", parent=self.window, action=Gtk.FileChooserAction.SAVE
+            title=_("Save project"), parent=self.window, action=Gtk.FileChooserAction.SAVE
         )
         dlg.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK
@@ -634,18 +649,23 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
 
         if dlg.run() == Gtk.ResponseType.OK:
             save_path = dlg.get_filename()
-            save_dir = os.path.dirname(save_path)
-            if os.path.isdir(save_dir):
+            save_dir = dirname(save_path)
+            if isdir(save_dir):
                 self.last_project_path = save_dir
 
             filename = dlg.get_filename()
             try:
                 self._save_project(filename)
             except Exception as exc:
-                error_dialog(self.window, "Error saving project file '%s': %s", filename, exc)
+                error_dialog(
+                    self.window,
+                    _("Error saving project file '{filename}': {msg}").format(
+                        filename=filename, msg=exc
+                    ),
+                )
             else:
                 self.current_filename = filename
-                self.recentmanager.add_item("file://" + os.path.abspath(filename))
+                self.recentmanager.add_item("file://" + abspath(filename))
 
         dlg.destroy()
 
@@ -656,11 +676,13 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
                 message_type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.NONE,
             )
-            dlg.set_markup("<b>Quit application?</b>")
+            dlg.set_markup(_("<b>Quit application?</b>"))
             dlg.format_secondary_markup(
-                "All jack_mixer ports will be closed and connections lost,"
-                "\nstopping all sound going through jack_mixer.\n\n"
-                "Are you sure?"
+                _(
+                    "All jack_mixer ports will be closed and connections lost,"
+                    "\nstopping all sound going through jack_mixer.\n\n"
+                    "Are you sure?"
+                )
             )
             dlg.add_buttons(
                 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_QUIT, Gtk.ResponseType.OK
@@ -722,10 +744,10 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
                 self.window.show_all()
 
     def on_add_input_channel(self, widget):
-        return self.on_add_channel("input", "Input")
+        return self.on_add_channel("input", _("Input"))
 
     def on_add_output_channel(self, widget):
-        return self.on_add_channel("output", "Output")
+        return self.on_add_channel("output", _("Output"))
 
     def on_edit_input_channel(self, widget, channel):
         log.debug('Editing input channel "%s".', channel.channel_name)
@@ -853,7 +875,7 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             parent=self.window,
             modal=True,
             message_type=Gtk.MessageType.WARNING,
-            text="Are you sure you want to clear all channels?",
+            text=_("Are you sure you want to clear all channels?"),
             buttons=Gtk.ButtonsType.OK_CANCEL,
         )
 
@@ -1037,12 +1059,12 @@ Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA"""
             return self.gui_factory
 
     def serialization_get_childs(self):
-        """Get child objects that required and support serialization"""
+        """Get child objects that require and support serialization."""
         childs = self.channels[:] + self.output_channels[:] + [self.gui_factory]
         return childs
 
     def serialization_name(self):
-        return "jack_mixer"
+        return __program__
 
     # ---------------------------------------------------------------------------------------------
     # Main program loop
@@ -1073,26 +1095,33 @@ def error_dialog(parent, msg, *args):
         destroy_with_parent=True,
         message_type=Gtk.MessageType.ERROR,
         buttons=Gtk.ButtonsType.OK,
-        text=msg % args,
+        text=msg.format(args),
     )
     err.run()
     err.destroy()
 
 
 def main():
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser(prog=__program__, description=_(__doc__.splitlines()[0]))
     parser.add_argument(
-        "-c", "--config", metavar="FILE", help="load mixer project configuration from FILE"
+        "-c",
+        "--config",
+        metavar=_("FILE"),
+        help=_("load mixer project configuration from FILE")
     )
     parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
         default="JACK_MIXER_DEBUG" in os.environ,
-        help="enable debug logging messages",
+        help=_("enable debug logging messages"),
     )
     parser.add_argument(
-        "client_name", metavar="NAME", nargs="?", default="jack_mixer", help="set JACK client name"
+        "client_name",
+        metavar=_("NAME"),
+        nargs="?",
+        default=__program__,
+        help=_("set JACK client name (default: %(default)s)"),
     )
     args = parser.parse_args()
 
@@ -1103,7 +1132,7 @@ def main():
     try:
         mixer = JackMixer(args.client_name)
     except Exception as e:
-        error_dialog(None, "Mixer creation failed:\n\n%s", e)
+        error_dialog(None, _("Mixer creation failed:\n\n{}"), e)
         sys.exit(1)
 
     if not mixer.nsm_client and args.config:
@@ -1111,7 +1140,12 @@ def main():
             with open(args.config) as fp:
                 mixer.load_from_xml(fp)
         except Exception as exc:
-            error_dialog(mixer.window, "Error loading project file '%s': %s", args.config, exc)
+            error_dialog(
+                mixer.window,
+                _("Error loading project file '{filename}': {msg}").format(
+                    filename=args.config, msg=exc
+                ),
+            )
         else:
             mixer.current_filename = args.config
 
@@ -1120,7 +1154,6 @@ def main():
         )
 
     mixer.main()
-
     mixer.cleanup()
 
 

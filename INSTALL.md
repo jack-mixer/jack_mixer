@@ -15,6 +15,7 @@ Build requirements:
  * Python headers
  * [JACK] headers
  * glib2 headers
+ * gettext
  * [Cython] (optional, required if building from a Git checkout)
  * [docutils] (optional, `rst2man` required if building from a Git checkout)
 

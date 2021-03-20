@@ -54,7 +54,9 @@ class XmlSerialization(SerializationBackend):
 
         document_type = self.doc.documentElement.nodeName
         if document_type != name:
-            raise InvalidDocumentTypeError("Document type '%s' not supported." % document_type)
+            raise InvalidDocumentTypeError(
+                _("Document type '{type}' not supported.").format(type=document_type)
+            )
 
 
 class XmlSerializationObject:

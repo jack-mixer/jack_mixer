@@ -25,3 +25,6 @@ install_data(
     join_paths('art', 'scalable', 'jack_mixer.svg'),
     install_dir: join_paths(icondir, 'scalable', 'apps')
 )
+
+# Translations
+subdir('locale')

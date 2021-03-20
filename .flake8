@@ -8,5 +8,6 @@ extend-exclude =
     dist,
     nsmclient.py
 per-file-ignores =
-    # import not at top of file due to gi.require_version
+    # import not at top of file due to gi.require_version and i18n
     app.py: E402
+builtins = _

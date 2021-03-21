@@ -16,9 +16,9 @@ Report bugs at <https://github.com/jack-mixer/jack_mixer/issues>.
 If you are reporting a bug, please include:
 
 - Your operating system name and version.
-- The **jack_mixer** version (see "about" dialog).
+- The **jack_mixer** version (see the "About" dialog).
 - The Python version (`python --version`).
-- A description of what went wrong ("X doesn't work" is *not* enough!).
+- A description of what went wrong ("X doesn't work" is *not enough!*).
 - Detailed steps to reproduce the bug.
 - Any details about your local setup that might be helpful in troubleshooting.
 
@@ -132,16 +132,16 @@ Create a new branch for every new PR, starting from the `main` branch.
         stuff;
     }
 ```
-- A space between keywords and parenthesis for:
-  `if`, `else`, `while`, `switch`, `catch`, `function`
-- Function calls have no space before the parentheses
-- No spaces are left inside the parentheses
-- A space after each comma, but without space before
-- All binary operators must have one space before and one after
-- There should be no empty comments
+- There should be a space between keywords and parenthesis for:
+  `if`, `else`, `while`, `switch`, `catch`, `function`.
+- Function calls have no space before the parentheses.
+- No spaces are left inside the parentheses.
+- A space after each comma, but without space before.
+- All binary operators must have one space before and one after.
+- There should be no empty comments.
 
 These conventions may change in the future and we may introduce auto-formatting
-of C code with `clang` at some point.
+of C code with `clang-format` at some point.
 
 
 ## Translations
@@ -152,19 +152,22 @@ of C code with `clang` at some point.
 1. Copy `data/local/jack_mixer.pot` to `data/locale/jack_mixer-<lang>.po`,
    where `<lang>` is the two-letter code for the language of the new
    translation.
-2. Edit `jack-mixer-<lang>.po` and translate all messages (you only need to
+2. Edit `data/local/meson.build` and add a string with the language code for
+   the new translation to the `languages` array (keep it sorted
+   alphabetically).
+3. Edit `jack-mixer-<lang>.po` and translate all messages (you only need to
    translate the messages for `argparse`, which are used in the command line
    help text).
-3. Run `./tools/compile-messages.py` to compile all `*.po` files to `*.mo`
-   files
-4. Build the application with `meson` and then run it from the root of the
+4. Run `./tools/compile-messages.py` to compile all `*.po` files to `*.mo`
+   files.
+5. Build the application with `meson` and then run it from the root of the
    source directory using the `./tools/jack_mixer.sh` script and check your
    translations. Also use the `-h` command line option to check the translation
    of the usage help message.
-5. Add a `Comment` tag in the new language to the `data/jack_mixer.desktop`
+6. Add a `Comment` tag in the new language to the `data/jack_mixer.desktop`
    file.
-6. Commit the `jack-mixer-<lang>.po` file and your changes to the `desktop`
-   file to a new branch and make a Pull Request.
+7. Commit the `jack-mixer-<lang>.po` file and your changes to the `.desktop`
+   and `data/locale/meson.build` files to a new branch and make a Pull Request.
 
 
 ### Updating a Translation

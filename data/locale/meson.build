@@ -1,5 +1,5 @@
 if get_option('gui').enabled()
-    languages = ['de']
+    languages = ['de', 'fr']
     msgfmt = find_program('msgfmt')
 
     foreach lang : languages

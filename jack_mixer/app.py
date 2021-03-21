@@ -393,7 +393,7 @@ class JackMixer(SerializedObject):
 
     def add_direct_output(self, channel, name=None):
         if not name:
-            name = channel.channel.name + " Out"
+            name = _("{channel_name} Out").format(channel_name=channel.channel_name)
         # create post fader output channel matching the input channel
         channel.post_fader_output_channel = self.mixer.add_output_channel(
             name, channel.channel.is_stereo, True

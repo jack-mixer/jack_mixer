@@ -150,8 +150,8 @@ of C code with `clang-format` at some point.
 ### Adding a New Translation
 
 1. Copy `data/local/jack_mixer.pot` to `data/locale/jack_mixer-<lang>.po`,
-   where `<lang>` is the two-letter code for the language of the new
-   translation.
+   where `<lang>` is the [two- or three-letter code] for the language of the
+   new translation.
 2. Edit `data/local/meson.build` and add a string element with the language
    code for the new translation to the `languages`
    [array](https://mesonbuild.com/Syntax.html#arrays) (keep it sorted
@@ -188,3 +188,4 @@ and make a new Pull Request (only include the `.po` files, which you edited).
 [jack-mixer/jack_mixer]: https://github.com/jack-mixer/jack_mixer
 [INSTALL]: ../INSTALL.md
 [README]: ../README.md
+[two- or three-letter code]: https://www.gnu.org/software/gettext/manual/html_node/Language-Codes.html#Language-Codes

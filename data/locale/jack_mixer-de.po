@@ -1,15 +1,8 @@
-# #-#-#-#-#  jack_mixer-de.po (jack_mixer 15.1)  #-#-#-#-#
-# jack_mixer i18n message catalog template
+# jack_mixer i18n message catalog German translation
 #
 # This file is distributed under the same license as the jack_mixer package.
 #
 # Copyright (C) 2021 Christopher Arndt <chris@chrisarndt.de>
-#
-# #-#-#-#-#  argparse-de.po (argparse Python 3.9)  #-#-#-#-#
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 msgid ""
 msgstr ""

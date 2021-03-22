@@ -1,4 +1,3 @@
-# #-#-#-#-#  jack_mixer-fr.po (jack_mixer 15.1)  #-#-#-#-#
 # jack_mixer i18n message catalog template
 #
 # This file is distributed under the same license as the jack_mixer package.

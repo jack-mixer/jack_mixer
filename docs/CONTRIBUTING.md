@@ -152,8 +152,9 @@ of C code with `clang-format` at some point.
 1. Copy `data/local/jack_mixer.pot` to `data/locale/jack_mixer-<lang>.po`,
    where `<lang>` is the two-letter code for the language of the new
    translation.
-2. Edit `data/local/meson.build` and add a string with the language code for
-   the new translation to the `languages` array (keep it sorted
+2. Edit `data/local/meson.build` and add a string element with the language
+   code for the new translation to the `languages`
+   [array](https://mesonbuild.com/Syntax.html#arrays) (keep it sorted
    alphabetically).
 3. Edit `jack-mixer-<lang>.po` and translate all messages (you only need to
    translate the messages for `argparse`, which are used in the command line

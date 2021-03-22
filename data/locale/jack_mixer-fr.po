@@ -275,7 +275,7 @@ msgid ""
 "{param} MIDI Control Change number (0-127, set to -1 to assign next free CC "
 "#)"
 msgstr ""
-"{param} Numéro de Control Change MIDI (0-127, mettre à -1 pour assigner le "
+"Numéro de Control Change MIDI pour {param} (0-127, mettre à -1 pour assigner le "
 "prochain CC libre #)"
 
 #: jack_mixer/channel.py:1010

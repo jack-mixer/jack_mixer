@@ -81,6 +81,8 @@ cdef class Mixer:
     def __cinit__(self, name, stereo=True):
         self._stereo = stereo
         self._mixer = mixer_create(name.encode('utf-8'), stereo)
+        if self._mixer == NULL:
+            raise RuntimeError(jack_mixer_error_str().decode('utf-8'))
 
     def __dealloc__(self):
         if self._mixer:
@@ -278,7 +280,8 @@ cdef class Channel:
 
     @name.setter
     def name(self, newname):
-        channel_rename(self._channel, newname.encode('utf-8'))
+        if channel_rename(self._channel, newname.encode('utf-8')) != 0:
+            raise RuntimeError(jack_mixer_error_str().decode('utf-8'))
 
     @property
     def out_mute(self):
@@ -337,7 +340,8 @@ cdef class Channel:
 
     @balance_midi_cc.setter
     def balance_midi_cc(self, int cc):
-        channel_set_balance_midi_cc(self._channel, cc)
+        if channel_set_balance_midi_cc(self._channel, cc) != 0:
+            raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     @property
     def mute_midi_cc(self):
@@ -346,7 +350,8 @@ cdef class Channel:
 
     @mute_midi_cc.setter
     def mute_midi_cc(self, int cc):
-        channel_set_mute_midi_cc(self._channel, cc)
+        if channel_set_mute_midi_cc(self._channel, cc) != 0:
+            raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     @property
     def solo_midi_cc(self):
@@ -355,7 +360,8 @@ cdef class Channel:
 
     @solo_midi_cc.setter
     def solo_midi_cc(self, int cc):
-        channel_set_solo_midi_cc(self._channel, cc)
+        if channel_set_solo_midi_cc(self._channel, cc) != 0:
+            raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     @property
     def volume_midi_cc(self):
@@ -364,7 +370,8 @@ cdef class Channel:
 
     @volume_midi_cc.setter
     def volume_midi_cc(self, int cc):
-        channel_set_volume_midi_cc(self._channel, cc)
+        if channel_set_volume_midi_cc(self._channel, cc) != 0:
+            raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     def autoset_balance_midi_cc(self):
         """Auto assign MIDI CC for channel balance."""

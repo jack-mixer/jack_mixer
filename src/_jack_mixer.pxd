@@ -30,17 +30,24 @@ cdef extern from "jack_mixer.h":
     cdef enum midi_behavior_mode:
         pass
 
+    ctypedef enum jack_mixer_error_t:
+        pass
+
+    cdef jack_mixer_error_t jack_mixer_error();
+
+    cdef const char* jack_mixer_error_str();
+
     # mixer
     cdef jack_mixer_t mixer_create "create" (const char * jack_client_name_ptr, bool stereo)
     cdef void mixer_destroy "destroy" (jack_mixer_t mixer)
     cdef unsigned int mixer_get_channels_count "get_channels_count" (jack_mixer_t mixer)
     cdef const char * mixer_get_client_name "get_client_name" (jack_mixer_t mixer)
     cdef int mixer_get_last_midi_cc "get_last_midi_cc" (jack_mixer_t mixer)
-    cdef unsigned int mixer_set_last_midi_cc "set_last_midi_cc" (
+    cdef void mixer_set_last_midi_cc "set_last_midi_cc" (
         jack_mixer_t mixer,
         int new_channel)
     cdef int mixer_get_midi_behavior_mode "get_midi_behavior_mode" (jack_mixer_t mixer)
-    cdef unsigned int mixer_set_midi_behavior_mode "set_midi_behavior_mode" (
+    cdef void mixer_set_midi_behavior_mode "set_midi_behavior_mode" (
         jack_mixer_t mixer,
         midi_behavior_mode mode)
     cdef jack_mixer_channel_t mixer_add_channel "add_channel" (
@@ -59,7 +66,7 @@ cdef extern from "jack_mixer.h":
 
     # channel
     cdef const char * channel_get_name(jack_mixer_channel_t channel)
-    cdef void channel_rename(jack_mixer_channel_t channel, const char * name)
+    cdef int channel_rename(jack_mixer_channel_t channel, const char * name)
 
     cdef double channel_abspeak_read(jack_mixer_channel_t channel)
     cdef void channel_abspeak_reset(jack_mixer_channel_t channel)
@@ -112,10 +119,10 @@ cdef extern from "jack_mixer.h":
     cdef int channel_get_mute_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_get_solo_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_get_volume_midi_cc(jack_mixer_channel_t channel)
-    cdef unsigned int channel_set_balance_midi_cc(jack_mixer_channel_t channel, int new_cc)
-    cdef unsigned int channel_set_mute_midi_cc(jack_mixer_channel_t channel, int new_cc)
-    cdef unsigned int channel_set_solo_midi_cc(jack_mixer_channel_t channel, int new_cc)
-    cdef unsigned int channel_set_volume_midi_cc(jack_mixer_channel_t channel, int new_cc)
+    cdef int channel_set_balance_midi_cc(jack_mixer_channel_t channel, int new_cc)
+    cdef int channel_set_mute_midi_cc(jack_mixer_channel_t channel, int new_cc)
+    cdef int channel_set_solo_midi_cc(jack_mixer_channel_t channel, int new_cc)
+    cdef int channel_set_volume_midi_cc(jack_mixer_channel_t channel, int new_cc)
 
     cdef void channel_set_midi_scale(jack_mixer_channel_t channel, jack_mixer_scale_t scale)
 

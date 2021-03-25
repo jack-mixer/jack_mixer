@@ -59,7 +59,37 @@ typedef void * jack_mixer_threshold_t;
 #define MAP(v, imin, imax, omin, omax) (((v) - (imin)) * ((omax) - (omin)) / ((imax) - (imin)) + (omin))
 #endif
 
-enum midi_behavior_mode { Jump_To_Value, Pick_Up };
+enum midi_behavior_mode {
+  Jump_To_Value,
+  Pick_Up
+};
+
+typedef enum {
+  JACK_MIXER_NO_ERROR,
+  JACK_MIXER_ERROR_JACK_CLIENT_CREATE,
+  JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE,
+  JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE,
+  JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK,
+  JACK_MIXER_ERROR_JACK_ACTIVATE,
+  JACK_MIXER_ERROR_CHANNEL_MALLOC,
+  JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC,
+  JACK_MIXER_ERROR_PORT_REGISTER,
+  JACK_MIXER_ERROR_PORT_REGISTER_LEFT,
+  JACK_MIXER_ERROR_PORT_REGISTER_RIGHT,
+  JACK_MIXER_ERROR_JACK_RENAME_PORT,
+  JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT,
+  JACK_MIXER_ERROR_JACK_RENAME_PORT_RIGHT,
+  JACK_MIXER_ERROR_PORT_NAME_MALLOC,
+  JACK_MIXER_ERROR_INVALID_CC,
+  JACK_MIXER_ERROR_NO_FREE_CC,
+  JACK_MIXER_ERROR_COUNT
+} jack_mixer_error_t;
+
+jack_mixer_error_t
+jack_mixer_error();
+
+const char*
+jack_mixer_error_str();
 
 jack_mixer_t
 create(
@@ -82,7 +112,7 @@ int8_t
 get_last_midi_cc(
   jack_mixer_t mixer);
 
-unsigned int
+void
 set_last_midi_cc(
   jack_mixer_t mixer,
   int8_t new_cc);
@@ -91,7 +121,7 @@ int
 get_midi_behavior_mode(
   jack_mixer_t mixer);
 
-unsigned int
+void
 set_midi_behavior_mode(
   jack_mixer_t mixer,
   enum midi_behavior_mode mode);
@@ -188,7 +218,7 @@ int8_t
 channel_get_balance_midi_cc(
   jack_mixer_channel_t channel);
 
-unsigned int
+int
 channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc);
@@ -197,7 +227,7 @@ int8_t
 channel_get_volume_midi_cc(
   jack_mixer_channel_t channel);
 
-unsigned int
+int
 channel_set_volume_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc);
@@ -206,7 +236,7 @@ int8_t
 channel_get_mute_midi_cc(
   jack_mixer_channel_t channel);
 
-unsigned int
+int
 channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc);
@@ -215,7 +245,7 @@ int8_t
 channel_get_solo_midi_cc(
   jack_mixer_channel_t channel);
 
-unsigned int
+int
 channel_set_solo_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc);
@@ -287,7 +317,7 @@ bool
 channel_is_soloed(
   jack_mixer_channel_t channel);
 
-void
+int
 channel_rename(
   jack_mixer_channel_t channel,
   const char * name);
@@ -343,7 +373,8 @@ bool
 output_channel_is_prefader(
   jack_mixer_output_channel_t output_channel);
 
-void output_channel_set_in_prefader(
+void
+output_channel_set_in_prefader(
   jack_mixer_output_channel_t output_channel,
   jack_mixer_channel_t input_channel,
   bool prefader_value);

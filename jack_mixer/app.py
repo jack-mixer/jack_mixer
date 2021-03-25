@@ -119,9 +119,6 @@ class JackMixer(SerializedObject):
 
     def create_mixer(self, client_name, with_nsm=True):
         self.mixer = Mixer(client_name)
-        if not self.mixer:
-            raise RuntimeError(_("Failed to create Mixer instance."))
-
         self.create_ui(with_nsm)
         self.window.set_title(client_name)
         # Port names, which are not user-settable are not marked as translatable,

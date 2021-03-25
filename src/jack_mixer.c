@@ -40,16 +40,15 @@
 #include "log.h"
 
 struct kmeter {
-  float   _z1;          // filter state
-  float   _z2;          // filter state
-  float   _rms;         // max rms value since last read()
-  float   _dpk;         // current digital peak value
-  int     _cnt;         // digital peak hold counter
-  bool    _flag;        // flag set by read(), resets _rms
-
-  int     _hold;        // number of JACK periods to hold peak value
-  float   _fall;        // per period fallback multiplier for peak value
-  float   _omega;       // ballistics filter constant.
+  float _z1;        // filter state
+  float _z2;        // filter state
+  float _rms;       // max rms value since last read()
+  float _dpk;       // current digital peak value
+  int _cnt;         // digital peak hold counter
+  bool _flag;       // flag set by read(), resets _rms
+  int _hold;        // number of JACK periods to hold peak value
+  float _fall;      // per period fallback multiplier for peak value
+  float _omega;     // ballistics filter constant.
 };
 
 struct channel {
@@ -179,7 +178,7 @@ interpolate(
 {
   double ret;
   double frac = 0.01;
-  LOG_DEBUG("%f -> %f, %d", start, end, step);
+  LOG_DEBUG("Interpolation: start=%f -> end=%f, step=%d\n", start, end, step);
   if (start <= 0) {
     if (step <= frac * steps) {
       ret = frac * end * step / steps;
@@ -199,8 +198,74 @@ interpolate(
   else {
     ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
   }
-  LOG_DEBUG("interpolate: %f", ret);
+  LOG_DEBUG("Interpolated value: %f\n", ret);
   return ret;
+}
+
+
+const char* const _jack_mixer_error_str[] = {
+  /* JACK_MIXER_NO_ERROR */
+  "No error.\n",
+  /* JACK_MIXER_ERROR_JACK_CLIENT_CREATE */
+  "Could not create JACK client.\nPlease make sure JACK daemon is running.\n",
+  /* JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE */
+  "Could not create JACK MIDI in port.\n",
+  /* JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE */
+  "Could not create JACK MIDI out port.\n",
+  /* JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK */
+  "Could not set JACK process callback.\n",
+  /* JACK_MIXER_ERROR_JACK_ACTIVATE */
+  "Could not activate JACK client.\n",
+  /* JACK_MIXER_ERROR_CHANNEL_MALLOC */
+  "Could not allocate memory for channel.\n",
+  /* JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC */
+  "Could not allocate memory for channel name.\n",
+  /* JACK_MIXER_ERROR_PORT_REGISTER */
+  "Could not register JACK port for channel.\n",
+  /* JACK_MIXER_ERROR_PORT_REGISTER_LEFT */
+  "Could not register JACK port for left channel.\n",
+  /* JACK_MIXER_ERROR_PORT_REGISTER_RIGHT */
+  "Could not register JACK port for right channel.\n",
+  /* JACK_MIXER_ERROR_JACK_RENAME_PORT */
+  "Could not rename JACK port for channel.\n",
+  /* JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT */
+  "Coudl not rename JACK port for left channel.\n",
+  /* JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT */
+  "Coudl not rename JACK port for right channel.\n"
+  /* JACK_MIXER_ERROR_PORT_NAME_MALLOC */
+  "Could not allocate memory for port name.\n"
+  /* JACK_MIXER_ERROR_INVALID_CC */
+  "Control Change number out of range.\n",
+  /* JACK_MIXER_ERROR_NO_FREE_CC */
+  "No free Control Change number.\n"
+};
+
+jack_mixer_error_t _jack_mixer_error = JACK_MIXER_NO_ERROR;
+
+/*****************************************************************************/
+/* Public API */
+
+jack_mixer_error_t
+jack_mixer_error()
+{
+  return _jack_mixer_error;
+}
+
+const char*
+jack_mixer_error_str()
+{
+  const char* err_str = NULL;
+
+  /* Ensure error codes are within valid range */
+  if (_jack_mixer_error == JACK_MIXER_NO_ERROR || _jack_mixer_error >= JACK_MIXER_ERROR_COUNT)
+  {
+    goto done;
+  }
+
+  err_str = _jack_mixer_error_str[_jack_mixer_error];
+
+done:
+  return err_str;
 }
 
 #define channel_ptr ((struct channel *)channel)
@@ -212,7 +277,7 @@ channel_get_name(
   return channel_ptr->name;
 }
 
-void
+int
 channel_rename(
   jack_mixer_channel_t channel,
   const char * name)
@@ -225,7 +290,8 @@ channel_rename(
   new_name = strdup(name);
   if (new_name == NULL)
   {
-    return;
+    _jack_mixer_error = JACK_MIXER_ERROR_PORT_NAME_MALLOC;
+    goto fail;
   }
 
   if (channel_ptr->name)
@@ -248,8 +314,8 @@ channel_rename(
     ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left, port_name);
     if (ret != 0)
     {
-      /* what else could we do here? */
-      LOG_ERROR("Renaming JACK port '%s' -> '%s' for left channel failed.");
+      _jack_mixer_error = JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT;
+      goto fail;
     }
 
     port_name[channel_name_size+1] = 'R';
@@ -257,8 +323,8 @@ channel_rename(
     ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_right, port_name);
     if (ret != 0)
     {
-      /* what else could we do here? */
-      LOG_ERROR("Renaming JACK port for right channel failed.");
+      _jack_mixer_error = JACK_MIXER_ERROR_JACK_RENAME_PORT_RIGHT;
+      goto fail_free;
     }
 
     free(port_name);
@@ -268,10 +334,15 @@ channel_rename(
     ret = jack_port_rename(channel_ptr->mixer_ptr->jack_client, channel_ptr->port_left, name);
     if (ret != 0)
     {
-      /* what else could we do here? */
-      LOG_ERROR("Renaming JACK port for channel failed.");
+      _jack_mixer_error = JACK_MIXER_ERROR_JACK_RENAME_PORT;
+      goto fail;
     }
   }
+  return 0;
+fail_free:
+  free(port_name);
+fail:
+  return -1;
 }
 
 bool
@@ -319,13 +390,14 @@ unset_midi_cc_mapping(
   mixer->midi_cc_map[cc] = NULL;
 }
 
-unsigned int
+int
 channel_set_balance_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
   if (new_cc < 0) {
-    return 2; /* error: outside CC value range */
+    _jack_mixer_error = JACK_MIXER_ERROR_INVALID_CC;
+    return -1;
   }
 
   /* Remove previous assignment for this CC */
@@ -346,13 +418,14 @@ channel_get_volume_midi_cc(
   return channel_ptr->midi_cc_volume_index;
 }
 
-unsigned int
+int
 channel_set_volume_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
   if (new_cc < 0) {
-    return 2; /* error: outside limit CC */
+    _jack_mixer_error = JACK_MIXER_ERROR_INVALID_CC;
+    return -1;
   }
 
   /* remove previous assignment for this CC */
@@ -373,13 +446,14 @@ channel_get_mute_midi_cc(
   return channel_ptr->midi_cc_mute_index;
 }
 
-unsigned int
+int
 channel_set_mute_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
   if (new_cc < 0) {
-    return 2; /* error: outside CC value range */
+    _jack_mixer_error = JACK_MIXER_ERROR_INVALID_CC;
+    return -1;
   }
 
   /* Remove previous assignment for this CC */
@@ -405,7 +479,7 @@ channel_set_midi_cc_volume_picked_up(
   jack_mixer_channel_t channel,
   bool status)
 {
-  LOG_DEBUG("Setting channel %s volume picked up to %d", channel_ptr->name, status);
+  LOG_DEBUG("Setting channel %s volume picked up to %d.\n", channel_ptr->name, status);
   channel_ptr->midi_cc_volume_picked_up = status;
 }
 
@@ -414,17 +488,18 @@ channel_set_midi_cc_balance_picked_up(
   jack_mixer_channel_t channel,
   bool status)
 {
-  LOG_DEBUG("Setting channel %s balance picked up to %d", channel_ptr->name, status);
+  LOG_DEBUG("Setting channel %s balance picked up to %d.\n", channel_ptr->name, status);
   channel_ptr->midi_cc_balance_picked_up = status;
 }
 
-unsigned int
+int
 channel_set_solo_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_cc)
 {
   if (new_cc < 0) {
-    return 2; /* error: outside limit CC */
+    _jack_mixer_error = JACK_MIXER_ERROR_INVALID_CC;
+    return -1;
   }
 
   /* Remove previous assignment for this CC */
@@ -451,11 +526,11 @@ channel_autoset_volume_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_volume_index = i;
 
-      LOG_DEBUG("New channel \"%s\" volume mapped to CC#%i", channel_ptr->name, i);
-
+      LOG_DEBUG("New channel \"%s\" volume mapped to CC#%i.\n", channel_ptr->name, i);
       return i;
     }
   }
+  _jack_mixer_error = JACK_MIXER_ERROR_NO_FREE_CC;
   return -1;
 }
 
@@ -472,11 +547,11 @@ channel_autoset_balance_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_balance_index = i;
 
-      LOG_DEBUG("New channel \"%s\" balance mapped to CC#%i", channel_ptr->name, i);
-
+      LOG_DEBUG("New channel \"%s\" balance mapped to CC#%i.\n", channel_ptr->name, i);
       return i;
     }
   }
+  _jack_mixer_error = JACK_MIXER_ERROR_NO_FREE_CC;
   return -1;
 }
 
@@ -493,11 +568,11 @@ channel_autoset_mute_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_mute_index = i;
 
-      LOG_DEBUG("New channel \"%s\" mute mapped to CC#%i", channel_ptr->name, i);
-
+      LOG_DEBUG("New channel \"%s\" mute mapped to CC#%i.\n", channel_ptr->name, i);
       return i;
     }
   }
+  _jack_mixer_error = JACK_MIXER_ERROR_NO_FREE_CC;
   return -1;
 }
 
@@ -514,11 +589,11 @@ channel_autoset_solo_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_solo_index = i;
 
-      LOG_DEBUG("New channel \"%s\" solo mapped to CC#%i", channel_ptr->name, i);
-
+      LOG_DEBUG("New channel \"%s\" solo mapped to CC#%i.\n", channel_ptr->name, i);
       return i;
     }
   }
+  _jack_mixer_error = JACK_MIXER_ERROR_NO_FREE_CC;
   return -1;
 }
 
@@ -572,7 +647,6 @@ remove_channel(
   free(channel_ptr->frames_right);
   free(channel_ptr->prefader_frames_left);
   free(channel_ptr->prefader_frames_right);
-
   free(channel_ptr);
 }
 
@@ -644,7 +718,7 @@ channel_volume_write(
     channel_ptr->midi_out_has_events |= CHANNEL_VOLUME;
   }
   channel_ptr->volume_new = value;
-  LOG_DEBUG("\"%s\" volume -> %f", channel_ptr->name, value);
+  LOG_DEBUG("\"%s\" volume -> %f.\n", channel_ptr->name, value);
 }
 
 double
@@ -687,7 +761,7 @@ channel_balance_write(
     channel_ptr->midi_out_has_events |= CHANNEL_BALANCE;
   }
   channel_ptr->balance_new = balance;
-  LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, balance);
+  LOG_DEBUG("\"%s\" balance -> %f\n", channel_ptr->name, balance);
 }
 
 double
@@ -728,7 +802,7 @@ channel_out_mute(
   if (!channel_ptr->out_mute) {
     channel_ptr->out_mute = true;
     channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
-    LOG_DEBUG("\"%s\" muted", channel_ptr->name);
+    LOG_DEBUG("\"%s\" muted.\n", channel_ptr->name);
   }
 }
 
@@ -739,7 +813,7 @@ channel_out_unmute(
   if (channel_ptr->out_mute) {
     channel_ptr->out_mute = false;
     channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
-    LOG_DEBUG("\"%s\" un-muted", channel_ptr->name);
+    LOG_DEBUG("\"%s\" un-muted.\n", channel_ptr->name);
   }
 }
 
@@ -758,7 +832,7 @@ channel_solo(
     return;
   channel_ptr->mixer_ptr->soloed_channels = g_slist_prepend(channel_ptr->mixer_ptr->soloed_channels, channel);
   channel_ptr->midi_out_has_events |= CHANNEL_SOLO;
-  LOG_DEBUG("\"%s\" soloed", channel_ptr->name);
+  LOG_DEBUG("\"%s\" soloed.\n", channel_ptr->name);
 }
 
 void
@@ -769,7 +843,7 @@ channel_unsolo(
     return;
   channel_ptr->mixer_ptr->soloed_channels = g_slist_remove(channel_ptr->mixer_ptr->soloed_channels, channel);
   channel_ptr->midi_out_has_events |= CHANNEL_SOLO;
-  LOG_DEBUG("\"%s\" un-soloed", channel_ptr->name);
+  LOG_DEBUG("\"%s\" un-soloed.\n", channel_ptr->name);
 }
 
 bool
@@ -1342,7 +1416,7 @@ process(
     cc_val = (uint8_t)(in_event.buffer[2] & 0x7F);
     mixer_ptr->last_midi_cc = (int8_t)cc_num;
 
-    LOG_DEBUG("%u: CC#%u -> %u", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
+    LOG_DEBUG("%u: CC#%u -> %u\n", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
 
     /* Do we have a mapping for particular CC? */
     channel_ptr = mixer_ptr->midi_cc_map[cc_num];
@@ -1454,7 +1528,7 @@ process(
                                                value_to_db(channel_ptr->volume_new)));
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u",
+            "%u: CC#%u <- %u\n",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1476,7 +1550,7 @@ process(
           }
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u",
+            "%u: CC#%u <- %u\n",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1492,7 +1566,7 @@ process(
           midi_out_buffer[2] = (unsigned char)(channel_is_out_muted(channel_ptr) ? 127 : 0);
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u",
+            "%u: CC#%u <- %u\n",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1508,7 +1582,7 @@ process(
           midi_out_buffer[2] = (unsigned char)(channel_is_soloed(channel_ptr) ? 127 : 0);
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u",
+            "%u: CC#%u <- %u\n",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1563,32 +1637,30 @@ create(
     mixer_ptr->midi_cc_map[i] = NULL;
   }
 
-  LOG_DEBUG("Initializing JACK");
+  LOG_DEBUG("Initializing JACK.\n");
   mixer_ptr->jack_client = jack_client_open(jack_client_name_ptr, 0, NULL);
   if (mixer_ptr->jack_client == NULL)
   {
-    LOG_ERROR("Cannot create JACK client.");
-    LOG_NOTICE("Please make sure JACK daemon is running.");
+    _jack_mixer_error = JACK_MIXER_ERROR_JACK_CLIENT_CREATE;
     goto exit_destroy_mutex;
   }
 
-  LOG_DEBUG("JACK client created");
-
-  LOG_DEBUG("Sample rate: %" PRIu32, jack_get_sample_rate(mixer_ptr->jack_client));
+  LOG_DEBUG("JACK client created.\n");
+  LOG_DEBUG("Sample rate: %\n" PRIu32, jack_get_sample_rate(mixer_ptr->jack_client));
 
 
 #if defined(HAVE_JACK_MIDI)
   mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
   if (mixer_ptr->port_midi_in == NULL)
   {
-    LOG_ERROR("Cannot create JACK MIDI in port");
+    _jack_mixer_error = JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE;
     goto close_jack;
   }
 
   mixer_ptr->port_midi_out = jack_port_register(mixer_ptr->jack_client, "midi out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
   if (mixer_ptr->port_midi_out == NULL)
   {
-    LOG_ERROR("Cannot create JACK MIDI out port");
+    _jack_mixer_error = JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE;
     goto close_jack;
   }
 
@@ -1597,14 +1669,14 @@ create(
   ret = jack_set_process_callback(mixer_ptr->jack_client, process, mixer_ptr);
   if (ret != 0)
   {
-    LOG_ERROR("Cannot set JACK process callback");
+    _jack_mixer_error = JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK;
     goto close_jack;
   }
 
   ret = jack_activate(mixer_ptr->jack_client);
   if (ret != 0)
   {
-    LOG_ERROR("Cannot activate JACK client");
+    _jack_mixer_error = JACK_MIXER_ERROR_JACK_ACTIVATE;
     goto close_jack;
   }
 
@@ -1629,14 +1701,10 @@ void
 destroy(
   jack_mixer_t mixer)
 {
-  LOG_DEBUG("Uninitializing JACK");
-
+  LOG_DEBUG("Uninitializing JACK.\n");
   assert(mixer_ctx_ptr->jack_client != NULL);
-
   jack_client_close(mixer_ctx_ptr->jack_client);
-
   pthread_mutex_destroy(&mixer_ctx_ptr->mutex);
-
   free(mixer_ctx_ptr);
 }
 
@@ -1662,12 +1730,11 @@ get_last_midi_cc(
   return mixer_ctx_ptr->last_midi_cc;
 }
 
-unsigned int
+void
 set_last_midi_cc(
   jack_mixer_t mixer,
   int8_t new_cc) {
   mixer_ctx_ptr->last_midi_cc = new_cc;
-  return 0;
 }
 
 int
@@ -1677,13 +1744,12 @@ get_midi_behavior_mode(
   return mixer_ctx_ptr->midi_behavior;
 }
 
-unsigned int
+void
 set_midi_behavior_mode(
   jack_mixer_t mixer,
   enum midi_behavior_mode mode)
 {
   mixer_ctx_ptr->midi_behavior = mode;
-  return 0;
 }
 
 jack_mixer_channel_t
@@ -1699,6 +1765,7 @@ add_channel(
   channel_ptr = malloc(sizeof(struct channel));
   if (channel_ptr == NULL)
   {
+    _jack_mixer_error = JACK_MIXER_ERROR_CHANNEL_MALLOC;
     goto fail;
   }
 
@@ -1707,6 +1774,7 @@ add_channel(
   channel_ptr->name = strdup(channel_name);
   if (channel_ptr->name == NULL)
   {
+    _jack_mixer_error = JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC;
     goto fail_free_channel;
   }
 
@@ -1717,7 +1785,8 @@ add_channel(
     port_name = malloc(channel_name_size + 3);
     if (port_name == NULL)
     {
-        goto fail_free_channel_name;
+      _jack_mixer_error = JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC;
+      goto fail_free_channel_name;
     }
 
     memcpy(port_name, channel_name, channel_name_size);
@@ -1728,7 +1797,8 @@ add_channel(
     channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     if (channel_ptr->port_left == NULL)
     {
-        goto fail_free_port_name;
+      _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_LEFT;
+      goto fail_free_port_name;
     }
 
     port_name[channel_name_size+1] = 'R';
@@ -1736,7 +1806,8 @@ add_channel(
     channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     if (channel_ptr->port_right == NULL)
     {
-        goto fail_unregister_left_channel;
+      _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_RIGHT;
+      goto fail_unregister_left_channel;
     }
   }
   else
@@ -1744,7 +1815,8 @@ add_channel(
     channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     if (channel_ptr->port_left == NULL)
     {
-        goto fail_free_channel_name;
+      _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER;
+      goto fail_free_channel_name;
     }
   }
 
@@ -1754,8 +1826,7 @@ add_channel(
   int fsize = jack_get_buffer_size(channel_ptr->mixer_ptr->jack_client);
 
   channel_ptr->volume_transition_seconds = VOLUME_TRANSITION_SECONDS;
-  channel_ptr->num_volume_transition_steps =
-    channel_ptr->volume_transition_seconds * sr + 1;
+  channel_ptr->num_volume_transition_steps = channel_ptr->volume_transition_seconds * sr + 1;
   channel_ptr->volume = 0.0;
   channel_ptr->volume_new = 0.0;
   channel_ptr->balance = 0.0;
@@ -1831,6 +1902,7 @@ create_output_channel(
   channel_ptr = (struct channel*)output_channel_ptr;
   if (channel_ptr == NULL)
   {
+    _jack_mixer_error = JACK_MIXER_ERROR_CHANNEL_MALLOC;
     goto fail;
   }
 
@@ -1839,6 +1911,7 @@ create_output_channel(
   channel_ptr->name = strdup(channel_name);
   if (channel_ptr->name == NULL)
   {
+    _jack_mixer_error = JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC;
     goto fail_free_channel;
   }
 
@@ -1849,7 +1922,8 @@ create_output_channel(
     port_name = malloc(channel_name_size + 4);
     if (port_name == NULL)
     {
-        goto fail_free_channel_name;
+      _jack_mixer_error = JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC;
+      goto fail_free_channel_name;
     }
 
     memcpy(port_name, channel_name, channel_name_size);
@@ -1860,7 +1934,8 @@ create_output_channel(
     channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
     if (channel_ptr->port_left == NULL)
     {
-        goto fail_free_port_name;
+      _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_LEFT;
+      goto fail_free_port_name;
     }
 
     port_name[channel_name_size+1] = 'R';
@@ -1868,7 +1943,8 @@ create_output_channel(
     channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
     if (channel_ptr->port_right == NULL)
     {
-        goto fail_unregister_left_channel;
+      _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_RIGHT;
+      goto fail_unregister_left_channel;
     }
   }
   else
@@ -1876,7 +1952,8 @@ create_output_channel(
     channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
     if (channel_ptr->port_left == NULL)
     {
-        goto fail_free_channel_name;
+      _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER;
+      goto fail_free_channel_name;
     }
   }
 
@@ -2107,7 +2184,6 @@ remove_output_channel(
   free(channel_ptr->frames_right);
   free(channel_ptr->prefader_frames_left);
   free(channel_ptr->prefader_frames_right);
-
   free(channel_ptr);
 }
 

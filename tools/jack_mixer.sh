@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if ! ls -a jack_mixer/_jack_mixer.*.so >/dev/null 2>&1 ; then
+if ! ls -a builddir/jack_mixer/_jack_mixer.*.so >/dev/null 2>&1 ; then
     echo "'_jack_mixer' extension module not found."
     echo "This script is meant to be run from a jack_mixer source directory"
     echo "Make sure that you have built jack_mixer with meson and created"
@@ -8,6 +8,6 @@ if ! ls -a jack_mixer/_jack_mixer.*.so >/dev/null 2>&1 ; then
     exit 1
 fi
 
-export PYTHONPATH=".:$PYTHONPATH"
+export PYTHONPATH=".:./builddir:$PYTHONPATH"
 export LOCALEDIR="data/locale"
 exec python -m jack_mixer "$@"

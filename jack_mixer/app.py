@@ -124,8 +124,10 @@ class JackMixer(SerializedObject):
 
         self.create_ui(with_nsm)
         self.window.set_title(client_name)
-
-        self.monitor_channel = self.mixer.add_output_channel(_("Monitor"), True, True)
+        # Port names, which are not user-settable are not marked as translatable,
+        # so they are the same regardless of the language setting of the environment
+        # in which a project is loaded.
+        self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
 
         GLib.timeout_add(33, self.read_meters)
         GLib.timeout_add(50, self.midi_events_check)
@@ -392,8 +394,11 @@ class JackMixer(SerializedObject):
         channel.connect("input-channel-order-changed", self.on_input_channel_order_changed)
 
     def add_direct_output(self, channel, name=None):
+        # Port names, which are not user-settable are not marked as translatable,
+        # so they are the same regardless of the language setting of the environment
+        # in which a project is loaded.
         if not name:
-            name = _("{channel_name} Out").format(channel_name=channel.channel_name)
+            name = "{channel_name} Out".format(channel_name=channel.channel_name)
         # create post fader output channel matching the input channel
         channel.post_fader_output_channel = self.mixer.add_output_channel(
             name, channel.channel.is_stereo, True

@@ -87,7 +87,7 @@ class Channel(Gtk.Box, SerializedObject):
         if self.channel:
             self.channel.name = name
         if self.post_fader_output_channel:
-            self.post_fader_output_channel.name = _("{channel_name} Out").format(channel_name=name)
+            self.post_fader_output_channel.name = "{channel_name} Out".format(channel_name=name)
 
     # ---------------------------------------------------------------------------------------------
     # UI creation and (de-)initialization

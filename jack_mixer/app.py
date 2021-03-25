@@ -1090,15 +1090,16 @@ class JackMixer(SerializedObject):
         Gtk.main()
 
 
-def error_dialog(parent, msg, *args):
-    log.exception(msg, *args)
+def error_dialog(parent, msg, *args, **kw):
+    if kw.get('debug'):
+        log.exception(msg.format(*args))
     err = Gtk.MessageDialog(
         parent=parent,
         modal=True,
         destroy_with_parent=True,
         message_type=Gtk.MessageType.ERROR,
         buttons=Gtk.ButtonsType.OK,
-        text=msg.format(args),
+        text=msg.format(*args),
     )
     err.run()
     err.destroy()
@@ -1135,7 +1136,7 @@ def main():
     try:
         mixer = JackMixer(args.client_name)
     except Exception as e:
-        error_dialog(None, _("Mixer creation failed:\n\n{}"), e)
+        error_dialog(None, _("Mixer creation failed:\n\n{}"), e, debug=args.debug)
         sys.exit(1)
 
     if not mixer.nsm_client and args.config:

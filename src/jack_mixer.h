@@ -20,8 +20,8 @@
  *
  *****************************************************************************/
 
-#ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
-#define JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
+#ifndef _JACK_MIXER_H
+#define _JACK_MIXER_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -353,4 +353,4 @@ output_channel_is_in_prefader(
   jack_mixer_output_channel_t output_channel,
   jack_mixer_channel_t channel);
 
-#endif /* #ifndef JACK_MIXER_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */
+#endif /* #ifndef _JACK_MIXER_H */

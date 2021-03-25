@@ -18,8 +18,8 @@
  *
  *****************************************************************************/
 
-#ifndef LOG_H__7097F6FE_4FEE_4962_9542_60375961F567__INCLUDED
-#define LOG_H__7097F6FE_4FEE_4962_9542_60375961F567__INCLUDED
+#ifndef _LOG_H
+#define _LOG_H
 
 void jack_mixer_log(int level, const char * format, ...);
 
@@ -78,9 +78,9 @@ void jack_mixer_log(int level, const char * format, ...);
 #if LOG_LEVEL <= LOG_LEVEL_FATAL
 # define LOG_FATAL(format, ...)              \
   jack_mixer_log(LOG_LEVEL_FATAL,               \
-                 format "\n", ## __VA_ARGS__)
+                 format, ## __VA_ARGS__)
 #else
 # define LOG_FATAL(format, ...)
 #endif
 
-#endif /* #ifndef LOG_H__7097F6FE_4FEE_4962_9542_60375961F567__INCLUDED */
+#endif /* #ifndef _LOG_H */

@@ -20,8 +20,8 @@
  *
  *****************************************************************************/
 
-#ifndef JACK_SCALE_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
-#define JACK_SCALE_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED
+#ifndef _SCALE_H
+#define _SCALE_H
 
 typedef void * jack_mixer_scale_t;
 
@@ -56,4 +56,4 @@ void
 scale_destroy(
   jack_mixer_scale_t scale);
 
-#endif /* #ifndef JACK_SCALE_H__DAEB51D8_5861_40F2_92E4_24CA495A384D__INCLUDED */
+#endif /* #ifndef _SCALE_H */

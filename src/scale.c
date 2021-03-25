@@ -2,9 +2,9 @@
 /*****************************************************************************
  *
  *   This file is part of jack_mixer
- *    
+ *
  *   Copyright (C) 2006 Nedko Arnaudov <nedko@arnaudov.name>
- *    
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; version 2 of the License
@@ -26,7 +26,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "jack_mixer.h"
+#include "scale.h"
 //#define LOG_LEVEL LOG_LEVEL_DEBUG
 #include "log.h"
 #include "list.h"
@@ -75,11 +75,11 @@ scale_destroy(
   free(scale_ptr);
 }
 
-void 
+void
 scale_remove_thresholds(
   jack_mixer_scale_t scale)
 {
-  
+
   struct threshold * threshold_ptr;
   struct threshold * node_ptr;
 

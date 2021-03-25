@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: jack_mixer 15.1\n"
 "Report-Msgid-Bugs-To: https://github.com/jack-mixer/jack_mixer/issues\n"
-"POT-Creation-Date: 2021-03-20 14:48+0100\n"
+"POT-Creation-Date: 2021-03-25 13:13+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: jack_mixer/app.py:48 jack_mixer/app.py:47 jack_mixer/app.py:49
+#: jack_mixer/app.py:49
 msgid ""
 "jack_mixer is free software; you can redistribute it and/or modify it\n"
 "under the terms of the GNU General Public License as published by the\n"
@@ -35,141 +35,133 @@ msgid ""
 "Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA\n"
 msgstr ""
 
-#: jack_mixer/app.py:118 jack_mixer/app.py:121 jack_mixer/app.py:122
+#: jack_mixer/app.py:123
 msgid "Failed to create Mixer instance."
 msgstr ""
 
-# Don't translate this unless you want the monitor JACK output port name to be localized
-#: jack_mixer/app.py:123 jack_mixer/app.py:126 jack_mixer/app.py:127
-msgid "Monitor"
-msgstr ""
-
-#: jack_mixer/app.py:165 jack_mixer/app.py:168 jack_mixer/app.py:169
+#: jack_mixer/app.py:172
 msgid "jack_mixer XML files"
 msgstr ""
 
-#: jack_mixer/app.py:178 jack_mixer/app.py:181 jack_mixer/app.py:182
+#: jack_mixer/app.py:185
 msgid "_Recent Projects"
 msgstr ""
 
-#: jack_mixer/app.py:212 jack_mixer/app.py:215 jack_mixer/app.py:216
+#: jack_mixer/app.py:219
 msgid "_Mixer"
 msgstr ""
 
-#: jack_mixer/app.py:214 jack_mixer/app.py:217 jack_mixer/app.py:218
+#: jack_mixer/app.py:221
 msgid "_Edit"
 msgstr ""
 
-#: jack_mixer/app.py:216 jack_mixer/app.py:219 jack_mixer/app.py:220
+#: jack_mixer/app.py:223
 msgid "_Help"
 msgstr ""
 
-#: jack_mixer/app.py:224 jack_mixer/app.py:227 jack_mixer/app.py:228
+#: jack_mixer/app.py:231
 msgid "New _Input Channel"
 msgstr ""
 
-#: jack_mixer/app.py:228 jack_mixer/app.py:231 jack_mixer/app.py:232
+#: jack_mixer/app.py:235
 msgid "New Output _Channel"
 msgstr ""
 
-#: jack_mixer/app.py:235 jack_mixer/app.py:238 jack_mixer/app.py:239
+#: jack_mixer/app.py:242
 msgid "_Open..."
 msgstr ""
 
-#: jack_mixer/app.py:241 jack_mixer/app.py:244 jack_mixer/app.py:245
+#: jack_mixer/app.py:248
 msgid "_Save"
 msgstr ""
 
-#: jack_mixer/app.py:245 jack_mixer/app.py:248 jack_mixer/app.py:249
+#: jack_mixer/app.py:252
 msgid "Save _As..."
 msgstr ""
 
-#: jack_mixer/app.py:250 jack_mixer/app.py:253 jack_mixer/app.py:254
+#: jack_mixer/app.py:257
 msgid "_Hide"
 msgstr ""
 
-#: jack_mixer/app.py:252 jack_mixer/app.py:255 jack_mixer/app.py:256
+#: jack_mixer/app.py:259
 msgid "_Quit"
 msgstr ""
 
-#: jack_mixer/app.py:259 jack_mixer/app.py:262 jack_mixer/app.py:263
+#: jack_mixer/app.py:266
 msgid "_Edit Input Channel"
 msgstr ""
 
-#: jack_mixer/app.py:266 jack_mixer/app.py:269 jack_mixer/app.py:270
+#: jack_mixer/app.py:273
 msgid "E_dit Output Channel"
 msgstr ""
 
-#: jack_mixer/app.py:273 jack_mixer/app.py:276 jack_mixer/app.py:277
+#: jack_mixer/app.py:280
 msgid "_Remove Input Channel"
 msgstr ""
 
-#: jack_mixer/app.py:280 jack_mixer/app.py:283 jack_mixer/app.py:284
+#: jack_mixer/app.py:287
 msgid "Re_move Output Channel"
 msgstr ""
 
-#: jack_mixer/app.py:288 jack_mixer/app.py:291 jack_mixer/app.py:292
+#: jack_mixer/app.py:295
 msgid "Shrink Channels"
 msgstr ""
 
-#: jack_mixer/app.py:291 jack_mixer/app.py:294 jack_mixer/app.py:295
+#: jack_mixer/app.py:298
 msgid "Expand Channels"
 msgstr ""
 
-#: jack_mixer/app.py:295 jack_mixer/app.py:298 jack_mixer/app.py:299
+#: jack_mixer/app.py:302
 msgid "_Clear"
 msgstr ""
 
-#: jack_mixer/app.py:300 jack_mixer/app.py:303 jack_mixer/app.py:304
+#: jack_mixer/app.py:307
 msgid "_Preferences"
 msgstr ""
 
-#: jack_mixer/app.py:307 jack_mixer/app.py:310 jack_mixer/app.py:311
+#: jack_mixer/app.py:314
 msgid "_About"
 msgstr ""
 
-#: jack_mixer/app.py:357 jack_mixer/app.py:360 jack_mixer/app.py:361
+#: jack_mixer/app.py:364
 msgid "Input channel creation failed."
 msgstr ""
 
-#: jack_mixer/app.py:416 jack_mixer/app.py:419 jack_mixer/app.py:420
+#: jack_mixer/app.py:426
 msgid "Output channel creation failed."
 msgstr ""
 
-#: jack_mixer/app.py:475 jack_mixer/app.py:557 jack_mixer/app.py:1138
-#: jack_mixer/app.py:478 jack_mixer/app.py:560 jack_mixer/app.py:1144
-#: jack_mixer/app.py:479 jack_mixer/app.py:561 jack_mixer/app.py:1145
+#: jack_mixer/app.py:485 jack_mixer/app.py:567 jack_mixer/app.py:1151
 #, python-brace-format
 msgid "Error loading project file '{filename}': {msg}"
 msgstr ""
 
-#: jack_mixer/app.py:542 jack_mixer/app.py:545 jack_mixer/app.py:546
+#: jack_mixer/app.py:552
 msgid "XML files"
 msgstr ""
 
-#: jack_mixer/app.py:546 jack_mixer/app.py:549 jack_mixer/app.py:550
+#: jack_mixer/app.py:556
 msgid "All files"
 msgstr ""
 
-#: jack_mixer/app.py:567 jack_mixer/app.py:570 jack_mixer/app.py:571
+#: jack_mixer/app.py:577
 msgid "Open project"
 msgstr ""
 
-#: jack_mixer/app.py:615 jack_mixer/app.py:658 jack_mixer/app.py:618
-#: jack_mixer/app.py:661 jack_mixer/app.py:619 jack_mixer/app.py:662
+#: jack_mixer/app.py:625 jack_mixer/app.py:668
 #, python-brace-format
 msgid "Error saving project file '{filename}': {msg}"
 msgstr ""
 
-#: jack_mixer/app.py:622 jack_mixer/app.py:625 jack_mixer/app.py:626
+#: jack_mixer/app.py:632
 msgid "Save project"
 msgstr ""
 
-#: jack_mixer/app.py:675 jack_mixer/app.py:678 jack_mixer/app.py:679
+#: jack_mixer/app.py:685
 msgid "<b>Quit application?</b>"
 msgstr ""
 
-#: jack_mixer/app.py:678 jack_mixer/app.py:681 jack_mixer/app.py:682
+#: jack_mixer/app.py:688
 msgid ""
 "All jack_mixer ports will be closed and connections lost,\n"
 "stopping all sound going through jack_mixer.\n"
@@ -177,36 +169,33 @@ msgid ""
 "Are you sure?"
 msgstr ""
 
-# Don't translate this unless you want default channel names to be localized
-#: jack_mixer/app.py:743 jack_mixer/app.py:746 jack_mixer/app.py:747
+#: jack_mixer/app.py:753
 msgid "Input"
 msgstr ""
 
-# Don't translate this unless you want default channel names to be localized
-#: jack_mixer/app.py:746 jack_mixer/app.py:749 jack_mixer/app.py:750
+#: jack_mixer/app.py:756
 msgid "Output"
 msgstr ""
 
-#: jack_mixer/app.py:874 jack_mixer/app.py:877 jack_mixer/app.py:878
+#: jack_mixer/app.py:884
 msgid "Are you sure you want to clear all channels?"
 msgstr ""
 
-#: jack_mixer/app.py:1103 jack_mixer/app.py:1109 jack_mixer/app.py:1110
+#: jack_mixer/app.py:1116
 msgid "load mixer project configuration from FILE"
 msgstr ""
 
-#: jack_mixer/app.py:1110 jack_mixer/app.py:1116 jack_mixer/app.py:1117
+#: jack_mixer/app.py:1123
 msgid "enable debug logging messages"
 msgstr ""
 
-#: jack_mixer/app.py:1128 jack_mixer/app.py:1134 jack_mixer/app.py:1135
+#: jack_mixer/app.py:1141
 msgid ""
 "Mixer creation failed:\n"
 "\n"
 "{}"
 msgstr ""
 
-# Don't translate this unless you want JACK output port names to be localized
 #: jack_mixer/channel.py:90
 #, python-brace-format
 msgid "{channel_name} Out"
@@ -475,20 +464,20 @@ msgstr ""
 msgid "Left: {left} / Right: {right}"
 msgstr ""
 
-#: jack_mixer/app.py:1103 jack_mixer/app.py:1108 jack_mixer/app.py:1109
+#: jack_mixer/app.py:1115
 msgid "FILE"
 msgstr ""
 
-#: jack_mixer/app.py:1114 jack_mixer/app.py:1120 jack_mixer/app.py:1121
+#: jack_mixer/app.py:1127
 msgid "NAME"
 msgstr ""
 
-#: jack_mixer/app.py:46 jack_mixer/app.py:48
+#: jack_mixer/app.py:48
 msgid ""
 "A multi-channel audio mixer application for the JACK Audio Connection Kit."
 msgstr ""
 
-#: jack_mixer/app.py:1123 jack_mixer/app.py:1124
+#: jack_mixer/app.py:1130
 #, python-format
 msgid "set JACK client name (default: %(default)s)"
 msgstr ""

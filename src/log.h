@@ -29,7 +29,7 @@ void jack_mixer_log(int level, const char * format, ...);
 #define LOG_LEVEL_NOTICE     3
 #define LOG_LEVEL_ERROR      4
 #define LOG_LEVEL_FATAL      5
-#define LOG_LEVEL_BLACK_HOLE 6      
+#define LOG_LEVEL_BLACK_HOLE 6
 
 #if !defined(LOG_LEVEL)
 #define LOG_LEVEL LOG_LEVEL_WARNING
@@ -38,7 +38,7 @@ void jack_mixer_log(int level, const char * format, ...);
 #if LOG_LEVEL <= LOG_LEVEL_DEBUG
 # define LOG_DEBUG(format, ...)              \
   jack_mixer_log(LOG_LEVEL_DEBUG,               \
-                 format "\n", ## __VA_ARGS__)
+                 format, ## __VA_ARGS__)
 #else
 # define LOG_DEBUG(format, ...)
 #endif
@@ -46,7 +46,7 @@ void jack_mixer_log(int level, const char * format, ...);
 #if LOG_LEVEL <= LOG_LEVEL_INFO
 # define LOG_INFO(format, ...)               \
   jack_mixer_log(LOG_LEVEL_INFO,                \
-                 format "\n", ## __VA_ARGS__)
+                 format, ## __VA_ARGS__)
 #else
 # define LOG_INFO(format, ...)
 #endif
@@ -54,7 +54,7 @@ void jack_mixer_log(int level, const char * format, ...);
 #if LOG_LEVEL <= LOG_LEVEL_WARNING
 # define LOG_WARNING(format, ...)            \
   jack_mixer_log(LOG_LEVEL_WARNING,             \
-                 format "\n", ## __VA_ARGS__)
+                 format, ## __VA_ARGS__)
 #else
 # define LOG_WARNING(format, ...)
 #endif
@@ -62,7 +62,7 @@ void jack_mixer_log(int level, const char * format, ...);
 #if LOG_LEVEL <= LOG_LEVEL_NOTICE
 # define LOG_NOTICE(format, ...)             \
   jack_mixer_log(LOG_LEVEL_NOTICE,              \
-                 format "\n", ## __VA_ARGS__)
+                 format, ## __VA_ARGS__)
 #else
 # define LOG_NOTICE(format, ...)
 #endif
@@ -70,7 +70,7 @@ void jack_mixer_log(int level, const char * format, ...);
 #if LOG_LEVEL <= LOG_LEVEL_ERROR
 # define LOG_ERROR(format, ...)              \
   jack_mixer_log(LOG_LEVEL_ERROR,               \
-                 format "\n", ## __VA_ARGS__)
+                 format, ## __VA_ARGS__)
 #else
 # define LOG_ERROR(format, ...)
 #endif

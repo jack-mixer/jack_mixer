@@ -187,8 +187,8 @@ class PreferencesDialog(Gtk.Dialog):
                 self.project_path_chooser.set_current_folder(fullpath)
                 self.app.gui_factory.set_default_project_path(path)
 
-    def on_project_path_selected(self, *args):
-        path = self.project_path_chooser.get_current_folder()
+    def on_project_path_selected(self, path_chooser):
+        path = path_chooser.get_filename()
         self.path_entry.set_text(path)
         self.app.gui_factory.set_default_project_path(path)
 

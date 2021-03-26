@@ -393,10 +393,10 @@ msgid "Cannot load PyXDG. "
 msgstr "Kann PyXDG nicht laden. "
 
 #: jack_mixer/gui.py:64
-msgid "Your preferences will not be preserved across jack_mixer invocations"
+msgid "Your preferences will not be preserved across jack_mixer invocations."
 msgstr ""
 "Ihre globalen Einstellungen bleiben nicht erhalten wenn jack_mixer beendet "
-"wird"
+"wird."
 
 #: jack_mixer/preferences.py:30
 msgid "Preferences"

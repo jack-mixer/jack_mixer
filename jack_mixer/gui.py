@@ -61,7 +61,7 @@ class Factory(GObject.GObject, SerializedObject):
         else:
             log.warning(
                 _("Cannot load PyXDG. ")
-                + _("Your preferences will not be preserved across jack_mixer invocations")
+                + _("Your preferences will not be preserved across jack_mixer invocations.")
             )
 
     def set_default_preferences(self):

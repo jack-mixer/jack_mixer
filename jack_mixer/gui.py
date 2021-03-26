@@ -124,61 +124,47 @@ class Factory(GObject.GObject, SerializedObject):
             self.config.write(configfile)
             configfile.close()
 
+    def _update_setting(self, name, value):
+        if value != getattr(self, name):
+            setattr(self, name, value)
+            if xdg:
+                self.write_preferences()
+            signal = "{}-changed".format(name.replace('_', '-'))
+            self.emit(signal, value)
+
     def set_confirm_quit(self, confirm_quit):
-        self.confirm_quit = confirm_quit
-        if xdg:
-            self.write_preferences()
-        self.emit("confirm-quit-changed", self.confirm_quit)
+        self._update_setting("confirm_quit", confirm_quit)
 
     def set_default_meter_scale(self, scale):
         if scale:
-            self.default_meter_scale = scale
-            if xdg:
-                self.write_preferences()
-            self.emit("default-meter-scale-changed", self.default_meter_scale)
+            self._update_setting("default_meter_scale", scale)
         else:
             log.warning(
                 _("Ignoring default_meter_scale setting, because '%s' scale is not known."), scale
             )
 
     def set_default_project_path(self, path):
-        self.default_project_path = path
-        if xdg:
-            self.write_preferences()
-        self.emit("default-project-path-changed", self.default_project_path)
+        self._update_setting("default_project_path", path)
 
     def set_default_slider_scale(self, scale):
         if scale:
-            self.default_slider_scale = scale
-            if xdg:
-                self.write_preferences()
-            self.emit("default-slider-scale-changed", self.default_slider_scale)
+            self._update_setting("default_slider_scale", scale)
         else:
             log.warning(
                 _("Ignoring default_slider_scale setting, because '%s' scale is not known."), scale
             )
 
     def set_midi_behavior_mode(self, mode):
-        self.midi_behavior_mode = int(mode)
-        self.emit_midi_behavior_mode()
+        self._update_setting("midi_behavior_mode", int(mode))
 
     def set_use_custom_widgets(self, use_custom):
-        self.use_custom_widgets = use_custom
-        if xdg:
-            self.write_preferences()
-        self.emit("use-custom-widgets-changed", self.use_custom_widgets)
+        self._update_setting("use_custom_widgets", use_custom)
 
     def set_vumeter_color(self, color):
-        self.vumeter_color = color
-        if xdg:
-            self.write_preferences()
-        self.emit("vumeter-color-changed", self.vumeter_color)
+        self._update_setting("vumeter_color", color)
 
     def set_vumeter_color_scheme(self, color_scheme):
-        self.vumeter_color_scheme = color_scheme
-        if xdg:
-            self.write_preferences()
-        self.emit("vumeter-color-scheme-changed", self.vumeter_color_scheme)
+        self._update_setting("vumeter_color_scheme", color_scheme)
 
     def get_confirm_quit(self):
         return self.confirm_quit

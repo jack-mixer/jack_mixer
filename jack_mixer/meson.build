@@ -1,15 +1,15 @@
 # https://mesonbuild.com/Python-module.html
 
-c_args = []
+defines = ['-DLOCALEDIR="@0@"'.format(join_paths(get_option('prefix'), get_option('localedir')))]
 
 if get_option('jack-midi').enabled()
-    c_args += ['-DHAVE_JACK_MIDI']
+    defines += ['-DHAVE_JACK_MIDI']
 endif
 
 if get_option('verbose')
-    c_args += ['-DLOG_LEVEL=0']
+    defines += ['-DLOG_LEVEL=0']
 else
-    c_args += ['-DLOG_LEVEL=2']
+    defines += ['-DLOG_LEVEL=2']
 endif
 
 
@@ -24,7 +24,7 @@ module = python.extension_module(
         math_dep,
     ],
     include_directories: jack_mixer_inc,
-    c_args: c_args,
+    c_args: defines,
     install: true,
     subdir: 'jack_mixer',
 )

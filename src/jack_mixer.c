@@ -27,6 +27,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <libintl.h>
+#include <locale.h>
 #include <jack/jack.h>
 #if defined(HAVE_JACK_MIDI)
 #include <jack/midiport.h>
@@ -38,6 +40,8 @@
 
 #include "jack_mixer.h"
 #include "log.h"
+
+#define _(String) String
 
 struct kmeter {
   float _z1;        // filter state
@@ -205,39 +209,39 @@ interpolate(
 
 const char* const _jack_mixer_error_str[] = {
   /* JACK_MIXER_NO_ERROR */
-  "No error.\n",
+  _("No error.\n"),
   /* JACK_MIXER_ERROR_JACK_CLIENT_CREATE */
-  "Could not create JACK client.\nPlease make sure JACK daemon is running.\n",
+  _("Could not create JACK client.\nPlease make sure JACK daemon is running.\n"),
   /* JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE */
-  "Could not create JACK MIDI in port.\n",
+  _("Could not create JACK MIDI in port.\n"),
   /* JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE */
-  "Could not create JACK MIDI out port.\n",
+  _("Could not create JACK MIDI out port.\n"),
   /* JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK */
-  "Could not set JACK process callback.\n",
+  _("Could not set JACK process callback.\n"),
   /* JACK_MIXER_ERROR_JACK_ACTIVATE */
-  "Could not activate JACK client.\n",
+  _("Could not activate JACK client.\n"),
   /* JACK_MIXER_ERROR_CHANNEL_MALLOC */
-  "Could not allocate memory for channel.\n",
+  _("Could not allocate memory for channel.\n"),
   /* JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC */
-  "Could not allocate memory for channel name.\n",
+  _("Could not allocate memory for channel name.\n"),
   /* JACK_MIXER_ERROR_PORT_REGISTER */
-  "Could not register JACK port for channel.\n",
+  _("Could not register JACK port for channel.\n"),
   /* JACK_MIXER_ERROR_PORT_REGISTER_LEFT */
-  "Could not register JACK port for left channel.\n",
+  _("Could not register JACK port for left channel.\n"),
   /* JACK_MIXER_ERROR_PORT_REGISTER_RIGHT */
-  "Could not register JACK port for right channel.\n",
+  _("Could not register JACK port for right channel.\n"),
   /* JACK_MIXER_ERROR_JACK_RENAME_PORT */
-  "Could not rename JACK port for channel.\n",
+  _("Could not rename JACK port for channel.\n"),
   /* JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT */
-  "Coudl not rename JACK port for left channel.\n",
+  _("Could not rename JACK port for left channel.\n"),
   /* JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT */
-  "Coudl not rename JACK port for right channel.\n"
+  _("Could not rename JACK port for right channel.\n"),
   /* JACK_MIXER_ERROR_PORT_NAME_MALLOC */
-  "Could not allocate memory for port name.\n"
+  _("Could not allocate memory for port name.\n"),
   /* JACK_MIXER_ERROR_INVALID_CC */
-  "Control Change number out of range.\n",
+  _("Control Change number out of range.\n"),
   /* JACK_MIXER_ERROR_NO_FREE_CC */
-  "No free Control Change number.\n"
+  _("No free Control Change number.\n")
 };
 
 jack_mixer_error_t _jack_mixer_error = JACK_MIXER_NO_ERROR;
@@ -262,7 +266,7 @@ jack_mixer_error_str()
     goto done;
   }
 
-  err_str = _jack_mixer_error_str[_jack_mixer_error];
+  err_str = gettext(_jack_mixer_error_str[_jack_mixer_error]);
 
 done:
   return err_str;
@@ -741,7 +745,8 @@ channels_volumes_read(
     {
         pChannel = (struct channel *)node_ptr->data;
         double vol = channel_volume_read( (jack_mixer_channel_t)pChannel);
-        printf("%s : volume is %f dbFS for mixer channel: %s\n", jack_get_client_name(pMixer->jack_client), vol, pChannel->name);
+        printf(gettext("%s: volume is %f dbFS for mixer channel: %s\n"),
+               jack_get_client_name(pMixer->jack_client), vol, pChannel->name);
     }
 }
 
@@ -1609,7 +1614,12 @@ create(
   int ret;
   struct jack_mixer * mixer_ptr;
   int i;
+  char * localedir;
 
+  localedir = getenv("LOCALEDIR");
+  setlocale(LC_ALL, "");
+  bindtextdomain("jack_mixer", localedir != NULL ? localedir : LOCALEDIR);
+  textdomain("jack_mixer");
 
   mixer_ptr = malloc(sizeof(struct jack_mixer));
   if (mixer_ptr == NULL)
@@ -1646,18 +1656,20 @@ create(
   }
 
   LOG_DEBUG("JACK client created.\n");
-  LOG_DEBUG("Sample rate: %\n" PRIu32, jack_get_sample_rate(mixer_ptr->jack_client));
+  LOG_DEBUG("Sample rate: %u\n", jack_get_sample_rate(mixer_ptr->jack_client));
 
 
 #if defined(HAVE_JACK_MIDI)
-  mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+  mixer_ptr->port_midi_in = jack_port_register(mixer_ptr->jack_client, "midi in",
+                                               JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
   if (mixer_ptr->port_midi_in == NULL)
   {
     _jack_mixer_error = JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE;
     goto close_jack;
   }
 
-  mixer_ptr->port_midi_out = jack_port_register(mixer_ptr->jack_client, "midi out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+  mixer_ptr->port_midi_out = jack_port_register(mixer_ptr->jack_client, "midi out",
+                                                JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
   if (mixer_ptr->port_midi_out == NULL)
   {
     _jack_mixer_error = JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE;
@@ -1683,7 +1695,8 @@ create(
   return mixer_ptr;
 
 close_jack:
-  jack_client_close(mixer_ptr->jack_client); /* this should clear all other resources we obtained through the client handle */
+  /* this should clear all other resources we obtained through the client handle */
+  jack_client_close(mixer_ptr->jack_client);
 
 exit_destroy_mutex:
   pthread_mutex_destroy(&mixer_ptr->mutex);
@@ -1794,7 +1807,8 @@ add_channel(
     port_name[channel_name_size+1] = 'L';
     port_name[channel_name_size+2] = 0;
 
-    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name,
+                                                JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     if (channel_ptr->port_left == NULL)
     {
       _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_LEFT;
@@ -1803,7 +1817,8 @@ add_channel(
 
     port_name[channel_name_size+1] = 'R';
 
-    channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name,
+                                                 JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     if (channel_ptr->port_right == NULL)
     {
       _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_RIGHT;
@@ -1812,7 +1827,8 @@ add_channel(
   }
   else
   {
-    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name,
+                                                JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     if (channel_ptr->port_left == NULL)
     {
       _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER;
@@ -1931,7 +1947,8 @@ create_output_channel(
     port_name[channel_name_size+1] = 'L';
     port_name[channel_name_size+2] = 0;
 
-    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name,
+                                                JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
     if (channel_ptr->port_left == NULL)
     {
       _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_LEFT;
@@ -1940,7 +1957,8 @@ create_output_channel(
 
     port_name[channel_name_size+1] = 'R';
 
-    channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+    channel_ptr->port_right = jack_port_register(channel_ptr->mixer_ptr->jack_client, port_name,
+                                                 JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
     if (channel_ptr->port_right == NULL)
     {
       _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER_RIGHT;
@@ -1949,7 +1967,8 @@ create_output_channel(
   }
   else
   {
-    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+    channel_ptr->port_left = jack_port_register(channel_ptr->mixer_ptr->jack_client, channel_name,
+                                                JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
     if (channel_ptr->port_left == NULL)
     {
       _jack_mixer_error = JACK_MIXER_ERROR_PORT_REGISTER;

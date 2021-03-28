@@ -8,6 +8,12 @@ jack_mixer_inc = include_directories('.')
 
 
 # Build 'jack_mix_box' command line program
+defines = ['-DLOCALEDIR="@0@"'.format(join_paths(get_option('prefix'), get_option('localedir')))]
+
+if get_option('jack-midi').enabled()
+    defines += ['-DHAVE_JACK_MIDI']
+endif
+
 executable(
     'jack_mix_box',
     ['jack_mix_box.c', jack_mixer_sources],
@@ -17,7 +23,7 @@ executable(
         math_dep
     ],
     include_directories: jack_mixer_inc,
-    c_args: get_option('jack-midi').enabled() ? '-DHAVE_JACK_MIDI' : [],
+    c_args: defines,
     install: true,
 )
 

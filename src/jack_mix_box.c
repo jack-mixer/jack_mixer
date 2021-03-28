@@ -31,10 +31,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <libintl.h>
+#include <locale.h>
 #include <getopt.h>
 #include <signal.h>
 #include <unistd.h>
 #include "jack_mixer.h"
+
+#define _(String) gettext(String)
 
 jack_mixer_t mixer;
 bool keepRunning = true;
@@ -42,20 +46,23 @@ bool keepRunning = true;
 void
 usage()
 {
-	printf("Usage: ");
-	printf("jack_mix_box [-n <name>] [-p] [-s] [-v <dB>] MIDI_CC...\n");
-	printf("\n");
-	printf("-h|--help\tprint this help message\n");
-	printf("-n|--name\tset JACK client name\n");
-	printf("-p|--pickup\tenable MIDI pickup mode (default: jump-to-value)\n");
-	printf("-s|--stereo\tmake all input channels stereo with left+right input\n");
-	printf("-v|--volume\tinitial volume gain in dB, default is 0.0 (i.e. unity gain)\n");
-	printf("\n");
-	printf("Each positional argument is interpreted as a MIDI Control Change number and adds\n");
-	printf("a mixer channel with one (mono) or left+right (stereo) inputs, whose volume can\n");
-	printf("be controlled via the given MIDI Control Change.\n");
-	printf("\n");
-	printf("Send SIGUSR1 to the process to have the current volumes reported per input channel.\n\n");
+	const char* _usage = _(
+"Usage: "
+"jack_mix_box [-n <name>] [-p] [-s] [-v <dB>] MIDI_CC...\n"
+"\n"
+"-h|--help    print this help message\n"
+"-n|--name    set JACK client name\n"
+"-p|--pickup  enable MIDI pickup mode (default: jump-to-value)\n"
+"-s|--stereo  make all input channels stereo with left+right input\n"
+"-v|--volume  initial volume gain in dBFS (default 0.0, i.e. unity gain)\n"
+"\n"
+"Each positional argument is interpreted as a MIDI Control Change number and\n"
+"adds a mixer channel with one (mono) or left+right (stereo) inputs, whose\n"
+"volume can be controlled via the given MIDI Control Change.\n"
+"\n"
+"Send SIGUSR1 to the process to have the current volumes reported per input\n"
+"channel.\n\n");
+	printf(_usage);
 }
 
 void
@@ -82,6 +89,12 @@ main(int argc, char *argv[])
 	bool bStereo = false;
 	enum midi_behavior_mode ePickup = Jump_To_Value;
 	double initialVolume = 0.0f; //in dbFS
+	char * localedir;
+
+	localedir = getenv("LOCALEDIR");
+	setlocale(LC_ALL, "");
+	bindtextdomain("jack_mixer", localedir != NULL ? localedir : LOCALEDIR);
+	textdomain("jack_mixer");
 
 	while (1) {
 		int c;
@@ -118,13 +131,13 @@ main(int argc, char *argv[])
 				ePickup = Pick_Up;
 				break;
 			default:
-				fprintf(stderr, "Unknown argument, aborting.\n");
+				fprintf(stderr, _("Unknown argument, aborting.\n"));
 				exit(1);
 		}
 	}
 
 	if (optind == argc) {
-		fprintf(stderr, "You must specify at least one input channel\n");
+		fprintf(stderr, _("You must specify at least one input channel.\n"));
 		exit(1);
 	}
 
@@ -138,6 +151,10 @@ main(int argc, char *argv[])
 	}
 
 	mixer = create(jack_cli_name, false);
+	if (mixer == NULL) {
+		fprintf(stderr, jack_mixer_error_str());
+		return -1;
+	}
 	main_mix_channel = add_output_channel(mixer, "MAIN", true, false);
 	channel_set_midi_scale(main_mix_channel, scale);
 	channel_volume_write(main_mix_channel, 0.0);
@@ -156,7 +173,7 @@ main(int argc, char *argv[])
 		}
 		channel = add_channel(mixer, channel_name, bStereo);
 		if (channel == NULL) {
-			fprintf(stderr, "Failed to add channel %d, aborting\n", channel_index);
+			fprintf(stderr, _("Failed to add channel %d, aborting.\n"), channel_index);
 			exit(1);
 		}
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));

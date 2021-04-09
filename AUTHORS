@@ -1,10 +1,8 @@
-Current Maintainer
-==================
+# Current Maintainer
 
 Frédéric Péters <fpeters@0d.be>
 
-Authors
-=======
+# Authors
 
 * Nedko Arnaudov <nedko@arnaudov.name> (original author)
 * Christopher Arndt <chris@chrisarndt.de>
@@ -16,7 +14,20 @@ Authors
 * Daniel Sheeler <dsheeler@pobox.com>
 * Athanasios Silis <athanasios.silis@gmail.com>
 
-Artwork
-=======
+
+# Translation
+
+
+## French
+
+* Olivier Humbert <trebmuh@tuxfamily.org>
+
+
+## German
+
+* Christopher Arndt <chris@chrisarndt.de>
+
+
+# Artwork
 
 The jack_mixer application icon has been created by Lapo Calamandrei.

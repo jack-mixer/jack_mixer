@@ -4,7 +4,7 @@
 PyNSMClient -  A New Session Manager Client-Library in one file.
 
 The Non-Session-Manager by Jonathan Moore Liles <male@tuxfamily.org>: http://non.tuxfamily.org/nsm/
-New Session Manager, by LinuxAudio.org: https://github.com/linuxaudio/new-session-manager
+New Session Manager, by LinuxAudio.org: https://new-session-manager.jackaudio.org/
 With help from code fragments from https://github.com/attwad/python-osc ( DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE v2 )
 
 MIT License

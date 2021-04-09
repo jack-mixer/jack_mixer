@@ -122,7 +122,7 @@ The wheel can be installed with `pip install jack_mixer-*.whl`.
 [JACK]: https://jackaudio.org/
 [meson]: https://mesonbuild.com/
 [ninja]: https://ninja-build.org/
-[NSM]: https://github.com/linuxaudio/new-session-manager
+[NSM]: https://new-session-manager.jackaudio.org/
 [options]: https://mesonbuild.com/Build-options.html
 [pip]: https://pypi.org/project/pip/
 [pycairo]: https://pypi.org/project/pycairo/

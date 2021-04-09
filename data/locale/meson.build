@@ -7,7 +7,6 @@ if get_option('gui').enabled()
         po_file = target + '.po'
         mo_file = meson.project_name() + '.mo'
         msg_dir = join_paths(get_option('localedir'), lang, 'LC_MESSAGES')
-        dist_mo = join_paths('data', 'lang', 'LC_MESSAGES', mo_file)
 
         mo = configure_file(
             input: po_file,

@@ -34,14 +34,16 @@ to hardware mixing desks.
 OPTIONS
 =======
 
-positional arguments:
-  NAME                  set JACK client name
+Positional arguments:
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -c FILE, --config FILE
-                        load mixer project configuration from FILE
-  -d, --debug           enable debug logging messages
+    NAME                  set JACK client name
+
+Optional arguments:
+
+    -h, --help            show this help message and exit
+    -c FILE, --config FILE
+                          load mixer project configuration from FILE
+    -d, --debug           enable debug logging messages
 
 
 GUI USAGE
@@ -68,7 +70,7 @@ JACK AUDIO AND MIDI PORTS
 * For each input channel, **jack_mixer** will create one (if it is a mono
   channel) or two (stereo) JACK audio input ports. The input port(s) will be
   named like the input channel strip, if it is a mono channel, or with an " L"
-  resp. " R" suffix, it it is a stero channel.
+  resp. " R" suffix, it it is a stereo channel.
 
 * Optionally, for each input channel, it creates a direct, post-fader audio
   output port (mono) or pair of output ports (stereo). These are named the same

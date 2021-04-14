@@ -27,9 +27,9 @@ Features:
 
 Documentation:
 
-* A man page for *jack_mix_box* was added.
-* A new [contributing guide](.docs/CONTRIBUTING.md) was added to repository.
-* The section on environment variables in *jack_mixer* man page was updated
+* A man page for `jack_mix_box` was added.
+* A new [contributing guide](./docs/CONTRIBUTING.md) was added to repository.
+* The section on environment variables in `jack_mixer` man page was updated
   and enhanced.
 * The NSM project URL was updated in various documents.
 

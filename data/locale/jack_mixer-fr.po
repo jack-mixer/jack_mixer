@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: jack_mixer 15.1\n"
 "Report-Msgid-Bugs-To: https://github.com/jack-mixer/jack_mixer/issues\n"
-"POT-Creation-Date: 2021-03-28 17:28+0200\n"
+"POT-Creation-Date: 2021-04-14 17:19+0200\n"
 "PO-Revision-Date: 2021-04-08 13:30+0100\n"
 "Last-Translator: 2021 Olivier (trebmuh/olinuxx) Humbert <trebmuh@tuxfamily.org>\n"
 "Language-Team: French\n"
@@ -50,121 +50,121 @@ msgstr "fichiers XML jack_mixer"
 msgid "_Recent Projects"
 msgstr "Projets _récents"
 
-#: jack_mixer/app.py:216
+#: jack_mixer/app.py:218
 msgid "_Mixer"
 msgstr "_Mixeur"
 
-#: jack_mixer/app.py:218
+#: jack_mixer/app.py:220
 msgid "_Edit"
 msgstr "Modifi_er"
 
-#: jack_mixer/app.py:220
+#: jack_mixer/app.py:222
 msgid "_Help"
 msgstr "_Aide"
 
-#: jack_mixer/app.py:228
+#: jack_mixer/app.py:230
 msgid "New _Input Channel"
 msgstr "_Nouveau canal d'entrée"
 
-#: jack_mixer/app.py:232
+#: jack_mixer/app.py:234
 msgid "New Output _Channel"
 msgstr "Nouveau _canal de de sortie"
 
-#: jack_mixer/app.py:239
+#: jack_mixer/app.py:241
 msgid "_Open..."
 msgstr "_Ouvrir"
 
-#: jack_mixer/app.py:245
+#: jack_mixer/app.py:247
 msgid "_Save"
 msgstr "_Sauvegarder"
 
-#: jack_mixer/app.py:249
+#: jack_mixer/app.py:251
 msgid "Save _As..."
 msgstr "S_auvegarder sous..."
 
-#: jack_mixer/app.py:254
+#: jack_mixer/app.py:256
 msgid "_Hide"
 msgstr "Cac_her"
 
-#: jack_mixer/app.py:256
+#: jack_mixer/app.py:258
 msgid "_Quit"
 msgstr "_Quitter"
 
-#: jack_mixer/app.py:263
+#: jack_mixer/app.py:265
 msgid "_Edit Input Channel"
 msgstr "Modifier le canal d'_entrée"
 
-#: jack_mixer/app.py:270
+#: jack_mixer/app.py:272
 msgid "E_dit Output Channel"
 msgstr "Modifier le canal _de sortie"
 
-#: jack_mixer/app.py:277
+#: jack_mixer/app.py:279
 msgid "_Remove Input Channel"
 msgstr "Supp_rimer le canal d'entrée"
 
-#: jack_mixer/app.py:284
+#: jack_mixer/app.py:286
 msgid "Re_move Output Channel"
 msgstr "Suppri_mer le canal de sortie"
 
-#: jack_mixer/app.py:292
+#: jack_mixer/app.py:294
 msgid "Shrink Channels"
 msgstr "Rétracter les canaux"
 
-#: jack_mixer/app.py:295
+#: jack_mixer/app.py:297
 msgid "Expand Channels"
 msgstr "Étendre les canaux"
 
-#: jack_mixer/app.py:299
+#: jack_mixer/app.py:301
 msgid "_Clear"
 msgstr "_Nettoyer"
 
-#: jack_mixer/app.py:304
+#: jack_mixer/app.py:306
 msgid "_Preferences"
 msgstr "_Préférences"
 
-#: jack_mixer/app.py:311
+#: jack_mixer/app.py:313
 msgid "_About"
 msgstr "À _propos"
 
-#: jack_mixer/app.py:361
+#: jack_mixer/app.py:363
 msgid "Input channel creation failed."
 msgstr "Impossible de créer un canal d'entrée."
 
-#: jack_mixer/app.py:423
+#: jack_mixer/app.py:425
 msgid "Output channel creation failed."
 msgstr "Impossible de créer un canal de sortie."
 
-#: jack_mixer/app.py:482 jack_mixer/app.py:564 jack_mixer/app.py:1149
+#: jack_mixer/app.py:484 jack_mixer/app.py:573 jack_mixer/app.py:1158
 #, python-brace-format
 msgid "Error loading project file '{filename}': {msg}"
 msgstr "Erreur lors du chargement du fichier projet '{filename}': {msg}"
 
-#: jack_mixer/app.py:549
+#: jack_mixer/app.py:558
 msgid "XML files"
 msgstr "Fichiers XML"
 
-#: jack_mixer/app.py:553
+#: jack_mixer/app.py:562
 msgid "All files"
 msgstr "Tous les fichiers"
 
-#: jack_mixer/app.py:574
+#: jack_mixer/app.py:583
 msgid "Open project"
 msgstr "Ouvrir un projet"
 
-#: jack_mixer/app.py:622 jack_mixer/app.py:665
+#: jack_mixer/app.py:631 jack_mixer/app.py:674
 #, python-brace-format
 msgid "Error saving project file '{filename}': {msg}"
 msgstr "Erreur lors de la sauvegarde du fichier projet '{filename}': {msg}"
 
-#: jack_mixer/app.py:629
+#: jack_mixer/app.py:638
 msgid "Save project"
 msgstr "Sauvegarder le projet"
 
-#: jack_mixer/app.py:682
+#: jack_mixer/app.py:691
 msgid "<b>Quit application?</b>"
 msgstr "<b>Quitter l'application ?</b>"
 
-#: jack_mixer/app.py:685
+#: jack_mixer/app.py:694
 msgid ""
 "All jack_mixer ports will be closed and connections lost,\n"
 "stopping all sound going through jack_mixer.\n"
@@ -177,41 +177,41 @@ msgstr ""
 "Êtes-vous sûr ?"
 
 # Don't translate this unless you want default channel names to be localized
-#: jack_mixer/app.py:750
+#: jack_mixer/app.py:759
 msgid "Input"
 msgstr "Entrée"
 
 # Don't translate this unless you want default channel names to be localized
-#: jack_mixer/app.py:753
+#: jack_mixer/app.py:762
 msgid "Output"
 msgstr "Sortie"
 
-#: jack_mixer/app.py:881
+#: jack_mixer/app.py:890
 msgid "Are you sure you want to clear all channels?"
 msgstr "Êtes-vous sûr de vouloir nettoyer tous les canaux ?"
 
-#: jack_mixer/app.py:1113
+#: jack_mixer/app.py:1122
 msgid "FILE"
 msgstr "FICHIER"
 
-#: jack_mixer/app.py:1114
+#: jack_mixer/app.py:1123
 msgid "load mixer project configuration from FILE"
 msgstr "charger la configuration du projet de mixeur à partir du FICHIER"
 
-#: jack_mixer/app.py:1121
+#: jack_mixer/app.py:1130
 msgid "enable debug logging messages"
 msgstr "activer les messages de journalisation de débogage"
 
-#: jack_mixer/app.py:1125
+#: jack_mixer/app.py:1134
 msgid "NAME"
 msgstr "NOM"
 
-#: jack_mixer/app.py:1128
+#: jack_mixer/app.py:1137
 #, python-format
 msgid "set JACK client name (default: %(default)s)"
 msgstr "paramètre le nom de client JACK (défaut : %(default)s)"
 
-#: jack_mixer/app.py:1139
+#: jack_mixer/app.py:1148
 msgid ""
 "Mixer creation failed:\n"
 "\n"
@@ -387,22 +387,26 @@ msgstr ""
 msgid "Pre (on) / Post (off) fader send"
 msgstr "Envoi pré (on) / post (off) fader"
 
-#: jack_mixer/gui.py:63
+#: jack_mixer/gui.py:47
+msgid "Use system setting"
+msgstr "Utiliser le paramètre système"
+
+#: jack_mixer/gui.py:69
 msgid "Cannot load PyXDG. "
 msgstr "Impossible de charger PyXDG."
 
-#: jack_mixer/gui.py:64
+#: jack_mixer/gui.py:70
 msgid "Your preferences will not be preserved across jack_mixer invocations."
 msgstr ""
 "Vos préférences ne seront pas préservées entre les invocations de jack_mixer."
 
-#: jack_mixer/gui.py:143
+#: jack_mixer/gui.py:152
 #, python-format
 msgid "Ignoring default_meter_scale setting, because '%s' scale is not known."
 msgstr ""
 "Ignorer le paramètre default_meter_scale, car l'échelle '%s' est inconnue."
 
-#: jack_mixer/gui.py:154
+#: jack_mixer/gui.py:163
 #, python-format
 msgid "Ignoring default_slider_scale setting, because '%s' scale is not known."
 msgstr ""
@@ -416,49 +420,57 @@ msgstr "Préférences"
 msgid "Default Project Path"
 msgstr "Chemin de projet par défaut"
 
-#: jack_mixer/preferences.py:71
+#: jack_mixer/preferences.py:75
+msgid "Language:"
+msgstr "Langue : "
+
+#: jack_mixer/preferences.py:79
 msgid "Confirm quit"
 msgstr "Confirmer la sortie"
 
-#: jack_mixer/preferences.py:73
+#: jack_mixer/preferences.py:81
 msgid "Always ask for confirmation before quitting the application"
 msgstr "Toujours demander une confirmation avant de quitter l'application"
 
-#: jack_mixer/preferences.py:79
+#: jack_mixer/preferences.py:87
 msgid "Use custom widgets"
 msgstr "Utiliser les widgets personnalisés"
 
-#: jack_mixer/preferences.py:84
+#: jack_mixer/preferences.py:92
 msgid "Use custom vumeter color"
 msgstr "Utiliser les couleurs personnalisées de VU-mètre"
 
-#: jack_mixer/preferences.py:95
+#: jack_mixer/preferences.py:103
 msgid "Custom color:"
 msgstr "Couleur personnalisée : "
 
-#: jack_mixer/preferences.py:103
+#: jack_mixer/preferences.py:111
 msgid "Interface"
 msgstr ""
 
-#: jack_mixer/preferences.py:109
+#: jack_mixer/preferences.py:117
 msgid "Meter scale"
 msgstr "Échelle de mesure"
 
-#: jack_mixer/preferences.py:113
+#: jack_mixer/preferences.py:121
 msgid "Slider scale"
 msgstr "Échelle du curseur"
 
-#: jack_mixer/preferences.py:117
+#: jack_mixer/preferences.py:125
 msgid "Scales"
 msgstr "Échelles"
 
-#: jack_mixer/preferences.py:123
+#: jack_mixer/preferences.py:131
 msgid "Control Behavior"
 msgstr "Contrôle du comportement"
 
-#: jack_mixer/preferences.py:127
+#: jack_mixer/preferences.py:135
 msgid "MIDI"
 msgstr ""
+
+#: jack_mixer/preferences.py:221
+msgid "You need to restart the application for this setting to take effect."
+msgstr "Vous devez redémarrer l'application pour que ce paramètre prenne effet."
 
 #: jack_mixer/scale.py:88
 msgid ""

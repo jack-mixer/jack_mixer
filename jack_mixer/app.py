@@ -197,6 +197,8 @@ class JackMixer(SerializedObject):
         self.window.set_default_size(self.width, self.height)
 
         self.gui_factory = gui.Factory(self.window, self.meter_scales, self.slider_scales)
+        self.gui_factory.connect("language-changed", self.on_language_changed)
+        self.gui_factory.emit("language-changed", self.gui_factory.get_language())
         self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
         self.gui_factory.emit_midi_behavior_mode()
 
@@ -506,6 +508,13 @@ class JackMixer(SerializedObject):
 
     # ---------------------------------------------------------------------------------------------
     # GTK signals
+
+    def on_language_changed(self, gui_factory, lang):
+        global translation
+        translation = gettext.translation(
+            __program__, _localedir, languages=[lang] if lang else None, fallback=True
+        )
+        translation.install()
 
     def on_about(self, *args):
         about = Gtk.AboutDialog()
@@ -1091,7 +1100,7 @@ class JackMixer(SerializedObject):
 
 
 def error_dialog(parent, msg, *args, **kw):
-    if kw.get('debug'):
+    if kw.get("debug"):
         log.exception(msg.format(*args))
     err = Gtk.MessageDialog(
         parent=parent,

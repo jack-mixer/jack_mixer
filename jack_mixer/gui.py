@@ -43,6 +43,12 @@ def lookup_scale(scales, scale_id):
 
 class Factory(GObject.GObject, SerializedObject):
     def __init__(self, topwindow, meter_scales, slider_scales):
+        self.languages = [
+            (None, _("Use system setting")),
+            ("de", "Deutsch"),
+            ("en", "English"),
+            ("fr", "Français"),
+        ]
         self.midi_behavior_modes = ["Jump To Value", "Pick Up"]
         GObject.GObject.__init__(self)
         self.topwindow = topwindow
@@ -69,6 +75,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.default_meter_scale = self.meter_scales[0]
         self.default_project_path = None
         self.default_slider_scale = self.slider_scales[0]
+        self.language = None
         self.midi_behavior_mode = 0
         self.use_custom_widgets = False
         self.vumeter_color = "#ccb300"
@@ -91,6 +98,7 @@ class Factory(GObject.GObject, SerializedObject):
             self.default_slider_scale = self.slider_scales[0]
 
         self.default_project_path = self.config["Preferences"].get("default_project_path")
+        self.language = self.config["Preferences"].get("language")
 
         try:
             self.midi_behavior_mode = self.config.getint(
@@ -116,6 +124,7 @@ class Factory(GObject.GObject, SerializedObject):
         self.config["Preferences"]["default_meter_scale"] = self.default_meter_scale.scale_id
         self.config["Preferences"]["default_project_path"] = self.default_project_path or ""
         self.config["Preferences"]["default_slider_scale"] = self.default_slider_scale.scale_id
+        self.config["Preferences"]["language"] = self.language or ""
         self.config["Preferences"]["midi_behavior_mode"] = str(self.midi_behavior_mode)
         self.config["Preferences"]["use_custom_widgets"] = str(self.use_custom_widgets)
         self.config["Preferences"]["vumeter_color"] = self.vumeter_color
@@ -129,7 +138,7 @@ class Factory(GObject.GObject, SerializedObject):
             setattr(self, name, value)
             if xdg:
                 self.write_preferences()
-            signal = "{}-changed".format(name.replace('_', '-'))
+            signal = "{}-changed".format(name.replace("_", "-"))
             self.emit(signal, value)
 
     def set_confirm_quit(self, confirm_quit):
@@ -153,6 +162,9 @@ class Factory(GObject.GObject, SerializedObject):
             log.warning(
                 _("Ignoring default_slider_scale setting, because '%s' scale is not known."), scale
             )
+
+    def set_language(self, lang):
+        self._update_setting("language", lang)
 
     def set_midi_behavior_mode(self, mode):
         self._update_setting("midi_behavior_mode", int(mode))
@@ -180,6 +192,9 @@ class Factory(GObject.GObject, SerializedObject):
 
     def get_default_slider_scale(self):
         return self.default_slider_scale
+
+    def get_language(self):
+        return self.language
 
     def get_midi_behavior_mode(self):
         return self.midi_behavior_mode
@@ -260,7 +275,7 @@ GObject.signal_new(
     Factory,
     GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
     None,
-    [GObject.TYPE_PYOBJECT],
+    [str],
 )
 GObject.signal_new(
     "default-slider-scale-changed",
@@ -268,6 +283,13 @@ GObject.signal_new(
     GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
     None,
     [GObject.TYPE_PYOBJECT],
+)
+GObject.signal_new(
+    "language-changed",
+    Factory,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [str],
 )
 GObject.signal_new(
     "midi-behavior-mode-changed",

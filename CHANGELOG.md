@@ -2,6 +2,41 @@ Change Log
 ==========
 
 
+## Version 16 (2021-04-15)
+
+Fixed:
+
+* Some global settings where not properly persisted in the settings file
+  when changed in the preferences dialog (#124).
+* Selecting a custom default project path in the preferences dialog via
+  folder selection widget did not update the path in the text entry.
+* The message formatting in error dialogs was corrected and when an error
+  dialog is shown, the error message to printed the console only contains
+  a Python traceback when the debug option is on.
+* Various debug log messages received minor fixes and improvements.
+
+Features:
+
+* Internationalization (i18n) support was added, making GUI labels and
+  messages and the command line help translatable.
+* A German translation was added.
+* A French translation was adde.
+* A global language setting was added to the preferences.
+* French and German translation of the application description were added to
+  the XDG desktop file.
+
+Documentation:
+
+* A man page for *jack_mix_box* was added.
+* A new [contributing guide](.docs/CONTRIBUTING.md) was added to repository.
+* The section on environment variables in *jack_mixer* man page was updated
+  and enhanced.
+* The NSM project URL was updated in various documents.
+
+This release was created by Christopher Arndt with Olivier Humbert providing
+the French translation.
+
+
 ## Version 15.1 (2021-03-15)
 
 **Bugfix release**

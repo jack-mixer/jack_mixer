@@ -68,6 +68,14 @@ class PreferencesDialog(Gtk.Dialog):
         vbox.pack_start(self.create_frame(_("Default Project Path"), path_vbox), True, True, 0)
 
         interface_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+        self.language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        interface_vbox.pack_start(self.language_box, True, True, 3)
+
+        self.language_box.pack_start(Gtk.Label(_("Language:")), False, True, 5)
+        self.language_combo = self.create_language_combo()
+        self.language_box.pack_start(self.language_combo, True, True, 0)
+
         self.confirm_quit_checkbutton = Gtk.CheckButton(_("Confirm quit"))
         self.confirm_quit_checkbutton.set_tooltip_text(
             _("Always ask for confirmation before quitting the application")
@@ -128,6 +136,14 @@ class PreferencesDialog(Gtk.Dialog):
         self.vbox.show_all()
 
         self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
+
+    def create_language_combo(self):
+        combo = Gtk.ComboBoxText()
+        for code, name in self.app.gui_factory.languages:
+            combo.append(code or "", name)
+        combo.set_active_id(self.app.gui_factory.get_language() or "")
+        combo.connect("changed", self.on_language_combo_changed)
+        return combo
 
     def create_meter_store_and_combo(self):
         store = Gtk.ListStore(GObject.TYPE_STRING, GObject.TYPE_PYOBJECT)
@@ -191,6 +207,21 @@ class PreferencesDialog(Gtk.Dialog):
         path = path_chooser.get_filename()
         self.path_entry.set_text(path)
         self.app.gui_factory.set_default_project_path(path)
+
+    def on_language_combo_changed(self, *args):
+        code = self.language_combo.get_active_id()
+        if code != self.app.gui_factory.get_language():
+            self.app.gui_factory.set_language(code)
+            dlg = Gtk.MessageDialog(
+                parent=self,
+                modal=True,
+                destroy_with_parent=True,
+                message_type=Gtk.MessageType.WARNING,
+                buttons=Gtk.ButtonsType.OK,
+                text=_("You need to restart the application for this setting to take effect."),
+            )
+            dlg.run()
+            dlg.destroy()
 
     def on_meter_scale_combo_changed(self, *args):
         active_iter = self.meter_scale_combo.get_active_iter()

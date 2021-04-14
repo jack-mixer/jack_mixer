@@ -8,7 +8,7 @@ A graphical multi-channel audio mixer for JACK
 
 :Author: Nedko Arnaudov <nedko@arnaudov.name> (original author),
     Frédéric Peters <fpeters@0d.be> (current maintainer).
-:Date: 2021-04-09
+:Date: 2021-04-14
 :Copyright: GNU General Public License Version 2
 :Version: @VERSION@
 :Manual section: 1
@@ -246,8 +246,9 @@ ENVIRONMENT
 
 ``LANGUAGE``, ``LC_ALL``, ``LC_MESSAGES``, and ``LANG``
     The first of these environment variables set to a non-empty value is used
-    to determine the language(s) for loading gettext translation files. The
-    value should be a colon separated list of language codes.
+    to determine the language(s) for loading gettext translation files if the
+    language is not set in the global settings. The value should be a colon
+    separated list of language codes.
 ``LOCALEDIR``
     With this environment variable, the base directory for the gettext
     translation files can be changed from the default set at compile

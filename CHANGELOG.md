@@ -11,8 +11,8 @@ Fixed:
 * Selecting a custom default project path in the preferences dialog via
   folder selection widget did not update the path in the text entry.
 * The message formatting in error dialogs was corrected and when an error
-  dialog is shown, the error message to printed the console only contains
-  a Python traceback when the debug option is on.
+  dialog is shown, the error message printed to the console now only
+  contains a Python traceback when the debug option is active.
 * Various debug log messages received minor fixes and improvements.
 
 Features:
@@ -20,16 +20,16 @@ Features:
 * Internationalization (i18n) support was added, making GUI labels and
   messages and the command line help translatable.
 * A German translation was added.
-* A French translation was adde.
+* A French translation was added.
 * A global language setting was added to the preferences.
-* French and German translation of the application description were added to
+* French and German translations of the application description were added to
   the XDG desktop file.
 
 Documentation:
 
 * A man page for `jack_mix_box` was added.
 * A new [contributing guide](./docs/CONTRIBUTING.md) was added to repository.
-* The section on environment variables in `jack_mixer` man page was updated
+* The section on environment variables in `jack_mixer's` man page was updated
   and enhanced.
 * The NSM project URL was updated in various documents.
 

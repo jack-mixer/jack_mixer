@@ -47,25 +47,34 @@ MIDI CC values (0-127) are mapped to dBFS using the current slider scale for
 the corresponding channel.
 
 
-## Feedback
+## Authors and Acknowledgements
+
+jack_mixer was initially written and supported by Nedko Arnaudov, it is now
+maintained by Frédéric Péters. For a list of contributors see the file
+[AUTHORS].
+
+K-meter implementation taken from jkmeter, licensed under the GPL 2, by Fons
+Adriaensen.
+
+
+## Feedback and Contributing
 
 If you have trouble getting jack_mixer working, find a bug or you miss some
 feature, please [create an issue] on GitHub or contact the maintainer by email.
 
-jack_mixer was initially written and supported by Nedko Arnaudov, it is now
-maintained by Frédéric Péters. You can reach Frédéric at fpeters (a.t) 0d (dot)
-be, and Nedko at nedko (a.t) arnaudov (dot) name. Most recently, the primary
-developers are Daniel Sheeler at dsheeler (a.t) pobox (dot) com and Christopher
-Arndt at chris (a.t) chrisarndt (dot) de, and you can also usually find these
-folks in #jack_mixer or #lad on FreeNode (as fpeters, nedko, dsheeler and
-strogon14).
+You can reach Frédéric at `fpeters (a.t) 0d (dot) be`, and Nedko at
+`nedko (a.t) arnaudov (dot) name`. Most recently, the primary developers are
+Daniel Sheeler at `dsheeler (a.t) pobox (dot) com` and Christopher Arndt at
+`chris (a.t) chrisarndt (dot) de`, and you can also usually find these folks in
+`#jack_mixer` or `#lad` on FreeNode (as *fpeters*, *nedko*, *dsheeler* and
+*strogon14*).
+
+If you want to get involved with jack_mixer's development, documentation or
+translation, please read the [contributing guide].
 
 
-## Acknowledgements
-
-K-meter implementation taken from jkmeter, licensed under
-the GPL 2, by Fons Adriaensen.
-
+[AUTHORS]: ./AUTHORS
 [COPYING]: ./COPYING
 [INSTALL.md]: ./INSTALL.md
+[contributing guide]: ./docs/CONTRIBUTING.md
 [create an issue]: https://github.com/jack-mixer/jack_mixer/issues

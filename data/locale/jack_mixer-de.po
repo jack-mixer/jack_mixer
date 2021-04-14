@@ -6,7 +6,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: jack_mixer 15.1\n"
+"Project-Id-Version: jack_mixer 16\n"
 "Report-Msgid-Bugs-To: https://github.com/jack-mixer/jack_mixer/issues\n"
 "POT-Creation-Date: 2021-04-14 17:19+0200\n"
 "PO-Revision-Date: 2021-03-20 14:27+0100\n"

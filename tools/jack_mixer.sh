@@ -10,4 +10,4 @@ fi
 
 export PYTHONPATH=".:./builddir:$PYTHONPATH"
 export LOCALEDIR="data/locale"
-exec python -m jack_mixer "$@"
+exec "${PYTHON:-python3}" -m jack_mixer "$@"

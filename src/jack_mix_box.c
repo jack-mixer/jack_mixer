@@ -62,7 +62,7 @@ usage()
 "\n"
 "Send SIGUSR1 to the process to have the current volumes reported per input\n"
 "channel.\n\n");
-	printf(_usage);
+	fputs(_usage, stdout);
 }
 
 void
@@ -137,7 +137,7 @@ main(int argc, char *argv[])
 	}
 
 	if (optind == argc) {
-		fprintf(stderr, _("You must specify at least one input channel.\n"));
+		fputs(_("You must specify at least one input channel.\n"), stderr);
 		exit(1);
 	}
 
@@ -152,7 +152,7 @@ main(int argc, char *argv[])
 
 	mixer = create(jack_cli_name, false);
 	if (mixer == NULL) {
-		fprintf(stderr, jack_mixer_error_str());
+		fputs(jack_mixer_error_str(), stderr);
 		return -1;
 	}
 	main_mix_channel = add_output_channel(mixer, "MAIN", true, false);

@@ -1,0 +1,286 @@
+=============
+ jack_mixer
+=============
+
+----------------------------------------------
+A graphical multi-channel audio mixer for JACK
+----------------------------------------------
+
+:Author: Nedko Arnaudov <nedko@arnaudov.name> (original author),
+    Frédéric Peters <fpeters@0d.be> (current maintainer).
+:Date: 2021-04-14
+:Copyright: GNU General Public License Version 2
+:Version: @VERSION@
+:Manual section: 1
+:Manual group: audio
+
+
+SYNOPSIS
+========
+
+jack_mixer.py [-h] [-c FILE] [-d] [NAME]
+
+
+DESCRIPTION
+===========
+
+This manual page documents the **jack_mixer** command.
+
+**jack_mixer** is a multi-channel audio mixer application for the JACK Audio
+Connection Kit with a graphical user interface and has a look & handling similar
+to hardware mixing desks.
+
+
+OPTIONS
+=======
+
+Positional arguments:
+
+    NAME                  set JACK client name
+
+Optional arguments:
+
+    -h, --help            show this help message and exit
+    -c FILE, --config FILE
+                          load mixer project configuration from FILE
+    -d, --debug           enable debug logging messages
+
+
+GUI USAGE
+=========
+
+After starting **jack_mixer**, you need to create at least one input and one
+output channel via the respective entries in the "Mixer" menu (see section
+**MAIN MENU**).
+
+Then connect your audio sources to the **jack_mixer's** JACK audio input ports
+(see section **JACK AUDIO AND MIDI PORTS**) using ``jack_connect`` or GUI tools
+like the QJackCtl's connections window, Catia, Carla, etc. Connect the monitor
+channel output port(s) or the output ports of the output channels to the input
+ports of your audio interface or any other JACK audio input ports.
+
+Then adjust input and output channel volume levels and balance as required using
+the fader controls in each channel strip (see section **MOUSE BINDINGS** for
+ways to to control the faders and routing).
+
+
+JACK AUDIO AND MIDI PORTS
+-------------------------
+
+* For each input channel, **jack_mixer** will create one (if it is a mono
+  channel) or two (stereo) JACK audio input ports. The input port(s) will be
+  named like the input channel strip, if it is a mono channel, or with an " L"
+  resp. " R" suffix, it it is a stereo channel.
+
+* Optionally, for each input channel, it creates a direct, post-fader audio
+  output port (mono) or pair of output ports (stereo). These are named the same
+  as their input port(s) with " Out" resp. " Out L" / "Out R" appended.
+
+* For each ouput channel it will create one (mono) or two (stereo) audio output
+  ports.
+
+* Additionally it will create one pair of audio monitor ports named "Monitor L"
+  and "Monitor R".
+
+* If **jack_mixer** was compiled with JACK MIDI support, it will also create
+  one MIDI input ("midi in") and one MIDI output ("midi out") port.
+
+
+MAIN MENU
+---------
+
+Main Menu:
+
+Use the **Mixer** menu to:
+
+* Add an input or output channel.
+* Add an output channel.
+* Open a file with a preset mixer layout.
+* Save the current mixer layout to an XML file.
+* Exit **jack_mixer**.
+
+Use the **Edit** menu to:
+
+* Change the properties of an input or output channel.
+* Remove an input or output channel.
+* Toggle all channel strips between wide and narrow view.
+* Clear the current mixer layout, i.e. remove all input and output channels.
+* Open the setting preferences dialog.
+
+Use the **Help** menu to show **jack_mixer's** about dialog.
+
+
+MOUSE BINDINGS
+--------------
+
+Main window:
+
+* Left-click and drag the vertical divider line horizontally to set the size
+  distribution of the left and right panels for the input and output channel
+  strips. If a panel contains more channel strips than can be fit into its
+  horizontal size, horizontal scrollbars will be available at the bottom of
+  the panel.
+
+Channel strip header:
+
+* Double click the channel strip header to open the channel properties dialog.
+* Ctrl+left-click the channel strip header to toggle the channel strip between
+  wide and narrow view.
+* Left-click and drag the channel strip header horizontally to re-order
+  channel strips. This doesn't effect the order of the JACK output ports
+  and input channels are always arranged on the left side of the main
+  **jack_mixer** window and output chanels on the right side.
+
+Control groups (input channels):
+
+Each input channel header has a control group for each output channel, which
+has the same background color and label as the corresponding output channel
+header.
+
+Each output channel control group shows a pre/post-fader ("P") and a mute ("M")
+button and, optionally, a solo ("S") button.
+
+* Left-click the pre/post-fader ("P") button to toggle the signal sent to the
+  corresponding output channel between the post-fader (off) and pre-fader (on)
+  signal of the input channel.
+* Left-click the mono ("M") button to mute the signal from the input channel
+  going to the corresponding output channel.
+* Left-click the solo ("S") button to solo the input channel for the
+  corresponding output channel. i.e. only the signal from this input channel
+  (plus any other soloed channels) is going to this output channel.
+
+Volume read-out and peak-indicator:
+
+* Left-click the volume level read-out to enter a value manually and press
+  Enter to set it.
+* Left/right-click the peak volume level read-out to reset the over-zero
+  indication.
+* Middle-click the peak volume level read-out to set the volume level to
+  peak at 0 dB at the current signal input level.
+
+Volume meter:
+
+* Left-click the pre-fader ("PRE") button below the volume meter to switch the
+  signal, which is metered, from post-fader (off) to pre-fader (on).
+
+  *(not yet implemented)*
+
+Volume slider:
+
+* Left-click and drag vertically anywhere in the slider area to set the channel
+  output volume level.
+* Scroll the mouse wheel up or down over the slider area to increase or
+  decrease the volume level.
+* Right-click anywhere in the slider area to move the volume level slowly
+  towards the click position.
+* Double click to set the volume level to -inf.
+* Ctrl+left-click to set the volume level to 0 dBFS.
+
+Balance slider:
+
+* Left-click and drag horizontally anywhere in the slider area to set the
+  balance between the left and right channel of the output signal.
+* Scroll the mouse wheel up or down over the slider area to move the
+  balance to right or left.
+* Right-click anywhere in the slider area to move the balance slowly towards
+  the click position.
+* Double click to set the left/right balance to center.
+
+Channel buttons:
+
+* Left-click the  mono ("M") button to mute signal from channel going to all
+  output channels (including direct channel outs).
+* Ctrl+left-click the  mono ("M") button for "exclusive" mute, i.e. the mute
+  function will be activated on this input or output channel only and
+  deactivated on all other input resp. output channels.
+* Left-click the solo ("S") button to solo an input channel, i.e. only the
+  signal from this channel is going to all output channels (including the
+  direct outputs of the channel).
+
+  The solo function is cumulative, i.e. you can activate solo on more than one
+  input channel and the signals from all soloed channels will be going to each
+  output channel.
+
+  Output channels have no solo button.
+* Ctrl+left-click the solo ("SM") button for "exclusive" solo, i.e. the solo
+  function will be activated on this channel only and deactivated on all other
+  input channels.
+* Right-clicking the mute ("M") button acts like left-clicking but also
+  synchronizes the muted state on all output channel control groups of the
+  channel with the main channel mute button.
+
+  Output channel control groups, where the mute function was already active
+  before righ-clicking the mute button are unaffected, i.e. it will stay
+  activated.
+* Right-clicking the solo ("S") button acts like left-clicking but also
+  synchronizes the soloed state on all output channel control groups of the
+  channel with the main channel solo button.
+
+  Output channel control groups, where the solo function was already active
+  before righ-clicking the solo button are unaffected, i.e. it will stay
+  activated.
+* Left-click the monitor ("MON") button, to toggle monitoring. If monitoring
+  is on, the (post-fader) signal from the channel is sent to the "Monitor L/R"
+  outputs. The monitor function is exclusive, i.e. activating monitoring on a
+  channel, will turn off monitoring on any other channel.
+
+
+COMPATIBILITY
+=============
+
+**jack_mixer** is fully compatible with the New Session Manager (NSM) protocol
+and provides Level 1 (L1) support for the LADISH protocol. When running as an
+NSM client, the mixer layout and current state will be saved in the NSM session.
+When started as an L1 client by LADISH, the mixer layout and current state will
+be saved in the LADISH studio session or project (the first time LADISH
+requests **jack_mixer** to save a project, it will open a "Save as" dialog).
+
+
+FILES
+=====
+
+``<XDG_CONFIG_HOME>/jack_mixer/preferences.ini``
+    This file stores global settings for **jack_mixer**.
+
+
+ENVIRONMENT
+===========
+
+``LANGUAGE``, ``LC_ALL``, ``LC_MESSAGES``, and ``LANG``
+    The first of these environment variables set to a non-empty value is used
+    to determine the language(s) for loading gettext translation files if the
+    language is not set in the global settings. The value should be a colon
+    separated list of language codes.
+``LOCALEDIR``
+    With this environment variable, the base directory for the gettext
+    translation files can be changed from the default set at compile
+    time, which is usually ``<prefix>/share/locale``.
+``JACK_MIXER_DEBUG``
+    When this environment variable is set, the logging level in the Python
+    layer is set to ``DEBUG`` unless it is overwritten by the ``-d|--debug``
+    command line switch.
+``NSM_URL``
+    When this environment variable is set, **jack_mixer** will act as a New
+    Session Manager (NSM) session client.
+
+
+SIGNALS
+=======
+
+``SIGUSR1``
+    In accordance with Level 1 support of LADISH, **jack_mixer** saves the
+    current mixer layout and state on receiving a ``USR1`` signal.
+``SIGINT | SIGTERM``
+    When receiving an ``INT`` or ``TERM`` signal, **jack_mixer** will either
+    exit the application immediately or, if enabled in the preferences, will
+    show a confirmation dialog, allowing the user to either quit or cancel the
+    action.
+
+
+SEE ALSO
+========
+
+* Project homepage (https://rdio.space/jackmixer/)
+* Source code repository on GitHub (https://github.com/jack-mixer/jack_mixer)
+* JACK Audio Connection Kit (https://jackaudio.org/)
+* New Session Manager (https://new-session-manager.jackaudio.org/)

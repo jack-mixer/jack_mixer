@@ -1,0 +1,109 @@
+==============
+ jack_mix_box
+==============
+
+---------------------------------------------------
+A minimal JACK audio mixer with MIDI volume control
+---------------------------------------------------
+
+:Author: Nedko Arnaudov <nedko@arnaudov.name> (original author),
+    Frédéric Peters <fpeters@0d.be> (current maintainer).
+:Date: 2021-04-14
+:Copyright: GNU General Public License Version 2
+:Version: @VERSION@
+:Manual section: 1
+:Manual group: audio
+
+
+SYNOPSIS
+========
+
+jack_mix_box [-n <name>] [-p] [-s] [-v <dB>] MIDI_CC...
+
+
+DESCRIPTION
+===========
+
+This manual page documents the **jack_mix_box** command.
+
+**jack_mix_box** is a minimal, GUI-less version of **jack_mixer**. It creates a
+JACK client with stereo output ports and a fixed number of mono or stereo input
+ports. The number of input ports and the MIDI Control Change message
+controlling the volume level of each is set via the command line. The signal of
+each input channel is mixed into the stereo outputs.
+
+
+OPTIONS
+=======
+
+Positional arguments:
+
+    MIDI_CC...      add input channel controlled by MIDI_CC
+
+Optional arguments:
+
+    -h, --help      print this help message
+    -n, --name      set JACK client name
+    -p, --pickup    enable MIDI pickup mode (default: jump-to-value)
+    -s, --stereo    make all input channels stereo with left+right input
+    -v, --volume    initial volume gain in dBFS (default 0.0, i.e. unity gain)
+
+
+USAGE
+=====
+
+Each positional argument is interpreted as a MIDI Control Change number and
+adds a mixer channel with one (mono) or left+right (stereo) inputs, whose
+volume can be controlled via the given MIDI Control Change.
+
+Use ``jack_connect`` or any other JACK conmection manager to connect other JACK
+clients or system ports to the input and output port.
+
+Send a ``SIGUSR1`` signal to the ``jack_mix_box`` process to have the current
+volumes per input channel reported to the standard output.
+
+
+JACK AUDIO AND MIDI PORTS
+-------------------------
+
+* For each input channel, **jack_mix_box** will create one (if it is a mono
+  channel) or two (stereo) JACK audio input ports. The input port(s) will be
+  named "Channel <n>", where "<n>" is the channel number, and have an " L"
+  resp. " R" suffix, it the channel is stereo.
+* It will create two JACK audio output ports named "MAIN L" and "MAIN R".
+* It will also create one JACK MIDI input ("midi in") and one MIDI output
+  ("midi out") port.
+
+
+ENVIRONMENT
+===========
+
+``LANGUAGE``, ``LC_ALL``, ``LC_MESSAGES``, and ``LANG``
+    The first of these environment variables set to a non-empty value is used
+    to determine the language(s) for loading gettext translation files. The
+    value should be a colon separated list of language codes.
+``LC_NUMERIC``
+    The language set via this environment determines the floating point number
+    format used to parse volume levels given on the command line and to format
+    them in the output. If ``LC_NUMERIC`` is not set, its value is inherited
+    from one of the language environment variables described above.
+``LOCALEDIR``
+    With this environment variable, the base directory for the gettext
+    translation files can be changed from the default set at compile
+    time, which is usually ``<prefix>/share/locale``.
+
+
+SIGNALS
+=======
+
+``SIGUSR1``
+    Send ``SIGUSR1`` to the **jack_mix_box** process to have the current
+    volumes reported per input channel.
+
+
+SEE ALSO
+========
+
+* Project homepage (https://rdio.space/jackmixer/)
+* Source code repository on GitHub (https://github.com/jack-mixer/jack_mixer)
+* JACK Audio Connection Kit (https://jackaudio.org/)

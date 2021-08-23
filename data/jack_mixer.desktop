@@ -1,7 +1,8 @@
 [Desktop Entry]
 Name=Jack Mixer
-Comment=Jack Mixer
-Comment[fr]=Mixeur pour JACK
+Comment=A multi-channel audio mixer application for the JACK Audio Connection Kit
+Comment[de]=Eine Mehrkanalaudiomixeranwendung für das JACK Audio Connection Kit
+Comment[fr]=Une application de mixage audio multi-canal pour le kit de connexion audio JACK
 Exec=jack_mixer
 Terminal=false
 Type=Application

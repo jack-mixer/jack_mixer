@@ -1,0 +1,13 @@
+[flake8]
+ignore = E116, E265, E266, E731, W503, W504
+max-line-length = 99
+extend-exclude =
+    build,
+    builddir,
+    data,
+    dist,
+    nsmclient.py
+per-file-ignores =
+    # import not at top of file due to gi.require_version and i18n
+    app.py: E402
+builtins = _

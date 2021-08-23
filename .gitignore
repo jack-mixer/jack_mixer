@@ -1,41 +1,37 @@
-/config
-/Makefile.in
-/Makefile
-/.deps
-/.libs
-/jack_mixer_c.so
-/config.h
-/libtool
-/stamp-h1
-/autom4te.cache
-/aclocal.m4
-/config.h.in
-/config.log
-/config.status
-/configure
-/jack_mixer_c.py
-/jack_mixer_wrap.c
-/data/Makefile
-/data/Makefile.in
-/data/art/Makefile
-/data/art/Makefile.in
+# binaries
+jack_mix_box
 *.lo
 *.la
-*.pyc
-/m4/libtool.m4
-/m4/ltoptions.m4
-/m4/ltsugar.m4
-/m4/ltversion.m4
-/m4/lt~obsolete.m4
 *.o
-jack_mix_box
-build/
-jack_mixer.cflags
-jack_mixer.config
-jack_mixer.creator
-jack_mixer.creator.user
-jack_mixer.cxxflags
-jack_mixer.files
-jack_mixer.includes
+
+# generated man pages
+jack_mix_box.1
+jack_mixer.1
+
+# Mixer configuration files
 *.xml
+
+# Geany editor project files
 *.geany
+
+# general Python stuff
+*.pyc
+__pycached__/
+
+# distutils / setuptools
+build/
+dist/
+*.egg-info
+# wheels downloaded when build wheel
+*.whl
+
+# Cython stuff
+_jack_mixer.c
+_jack_mixer.*.so
+
+# recommended meson build directory
+builddir/
+
+# i18n
+data/locale/*/LC_MESSAGES/
+data/locale/*.po~

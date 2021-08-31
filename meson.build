@@ -45,6 +45,7 @@ datadir = join_paths(prefix, get_option('datadir'))
 #pythondir = join_paths(prefix, python.get_path('purelib'))
 desktopdir = join_paths(datadir, 'applications')
 icondir = join_paths(datadir, 'icons', 'hicolor')
+raysessiondir = join_paths('/', 'etc', 'xdg', 'raysession', 'client_templates', '35_jackmixer')
 
 # Build jack_mix_box and generate _jack_mixer extension source
 subdir('src')

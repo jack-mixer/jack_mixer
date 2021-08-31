@@ -741,6 +741,29 @@ channel_mono_kmeter_read(
 }
 
 void
+channel_mono_kmeter_reset(
+  jack_mixer_channel_t channel)
+{
+  struct kmeter *kmeter;
+  kmeter = &channel_ptr->kmeter_prefader_left;
+  kmeter->_flag = true;
+  kmeter = &channel_ptr->kmeter_left;
+  kmeter->_flag = true;
+}
+
+void
+channel_stereo_kmeter_reset(
+  jack_mixer_channel_t channel)
+{
+  struct kmeter *kmeter;
+  channel_mono_kmeter_reset(channel);
+  kmeter = &channel_ptr->kmeter_prefader_right;
+  kmeter->_flag = true;
+  kmeter = &channel_ptr->kmeter_right;
+  kmeter->_flag = true;
+}
+
+void
 channel_volume_write(
   jack_mixer_channel_t channel,
   double volume)

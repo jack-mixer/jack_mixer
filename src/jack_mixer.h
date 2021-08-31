@@ -199,6 +199,14 @@ channel_mono_kmeter_read(
   double * mono_rms_ptr,
   enum meter_mode mode);
 
+void
+channel_mono_kmeter_reset(
+  jack_mixer_channel_t channel);
+
+void
+channel_stereo_kmeter_reset(
+  jack_mixer_channel_t channel);
+
 bool
 channel_is_stereo(
   jack_mixer_channel_t channel);

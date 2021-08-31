@@ -259,11 +259,11 @@ cdef class Channel:
 
     @property
     def kmeter_prefader(self):
-        """Read channel kmeter.
+        """Read channel prefader kmeter.
 
         If channel is stereo, return a four-item tupel with
-        ``(peak_left, peak_right, rms_left, rms_right)`` value.
-        If channel is mono, return a tow-item tupel with ``(peak, rms)`` value.
+        ``(rms_left, rms_right, peak_left, peak_right)`` value.
+        If channel is mono, return a tow-item tupel with ``(rms, peak)`` value.
         """
         cdef double peak_left, peak_right, left_rms, right_rms
 
@@ -277,11 +277,11 @@ cdef class Channel:
 
     @property
     def kmeter_postfader(self):
-        """Read channel kmeter.
+        """Read channel postfader kmeter.
 
         If channel is stereo, return a four-item tupel with
-        ``(peak_left, peak_right, rms_left, rms_right)`` value.
-        If channel is mono, return a tow-item tupel with ``(peak, rms)`` value.
+        ``(rms_left, rms_right, peak_left, peak_right)`` value.
+        If channel is mono, return a tow-item tupel with ``(rms, peak)`` value.
         """
         cdef double peak_left, peak_right, left_rms, right_rms
 
@@ -292,6 +292,13 @@ cdef class Channel:
         else:
             channel_mono_kmeter_read(self._channel, &peak_left, &left_rms, MeterMode.POST_FADER)
             return (left_rms, peak_left)
+
+    def kmeter_reset(self):
+        """Reset channel kmeters"""
+        if channel_is_stereo(self._channel):
+            channel_stereo_kmeter_reset(self._channel)
+        else:
+            channel_mono_kmeter_reset(self._channel)
 
     @property
     def meter_prefader(self):

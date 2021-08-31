@@ -500,6 +500,10 @@ class Channel(Gtk.Box, SerializedObject):
         self.meter_prefader = flag
         self.prefader_button.set_active(flag)
 
+        if (self.meter.kmetering):
+            # Reset the kmeter rms
+            self.channel.kmeter_reset()
+
     def read_meter(self):
         if not self.channel:
             return
@@ -523,13 +527,11 @@ class Channel(Gtk.Box, SerializedObject):
                     self.meter.set_value_kmeter(*self.channel.kmeter_prefader)
                 else:
                     self.meter.set_value_kmeter(*self.channel.kmeter_postfader)
-
             else:
                 if self.meter_prefader:
                     self.meter.set_value(*self.channel.meter_prefader)
                 else:
                     self.meter.set_value(*self.channel.meter_postfader)
-
 
         if self.meter_prefader:
             self.abspeak.set_peak(self.channel.abspeak_prefader)

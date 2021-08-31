@@ -87,17 +87,20 @@ cdef extern from "jack_mixer.h":
         meter_mode mode)
 
     cdef void channel_mono_kmeter_read(
-      jack_mixer_channel_t channel,
-      double * left_ptr,
-      double * left_rms_ptr,
-      meter_mode mode)
+        jack_mixer_channel_t channel,
+        double * left_ptr,
+        double * left_rms_ptr,
+        meter_mode mode)
     cdef void channel_stereo_kmeter_read(
-      jack_mixer_channel_t channel,
-      double * left_ptr,
-      double * right_ptr,
-      double * left_rms_ptr,
-      double * right_rms_ptr,
-      meter_mode mode)
+        jack_mixer_channel_t channel,
+        double * left_ptr,
+        double * right_ptr,
+        double * left_rms_ptr,
+        double * right_rms_ptr,
+        meter_mode mode)
+
+    cdef void channel_mono_kmeter_reset(jack_mixer_channel_t channel)
+    cdef void channel_stereo_kmeter_reset(jack_mixer_channel_t channel)
 
     cdef void channel_volume_write(jack_mixer_channel_t channel, double volume)
     cdef double channel_volume_read(jack_mixer_channel_t channel)

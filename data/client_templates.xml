@@ -1,0 +1,3 @@
+<RAY-CLIENT-TEMPLATES>
+ <Client-Template template-name="Jack Mixer" client_id="jack_mixer" executable="jack_mixer"/>
+</RAY-CLIENT-TEMPLATES>

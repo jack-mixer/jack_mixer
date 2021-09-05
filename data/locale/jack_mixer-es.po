@@ -533,7 +533,7 @@ msgstr "Izquierda: {left} / Derecha: {right}"
 
 #: /usr/lib/python3.9/argparse.py:296
 msgid "usage: "
-msgstr "utilización:"
+msgstr "utilización: "
 
 #: /usr/lib/python3.9/argparse.py:854
 msgid ".__call__() not defined"

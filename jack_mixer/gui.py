@@ -47,6 +47,7 @@ class Factory(GObject.GObject, SerializedObject):
             (None, _("Use system setting")),
             ("de", "Deutsch"),
             ("en", "English"),
+            ("es", "Español"),
             ("fr", "Français"),
         ]
         self.midi_behavior_modes = ["Jump To Value", "Pick Up"]

@@ -188,7 +188,7 @@ msgstr ""
 "Todos los puertos de jack_mixer se cerrarán y se perderán las conexiones,\n"
 "deteniendo cualquier audio procesado por jack_mixer.\n"
 "\n"
-"¿Estás segur@?"
+"¿Deseas seguir?"
 
 #: jack_mixer/app.py:759
 msgid "Input"
@@ -200,7 +200,7 @@ msgstr "Salida"
 
 #: jack_mixer/app.py:890
 msgid "Are you sure you want to clear all channels?"
-msgstr "¿Segur@ que deseas eliminar todos los canales?"
+msgstr "¿Deseas seguir y eliminar todos los canales?"
 
 #: jack_mixer/app.py:1122
 msgid "FILE"

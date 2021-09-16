@@ -108,6 +108,29 @@ class PreferencesDialog(Gtk.Dialog):
         self.vumeter_color_picker.connect("color-set", self.on_vumeter_color_change)
         hbox.pack_start(self.vumeter_color_picker, True, True, 0)
 
+        self.auto_reset_peak_meters_checkbutton = Gtk.CheckButton(_("Auto reset peak meter"))
+        self.auto_reset_peak_meters_checkbutton.set_tooltip_text(_(
+            "Reset peak meters after specified time"
+        ))
+        self.auto_reset_peak_meters_checkbutton.set_active(
+            self.app.gui_factory.get_auto_reset_peak_meters()
+        )
+        self.auto_reset_peak_meters_checkbutton.connect(
+            "toggled", self.on_auto_reset_peak_meters_toggled
+        )
+        interface_vbox.pack_start(self.auto_reset_peak_meters_checkbutton, True, True, 3)
+
+        self.auto_reset_peak_meters_time_seconds_box = hbox = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL
+        )
+        interface_vbox.pack_start(hbox, True, True, 3)
+
+        hbox.set_sensitive(self.auto_reset_peak_meters_checkbutton.get_active())
+        hbox.pack_start(Gtk.Label(_("Time:")), False, True, 5)
+        self.auto_reset_peak_meters_time_seconds_spinbutton = spinbutton = \
+            self.create_auto_reset_peak_meters_time_seconds_spinbutton()
+        hbox.pack_start(spinbutton, True, True, 0)
+
         vbox.pack_start(self.create_frame(_("Interface"), interface_vbox), True, True, 0)
 
         table = Gtk.Table(2, 2, False)
@@ -189,6 +212,20 @@ class PreferencesDialog(Gtk.Dialog):
         combo.connect("changed", self.on_midi_behavior_combo_changed)
         return combo
 
+    def create_auto_reset_peak_meters_time_seconds_spinbutton(self):
+        adjustment = \
+            Gtk.Adjustment(value=float(
+                           self.app.gui_factory.get_auto_reset_peak_meters_time_seconds()
+                           ),
+                           lower=0.1,
+                           upper=10.0,
+                           step_increment=0.1,
+                           page_increment=0.5,
+                           page_size=0.0)
+        spinbutton = Gtk.SpinButton(adjustment=adjustment, climb_rate=1.0, digits=1)
+        spinbutton.connect("value-changed", self.on_peak_reset_spinbutton_changed)
+        return spinbutton
+
     def on_response_cb(self, dlg, response_id, *args):
         self.app.preferences_dialog = None
         self.destroy()
@@ -253,3 +290,17 @@ class PreferencesDialog(Gtk.Dialog):
 
     def on_custom_widget_toggled(self, *args):
         self.app.gui_factory.set_use_custom_widgets(self.custom_widgets_checkbutton.get_active())
+
+    def on_auto_reset_peak_meters_toggled(self, *args):
+        self.app.gui_factory.set_auto_reset_peak_meters(
+            self.auto_reset_peak_meters_checkbutton.get_active()
+        )
+
+        self.auto_reset_peak_meters_time_seconds_box.set_sensitive(
+            self.auto_reset_peak_meters_checkbutton.get_active()
+        )
+
+    def on_peak_reset_spinbutton_changed(self, *args):
+        self.app.gui_factory.set_auto_reset_peak_meters_time_seconds(
+            self.auto_reset_peak_meters_time_seconds_spinbutton.get_value()
+        )

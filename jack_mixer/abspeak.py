@@ -35,7 +35,8 @@ class AbspeakWidget(Gtk.EventBox):
             "auto-reset-peak-meters-changed", self.on_auto_reset_peak_meters_changed
         )
         self.gui_factory.connect(
-            "auto-reset-peak-meters-time-seconds-changed", self.on_auto_reset_peak_meters_time_seconds_changed
+            "auto-reset-peak-meters-time-seconds-changed",
+            self.on_auto_reset_peak_meters_time_seconds_changed
         )
         self.reset_timer_id = None
 
@@ -43,6 +44,7 @@ class AbspeakWidget(Gtk.EventBox):
         self.emit("reset")
         context = self.get_style_context()
         context.remove_class("over_zero")
+        context.remove_class("is_nan")
         self.reset_timer_id = None
         return False
 
@@ -58,7 +60,7 @@ class AbspeakWidget(Gtk.EventBox):
             self.reset_timer()
 
     def on_auto_reset_peak_meters_time_seconds_changed(self, widget, event):
-            self.reset_timer()
+        self.reset_timer()
 
     def get_style_context(self):
         return self.label.get_style_context()

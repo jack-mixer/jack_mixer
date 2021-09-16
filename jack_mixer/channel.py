@@ -197,7 +197,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.volume_digits.get_style_context().add_class("readout")
 
         # Peak level label
-        self.abspeak = abspeak.AbspeakWidget()
+        self.abspeak = abspeak.AbspeakWidget(self.app)
         self.abspeak.connect("reset", self.on_abspeak_reset)
         self.abspeak.connect("volume-adjust", self.on_abspeak_adjust)
         self.abspeak.get_style_context().add_class("readout")

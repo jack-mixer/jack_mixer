@@ -18,10 +18,7 @@
 import logging
 
 import cairo
-from gi.repository import Gtk
-from gi.repository import Gdk
-from gi.repository import GObject
-
+from gi.repository import Gdk, GObject, Gtk
 
 log = logging.getLogger(__name__)
 
@@ -273,18 +270,67 @@ class CustomSliderWidget(Gtk.DrawingArea):
     def __init__(self, adjustment):
         super().__init__()
         self.adjustment = adjustment
+        self._button_down = False
+        self._button_down_y = 0
+        self._button_down_value = 0
 
         self.connect("draw", self.on_expose)
         self.connect("size_allocate", self.on_size_allocate)
         adjustment.connect("value-changed", self.on_value_changed)
-        self.connect("button-press-event", self.on_mouse)
-        self.connect("motion-notify-event", self.on_mouse)
+        self.connect("button-release-event", self.on_button_release_event)
+        self.connect("button-press-event", self.on_button_press_event)
+        self.connect("motion-notify-event", self.on_motion_notify_event)
         self.connect("scroll-event", self.on_scroll)
         self.set_events(
             Gdk.EventMask.BUTTON1_MOTION_MASK
             | Gdk.EventMask.SCROLL_MASK
             | Gdk.EventMask.BUTTON_PRESS_MASK
+            | Gdk.EventMask.BUTTON_RELEASE_MASK
         )
+
+    def on_button_press_event(self, widget, event):
+        log.debug("Mouse button %u pressed %ux%u", event.button, event.x, event.y)
+        if event.button == 1:
+            if (
+                event.state & Gdk.ModifierType.CONTROL_MASK
+                and event.type == Gdk.EventType.BUTTON_PRESS
+            ):
+                self.adjustment.set_value_db(0)
+                return True
+            elif event.type == Gdk.EventType.BUTTON_PRESS:
+                self._button_down = True
+                self._button_down_y = event.y
+                self._button_down_value = self.adjustment.get_value()
+                return True
+            elif event.type == Gdk.EventType._2BUTTON_PRESS:
+                self.adjustment.set_value(0)
+                return True
+
+        return False
+
+    def on_button_release_event(self, widget, event):
+        self._button_down = False
+        return False
+
+    def on_motion_notify_event(self, widget, event):
+        slider_length = self.slider_rail_height
+        if self._button_down:
+            delta_y = (self._button_down_y - event.y) / slider_length
+            y = self._button_down_value + delta_y
+            if y >= 1:
+                y = 1
+            elif y <= 0:
+                y = 0
+
+            self.adjustment.set_value(y)
+            return True
+
+    def on_value_changed(self, adjustment):
+        self.invalidate_all()
+
+    def on_expose(self, widget, cairo_ctx):
+        self.draw(cairo_ctx)
+        return False
 
     def on_scroll(self, widget, event):
         delta = self.adjustment.step_increment
@@ -293,44 +339,16 @@ class CustomSliderWidget(Gtk.DrawingArea):
             y = value + delta
         elif event.direction == Gdk.ScrollDirection.DOWN:
             y = value - delta
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            y = value - event.delta_y * delta
+
         if y >= 1:
             y = 1
         elif y <= 0:
             y = 0
+
         self.adjustment.set_value(y)
         return True
-
-    def on_mouse(self, widget, event):
-        if event.type == Gdk.EventType.BUTTON_PRESS:
-            log.debug("Mouse button %u pressed %ux%u", event.button, event.x, event.y)
-            if event.button == 1:
-                if (
-                    event.y >= self.slider_rail_up
-                    and event.y < self.slider_rail_up + self.slider_rail_height
-                ):
-                    self.adjustment.set_value(
-                        1 - float(event.y - self.slider_rail_up) / float(self.slider_rail_height)
-                    )
-        elif event.type == Gdk.EventType.MOTION_NOTIFY:
-            log.debug("Mouse motion %ux%u", event.x, event.y)
-            if event.y < self.slider_rail_up:
-                y = self.slider_rail_up
-            elif event.y > self.slider_rail_up + self.slider_rail_height:
-                y = self.slider_rail_up + self.slider_rail_height
-            else:
-                y = event.y
-            self.adjustment.set_value(
-                1 - float(y - self.slider_rail_up) / float(self.slider_rail_height)
-            )
-
-        return False
-
-    def on_value_changed(self, adjustment):
-        self.invalidate_all()
-
-    def on_expose(self, widget, cairo_ctx):
-        self.draw(cairo_ctx)
-        return False
 
     def get_preferred_width(self, widget):
         minimal_width = natural_width = self.width

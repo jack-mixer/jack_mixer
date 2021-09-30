@@ -24,6 +24,8 @@ from gi.repository import Gdk
 
 log = logging.getLogger(__name__)
 
+METER_MIN_WIDTH = 24
+METER_MAX_WIDTH = 40
 
 class MeterWidget(Gtk.DrawingArea):
     def __init__(self, scale):
@@ -36,8 +38,8 @@ class MeterWidget(Gtk.DrawingArea):
         self.width = 0
         self.height = 0
         self.cache_surface = None
-        self.min_width = 15
-        self.preferred_width = 25
+        self.min_width = METER_MIN_WIDTH
+        self.preferred_width = METER_MAX_WIDTH
         self.preferred_height = 200
 
         self.widen()

@@ -22,6 +22,9 @@ from gi.repository import Gdk, GObject, Gtk
 
 log = logging.getLogger(__name__)
 
+FADER_MIN_WIDTH = 24
+FADER_MAX_WIDTH = 40
+
 
 class AdjustmentdBFS(Gtk.Adjustment):
     def __init__(self, scale, default_db, step_inc):
@@ -121,11 +124,22 @@ class VolumeSlider(Gtk.Scale):
         self._button_down = False
         self._button_down_y = 0
         self._button_down_value = 0
+        self.min_width = FADER_MIN_WIDTH
+        self.preferred_width = FADER_MAX_WIDTH
+        self.preferred_height = 200
 
         self.connect("button-press-event", self.button_press_event)
         self.connect("button-release-event", self.button_release_event)
         self.connect("motion-notify-event", self.motion_notify_event)
         self.connect("scroll-event", self.scroll_event)
+
+    def narrow(self):
+        return self.widen(False)
+
+    def widen(self, flag=True):
+        self.set_size_request(
+            self.preferred_width if flag else self.min_width, self.preferred_height
+        )
 
     def button_press_event(self, widget, event):
         if event.button == 1:
@@ -273,6 +287,9 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self._button_down = False
         self._button_down_y = 0
         self._button_down_value = 0
+        self.min_width = FADER_MIN_WIDTH
+        self.preferred_width = FADER_MAX_WIDTH
+        self.preferred_height = 200
 
         self.connect("draw", self.on_expose)
         self.connect("size_allocate", self.on_size_allocate)
@@ -286,6 +303,14 @@ class CustomSliderWidget(Gtk.DrawingArea):
             | Gdk.EventMask.SCROLL_MASK
             | Gdk.EventMask.BUTTON_PRESS_MASK
             | Gdk.EventMask.BUTTON_RELEASE_MASK
+        )
+
+    def narrow(self):
+        return self.widen(False)
+
+    def widen(self, flag=True):
+        self.set_size_request(
+            self.preferred_width if flag else self.min_width, self.preferred_height
         )
 
     def on_button_press_event(self, widget, event):
@@ -334,13 +359,13 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
     def on_scroll(self, widget, event):
         delta = self.adjustment.step_increment
-        value = self.adjustment.get_value()
+        y = self.adjustment.get_value()
         if event.direction == Gdk.ScrollDirection.UP:
-            y = value + delta
+            y = y + delta
         elif event.direction == Gdk.ScrollDirection.DOWN:
-            y = value - delta
+            y = y - delta
         elif event.direction == Gdk.ScrollDirection.SMOOTH:
-            y = value - event.delta_y * delta
+            y = y - event.delta_y * delta
 
         if y >= 1:
             y = 1
@@ -350,23 +375,13 @@ class CustomSliderWidget(Gtk.DrawingArea):
         self.adjustment.set_value(y)
         return True
 
-    def get_preferred_width(self, widget):
-        minimal_width = natural_width = self.width
-        return (minimal_width, natural_width)
-
-    def get_preferred_height(self, widget):
-        requisition = Gtk.Requisition()
-        self.on_size_request(self, widget, requisition)
-        minimal_height = natural_height = requisition.height
-        return (minimal_height, natural_height)
-
     def on_size_allocate(self, widget, allocation):
         self.width = float(allocation.width)
         self.height = float(allocation.height)
         self.font_size = 10
 
     def on_size_request(self, widget, requisition):
-        requisition.width = 20
+        requisition.width = 666
 
     def invalidate_all(self):
         if hasattr(self, "width") and hasattr(self, "height"):
@@ -385,7 +400,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
         #        self.get_style_context().get_color(state).to_color())
         # cairo_ctx.stroke()
 
-        slider_knob_width = 37.5 if self.width * 3 / 4 > 37.5 else self.width * 3 / 4
+        slider_knob_width = self.preferred_width * 3 / 4 if self.width * 3 / 4 > \
+            self.preferred_width * 3 / 4 else self.width * 3 / 4
         slider_knob_height = slider_knob_width * 2
         slider_knob_height -= slider_knob_height % 2
         slider_knob_height += 1
@@ -396,7 +412,7 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
         # slider rail
         Gdk.cairo_set_source_color(cairo_ctx, self.get_style_context().get_color(state).to_color())
-        self.slider_rail_up = slider_knob_height / 2 + (self.width - slider_knob_width) / 2
+        self.slider_rail_up = slider_knob_height / 2
         self.slider_rail_height = self.height - 2 * self.slider_rail_up
         cairo_ctx.move_to(slider_x, self.slider_rail_up)
         cairo_ctx.line_to(slider_x, self.slider_rail_height + self.slider_rail_up)

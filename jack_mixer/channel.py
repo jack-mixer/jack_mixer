@@ -136,9 +136,13 @@ class Channel(Gtk.Box, SerializedObject):
         self.vbox_fader.pack_start(self.hbox_readouts, False, False, 0)
 
         self.hbox_fader = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.hbox_fader.pack_start(self.slider, True, True, 0)
+        self.hbox_fader.pack_start(self.slider, True, False, 0)
         self.hbox_fader.pack_start(self.meter, True, True, 0)
-        self.vbox_fader.pack_start(self.hbox_fader, True, True, 0)
+        self.event_box_fader = Gtk.EventBox()
+        self.event_box_fader.set_events(Gdk.EventMask.SCROLL_MASK)
+        self.event_box_fader.connect("scroll-event", self.on_scroll)
+        self.event_box_fader.add(self.hbox_fader)
+        self.vbox_fader.pack_start(self.event_box_fader, True, True, 0)
         self.vbox_fader.pack_end(self.balance, False, True, 0)
 
         self.pack_start(self.vbox_fader, True, True, 0)
@@ -155,9 +159,10 @@ class Channel(Gtk.Box, SerializedObject):
             self.slider = slider.VolumeSlider(self.slider_adjustment)
 
         if parent:
-            parent.pack_start(self.slider, True, True, 0)
+            parent.pack_start(self.slider, True, False, 0)
             parent.reorder_child(self.slider, 0)
 
+        self.slider.widen(self.wide)
         self.slider.show()
 
     def realize(self):
@@ -208,7 +213,6 @@ class Channel(Gtk.Box, SerializedObject):
         else:
             self.meter = meter.MonoMeterWidget(self.meter_scale)
 
-        self.meter.set_events(Gdk.EventMask.SCROLL_MASK)
         self.on_vumeter_color_changed(self.gui_factory)
 
         # If channel is created via UI, the initial volume is passed to the
@@ -466,6 +470,7 @@ class Channel(Gtk.Box, SerializedObject):
         if len(label) > label_width:
             self.label_name.set_tooltip_text(label)
 
+        self.slider.widen(flag)
         self.meter.widen(flag)
         self.hbox_readouts.set_orientation(
             Gtk.Orientation.HORIZONTAL if flag else Gtk.Orientation.VERTICAL

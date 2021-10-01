@@ -374,7 +374,8 @@ class CustomSliderWidget(Gtk.DrawingArea):
 
         slider_x = self.width / 2
 
-        cairo_ctx.set_line_width(1)
+        cairo_ctx.set_line_cap(cairo.LineCap.ROUND)
+        cairo_ctx.set_line_width(slider_knob_width / 8.0)
 
         # slider rail
         Gdk.cairo_set_source_color(cairo_ctx, self.get_style_context().get_color(state).to_color())

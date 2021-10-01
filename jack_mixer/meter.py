@@ -40,6 +40,7 @@ class MeterWidget(Gtk.DrawingArea):
         self.cache_surface = None
         self.min_width = METER_MIN_WIDTH
         self.preferred_width = METER_MAX_WIDTH
+        self.current_width_size_request = self.preferred_width
         self.preferred_height = 200
 
         self.widen()
@@ -51,9 +52,8 @@ class MeterWidget(Gtk.DrawingArea):
         return self.widen(False)
 
     def widen(self, flag=True):
-        self.set_size_request(
-            self.preferred_width if flag else self.min_width, self.preferred_height
-        )
+        self.current_width_size_request = self.preferred_width if flag else self.min_width
+        self.set_size_request(self.current_width_size_request, self.preferred_height)
 
     def set_color(self, color):
         self.color_value = color
@@ -159,8 +159,10 @@ class MonoMeterWidget(MeterWidget):
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
-        self.draw_value(cairo_ctx, self.value, self.width / 4.0, self.width / 2.0)
-        self.draw_peak(cairo_ctx, self.pk, self.width / 4.0, self.width / 2.0)
+        width = self.current_width_size_request / 1.5
+        x = 0.5 * (self.width - width)
+        self.draw_value(cairo_ctx, self.value, x, width)
+        self.draw_peak(cairo_ctx, self.pk, x, width)
 
     def set_values(self, pk, value):
         if value == self.raw_value and pk == self.raw_pk:
@@ -196,10 +198,14 @@ class StereoMeterWidget(MeterWidget):
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
-        self.draw_value(cairo_ctx, self.left, self.width / 5.0, self.width / 5.0)
-        self.draw_value(cairo_ctx, self.right, self.width / 5.0 * 3.0, self.width / 5.0)
-        self.draw_peak(cairo_ctx, self.pk_left, self.width / 5.0, self.width / 5.0)
-        self.draw_peak(cairo_ctx, self.pk_right, self.width / 5.0 * 3.0, self.width / 5.0)
+        width = self.current_width_size_request / 5.0
+        left_x = 0.5 * self.width - self.current_width_size_request / 5.0 - 0.5 * width
+        right_x = 0.5 * self.width + self.current_width_size_request / 5.0 - 0.5 * width
+
+        self.draw_value(cairo_ctx, self.left, left_x, width)
+        self.draw_value(cairo_ctx, self.right, right_x, width)
+        self.draw_peak(cairo_ctx, self.pk_left, left_x, width)
+        self.draw_peak(cairo_ctx, self.pk_right, right_x, width)
 
     def set_values(self, pk_l, pk_r, left, right):
         if (

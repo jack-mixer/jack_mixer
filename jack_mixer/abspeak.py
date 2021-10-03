@@ -20,15 +20,47 @@ import math
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
+from gi.repository import GLib
 
 
 class AbspeakWidget(Gtk.EventBox):
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
         self.label = Gtk.Label()
         self.add(self.label)
         self.connect("button-press-event", self.on_mouse)
         self.peak = -math.inf
+        self.gui_factory = app.gui_factory
+        self.gui_factory.connect(
+            "auto-reset-peak-meters-changed", self.on_auto_reset_peak_meters_changed
+        )
+        self.gui_factory.connect(
+            "auto-reset-peak-meters-time-seconds-changed",
+            self.on_auto_reset_peak_meters_time_seconds_changed
+        )
+        self.reset_timer_id = None
+
+    def emit_reset(self):
+        self.emit("reset")
+        context = self.get_style_context()
+        context.remove_class("over_zero")
+        context.remove_class("is_nan")
+        self.reset_timer_id = None
+        return False
+
+    def reset_timer(self):
+        if self.reset_timer_id is not None:
+            GLib.source_remove(self.reset_timer_id)
+        self.reset_timer_id = GLib.timeout_add(
+            self.gui_factory.auto_reset_peak_meters_time_seconds * 1000, self.emit_reset
+        )
+
+    def on_auto_reset_peak_meters_changed(self, widget, event):
+        if event is True:
+            self.reset_timer()
+
+    def on_auto_reset_peak_meters_time_seconds_changed(self, widget, event):
+        self.reset_timer()
 
     def get_style_context(self):
         return self.label.get_style_context()
@@ -49,6 +81,9 @@ class AbspeakWidget(Gtk.EventBox):
                     self.emit("volume-adjust", adjust)
 
     def set_peak(self, peak):
+        if self.gui_factory.auto_reset_peak_meters:
+            if peak > self.peak:
+                self.reset_timer()
         self.peak = peak
         context = self.get_style_context()
 

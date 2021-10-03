@@ -2,6 +2,7 @@
 Name=Jack Mixer
 Comment=A multi-channel audio mixer application for the JACK Audio Connection Kit
 Comment[de]=Eine Mehrkanalaudiomixeranwendung für das JACK Audio Connection Kit
+Comment[es]=Una aplicación para la mezcla de audio multi-canal para JACK Audio Connection Kit
 Comment[fr]=Une application de mixage audio multi-canal pour le kit de connexion audio JACK
 Exec=jack_mixer
 Terminal=false

@@ -76,6 +76,7 @@ typedef enum {
   JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE,
   JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE,
   JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK,
+  JACK_MIXER_ERROR_JACK_SET_BUFFER_SIZE_CALLBACK,
   JACK_MIXER_ERROR_JACK_ACTIVATE,
   JACK_MIXER_ERROR_CHANNEL_MALLOC,
   JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC,
@@ -150,10 +151,9 @@ add_channel(
 void
 kmeter_init(
   jack_mixer_kmeter_t km,
-  int sr,
-  int fsize,
-  float hold,
-  float fall);
+  jack_nframes_t fsize,
+  jack_nframes_t sr
+);
 
 void
 kmeter_process(

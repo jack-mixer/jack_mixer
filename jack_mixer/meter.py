@@ -26,6 +26,8 @@ from . import scale as scalemod
 
 log = logging.getLogger(__name__)
 
+METER_MIN_WIDTH = 24
+METER_MAX_WIDTH = 40
 
 class MeterWidget(Gtk.DrawingArea):
     def __init__(self, scale):
@@ -218,6 +220,15 @@ class StereoMeterWidget(MeterWidget):
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
+
+        width = self.current_width_size_request / 5.0
+        left_x = 0.5 * self.width - self.current_width_size_request / 5.0 - 0.5 * width
+        right_x = 0.5 * self.width + self.current_width_size_request / 5.0 - 0.5 * width
+
+        self.draw_value(cairo_ctx, self.left, left_x, width)
+        self.draw_value(cairo_ctx, self.right, right_x, width)
+        self.draw_peak(cairo_ctx, self.pk_left, left_x, width)
+        self.draw_peak(cairo_ctx, self.pk_right, right_x, width)
 
         width = self.current_width_size_request / 5.0
         left_x = 0.5 * self.width - self.current_width_size_request / 5.0 - 0.5 * width

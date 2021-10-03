@@ -47,6 +47,7 @@ class Factory(GObject.GObject, SerializedObject):
             (None, _("Use system setting")),
             ("de", "Deutsch"),
             ("en", "English"),
+            ("es", "Español"),
             ("fr", "Français"),
         ]
         self.midi_behavior_modes = ["Jump To Value", "Pick Up"]
@@ -80,6 +81,9 @@ class Factory(GObject.GObject, SerializedObject):
         self.use_custom_widgets = False
         self.vumeter_color = "#ccb300"
         self.vumeter_color_scheme = "default"
+        self.auto_reset_peak_meters = False
+        self.auto_reset_peak_meters_time_seconds = 2.0
+        self.meter_refresh_period_milliseconds = 33
 
     def read_preferences(self):
         self.config.read(self.path)
@@ -117,6 +121,17 @@ class Factory(GObject.GObject, SerializedObject):
         self.vumeter_color_scheme = self.config.get(
             "Preferences", "vumeter_color_scheme", fallback=self.vumeter_color_scheme
         )
+        self.auto_reset_peak_meters = self.config.getboolean(
+            "Preferences", "auto_reset_peak_meters", fallback=self.auto_reset_peak_meters
+        )
+        self.auto_reset_peak_meters_time_seconds = self.config.getfloat(
+            "Preferences", "auto_reset_peak_meters_time_seconds",
+            fallback=self.auto_reset_peak_meters_time_seconds
+        )
+        self.meter_refresh_period_milliseconds = self.config.getint(
+            "Preferences", "meter_refresh_period_milliseconds",
+            fallback=self.meter_refresh_period_milliseconds
+        )
 
     def write_preferences(self):
         self.config["Preferences"] = {}
@@ -129,6 +144,12 @@ class Factory(GObject.GObject, SerializedObject):
         self.config["Preferences"]["use_custom_widgets"] = str(self.use_custom_widgets)
         self.config["Preferences"]["vumeter_color"] = self.vumeter_color
         self.config["Preferences"]["vumeter_color_scheme"] = self.vumeter_color_scheme
+        self.config["Preferences"]["auto_reset_peak_meters"] = str(self.auto_reset_peak_meters)
+        self.config["Preferences"]["auto_reset_peak_meters_time_seconds"] = \
+            str(self.auto_reset_peak_meters_time_seconds)
+        self.config["Preferences"]["meter_refresh_period_milliseconds"] = \
+            str(self.meter_refresh_period_milliseconds)
+
         with open(self.path, "w") as configfile:
             self.config.write(configfile)
             configfile.close()
@@ -178,6 +199,15 @@ class Factory(GObject.GObject, SerializedObject):
     def set_vumeter_color_scheme(self, color_scheme):
         self._update_setting("vumeter_color_scheme", color_scheme)
 
+    def set_auto_reset_peak_meters(self, auto_reset):
+        self._update_setting("auto_reset_peak_meters", auto_reset)
+
+    def set_auto_reset_peak_meters_time_seconds(self, time):
+        self._update_setting("auto_reset_peak_meters_time_seconds", time)
+
+    def set_meter_refresh_period_milliseconds(self, period):
+        self._update_setting("meter_refresh_period_milliseconds", period)
+
     def get_confirm_quit(self):
         return self.confirm_quit
 
@@ -208,6 +238,15 @@ class Factory(GObject.GObject, SerializedObject):
     def get_vumeter_color_scheme(self):
         return self.vumeter_color_scheme
 
+    def get_auto_reset_peak_meters(self):
+        return self.auto_reset_peak_meters
+
+    def get_auto_reset_peak_meters_time_seconds(self):
+        return self.auto_reset_peak_meters_time_seconds
+
+    def get_meter_refresh_period_milliseconds(self):
+        return self.meter_refresh_period_milliseconds
+
     def emit_midi_behavior_mode(self):
         self.emit("midi-behavior-mode-changed", self.midi_behavior_mode)
 
@@ -227,6 +266,19 @@ class Factory(GObject.GObject, SerializedObject):
         object_backend.add_property("use_custom_widgets", str(self.get_use_custom_widgets()))
         object_backend.add_property("vumeter_color", self.get_vumeter_color())
         object_backend.add_property("vumeter_color_scheme", self.get_vumeter_color_scheme())
+        object_backend.add_property(
+            "auto_reset_peak_meters", str(self.get_auto_reset_peak_meters())
+        )
+        object_backend.add_property(
+            "auto_reset_peak_meters_time_seconds", str(
+                self.get_auto_reset_peak_meters_time_seconds()
+            )
+        )
+        object_backend.add_property(
+            "meter_refresh_period_milliseconds", str(
+                self.get_meter_refresh_period_milliseconds()
+            )
+        )
 
     def unserialize_property(self, name, value):
         if name == "confirm_quit":
@@ -253,6 +305,14 @@ class Factory(GObject.GObject, SerializedObject):
         elif name == "vumeter_color_scheme":
             self.set_vumeter_color_scheme(value)
             return True
+        elif name == "auto_reset_peak_meters":
+            self.set_auto_reset_peak_meters(value)
+            return True
+        elif name == "auto_reset_peak_meters_time_seconds":
+            self.set_auto_reset_peak_meters_time_seconds(float(value))
+            return True
+        elif name == "meter_refresh_period_milliseconds":
+            self.set_meter_refresh_period_milliseconds(int(value))
         return False
 
 
@@ -318,4 +378,25 @@ GObject.signal_new(
     GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
     None,
     [str],
+)
+GObject.signal_new(
+    "auto-reset-peak-meters-changed",
+    Factory,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [bool],
+)
+GObject.signal_new(
+    "auto-reset-peak-meters-time-seconds-changed",
+    Factory,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [float],
+)
+GObject.signal_new(
+    "meter-refresh-period-milliseconds-changed",
+    Factory,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [int],
 )

@@ -126,7 +126,9 @@ class JackMixer(SerializedObject):
         # in which a project is loaded.
         self.monitor_channel = self.mixer.add_output_channel("Monitor", True, True)
 
-        GLib.timeout_add(33, self.read_meters)
+        self.meter_refresh_period = \
+            self.gui_factory.get_meter_refresh_period_milliseconds()
+        self.meter_refresh_timer_id = GLib.timeout_add(self.meter_refresh_period, self.read_meters)
         GLib.timeout_add(50, self.midi_events_check)
 
         if with_nsm:
@@ -202,6 +204,10 @@ class JackMixer(SerializedObject):
         self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
         self.gui_factory.connect(
             "default-meter-scale-changed", self.on_default_meter_scale_changed
+        )
+        self.gui_factory.connect(
+            "meter-refresh-period-milliseconds-changed",
+            self.on_meter_refresh_period_milliseconds_changed
         )
         self.gui_factory.emit_midi_behavior_mode()
 
@@ -941,6 +947,12 @@ class JackMixer(SerializedObject):
             self.mixer.kmetering = True
         else:
             self.mixer.kmetering = False
+
+    def on_meter_refresh_period_milliseconds_changed(self, sender, value):
+        if self.meter_refresh_timer_id is not None:
+            GLib.source_remove(self.meter_refresh_timer_id)
+        self.meter_refresh_period = value
+        self.meter_refresh_timer_id = GLib.timeout_add(self.meter_refresh_period, self.read_meters)
 
     def read_meters(self):
         for channel in self.channels:

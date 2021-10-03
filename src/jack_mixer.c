@@ -228,6 +228,8 @@ const char* const _jack_mixer_error_str[] = {
   _("Could not create JACK MIDI out port.\n"),
   /* JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK */
   _("Could not set JACK process callback.\n"),
+  /* JACK_MIXER_ERROR_JACK_SET_BUFFER_SIZE_CALLBACK */
+  _("Could not set JACK buffer size callback.\n"),
   /* JACK_MIXER_ERROR_JACK_ACTIVATE */
   _("Could not activate JACK client.\n"),
   /* JACK_MIXER_ERROR_CHANNEL_MALLOC */
@@ -1483,6 +1485,54 @@ update_channel_buffers(
   }
 }
 
+static inline void
+kmeter_calc_hold_fall(
+  int *hold,
+  float *fall,
+  jack_nframes_t nframes,
+  jack_nframes_t sr)
+  {
+    float t;
+    t = (float) nframes / sr;
+    *hold = (int)(0.5 / t + 0.5f);
+    *fall = powf(10.0f, -0.05f * 10.5f * t);
+  }
+
+static inline void
+set_kmeters_peak_params(
+  struct channel *channel_ptr,
+  jack_nframes_t nframes)
+  {
+    int hold;
+    float fall;
+    jack_nframes_t sr = jack_get_sample_rate(channel_ptr->mixer_ptr->jack_client);
+    kmeter_calc_hold_fall(&hold, &fall, nframes, sr);
+    channel_ptr->kmeter_left._hold = hold;
+    channel_ptr->kmeter_right._hold = hold;
+    channel_ptr->kmeter_left._fall = fall;
+    channel_ptr->kmeter_right._fall = fall;
+  }
+
+static int jack_buffer_size_cb(jack_nframes_t nframes, void *arg) {
+    struct jack_mixer *mixer_ptr  = (struct jack_mixer *) arg;
+    struct channel *channel_ptr;
+    GSList *list_ptr;
+    /* Get input ports buffer pointers */
+    for (list_ptr = mixer_ptr->input_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
+    {
+      channel_ptr = list_ptr->data;
+      set_kmeters_peak_params(channel_ptr, nframes);
+    }
+
+    /* Get output ports buffer pointer */
+    for (list_ptr = mixer_ptr->output_channels_list; list_ptr; list_ptr = g_slist_next(list_ptr))
+    {
+      channel_ptr = list_ptr->data;
+      set_kmeters_peak_params(channel_ptr, nframes);
+    }
+    return 0;
+}
+
 #define mixer_ptr ((struct jack_mixer *)context)
 
 static int
@@ -1805,6 +1855,13 @@ create(
     goto close_jack;
   }
 
+  ret = jack_set_buffer_size_callback(mixer_ptr->jack_client, jack_buffer_size_cb, mixer_ptr);
+  if (ret != 0)
+  {
+    _jack_mixer_error = JACK_MIXER_ERROR_JACK_SET_BUFFER_SIZE_CALLBACK;
+    goto close_jack;
+  }
+
   ret = jack_activate(mixer_ptr->jack_client);
   if (ret != 0)
   {
@@ -1988,10 +2045,10 @@ add_channel(
   channel_ptr->abspeak_prefader = 0.0;
   channel_ptr->out_mute = false;
 
-  kmeter_init(&channel_ptr->kmeter_left, sr, fsize, .5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_right, sr, fsize, .5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_prefader_left, sr, fsize, .5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_prefader_right, sr, fsize, .5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_left, fsize, sr);
+  kmeter_init(&channel_ptr->kmeter_right, fsize, sr);
+  kmeter_init(&channel_ptr->kmeter_prefader_left, fsize, sr);
+  kmeter_init(&channel_ptr->kmeter_prefader_right, fsize, sr);
 
   channel_ptr->peak_left_prefader = channel_ptr->peak_left_postfader = 0.0;
   channel_ptr->peak_right_prefader = channel_ptr->peak_right_postfader = 0.0;
@@ -2131,10 +2188,10 @@ create_output_channel(
   channel_ptr->meter_right_prefader = channel_ptr->meter_right_postfader = -1.0;
   channel_ptr->abspeak_postfader = 0.0;
   channel_ptr->abspeak_prefader = 0.0;
-  kmeter_init(&channel_ptr->kmeter_left, sr, fsize, 0.5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_right, sr, fsize, 0.5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_prefader_left, sr, fsize, 0.5f, 15.0f);
-  kmeter_init(&channel_ptr->kmeter_prefader_right, sr, fsize, 0.5f, 15.0f);
+  kmeter_init(&channel_ptr->kmeter_left, fsize, sr);
+  kmeter_init(&channel_ptr->kmeter_right, fsize, sr);
+  kmeter_init(&channel_ptr->kmeter_prefader_left, fsize, sr);
+  kmeter_init(&channel_ptr->kmeter_prefader_right, fsize, sr);
 
   channel_ptr->peak_left_prefader = channel_ptr->peak_left_postfader = 0.0;
   channel_ptr->peak_right_prefader = channel_ptr->peak_right_postfader = 0.0;
@@ -2226,10 +2283,8 @@ remove_channels(
 void
 kmeter_init(
   jack_mixer_kmeter_t kmeter,
-  int sr,
-  int fsize,
-  float hold,
-  float fall)
+  jack_nframes_t fsize,
+  jack_nframes_t sr)
 {
   km->_z1 = 0;
   km->_z2 = 0;
@@ -2238,11 +2293,8 @@ kmeter_init(
   km->_cnt = 0;
   km->_flag = false;
 
-  float t;
   km->_omega = 9.72f / sr;
-  t = (float) fsize / sr;
-  km->_hold = (int)(hold / t + 0.5f);
-  km->_fall = powf(10.0f, -0.05f * fall * t);
+  kmeter_calc_hold_fall(&km->_hold, &km->_fall, fsize, sr);
 }
 
 void

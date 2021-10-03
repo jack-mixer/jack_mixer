@@ -227,15 +227,6 @@ class StereoMeterWidget(MeterWidget):
 
         self.draw_value(cairo_ctx, self.left, left_x, width)
         self.draw_value(cairo_ctx, self.right, right_x, width)
-        self.draw_peak(cairo_ctx, self.pk_left, left_x, width)
-        self.draw_peak(cairo_ctx, self.pk_right, right_x, width)
-
-        width = self.current_width_size_request / 5.0
-        left_x = 0.5 * self.width - self.current_width_size_request / 5.0 - 0.5 * width
-        right_x = 0.5 * self.width + self.current_width_size_request / 5.0 - 0.5 * width
-
-        self.draw_value(cairo_ctx, self.left, left_x, width)
-        self.draw_value(cairo_ctx, self.right, right_x, width)
 
         if self.kmetering:
             self.draw_peak(cairo_ctx, self.pk_left, left_x, width)

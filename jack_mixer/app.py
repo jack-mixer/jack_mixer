@@ -203,6 +203,9 @@ class JackMixer(SerializedObject):
         self.gui_factory.emit("language-changed", self.gui_factory.get_language())
         self.gui_factory.connect("midi-behavior-mode-changed", self.on_midi_behavior_mode_changed)
         self.gui_factory.connect(
+            "default-meter-scale-changed", self.on_default_meter_scale_changed
+        )
+        self.gui_factory.connect(
             "meter-refresh-period-milliseconds-changed",
             self.on_meter_refresh_period_milliseconds_changed
         )
@@ -302,6 +305,13 @@ class JackMixer(SerializedObject):
         edit_menu.append(
             self.new_menu_item(_("Expand Channels"), self.on_expand_channels_cb, "<Control>plus")
         )
+        edit_menu.append(Gtk.SeparatorMenuItem())
+
+        edit_menu.append(self.new_menu_item('Prefader Metering', self.on_prefader_meters_cb,
+                                            "<Control>M"))
+        edit_menu.append(self.new_menu_item('Postfader Metering', self.on_postfader_meters_cb,
+                                            "<Shift><Control>M"))
+
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         edit_menu.append(self.new_menu_item(_("_Clear"), self.on_channels_clear, "<Control>X"))
@@ -720,6 +730,14 @@ class JackMixer(SerializedObject):
         for channel in self.channels + self.output_channels:
             channel.widen()
 
+    def on_prefader_meters_cb(self, widget):
+        for channel in self.channels + self.output_channels:
+            channel.use_prefader_metering()
+
+    def on_postfader_meters_cb(self, widget):
+        for channel in self.channels + self.output_channels:
+            channel.use_prefader_metering(False)
+
     def on_midi_behavior_mode_changed(self, gui_factory, value):
         self.mixer.midi_behavior_mode = value
 
@@ -923,6 +941,12 @@ class JackMixer(SerializedObject):
             self.current_filename = None
 
         dlg.destroy()
+
+    def on_default_meter_scale_changed(self, sender, newscale):
+        if isinstance(newscale, (scale.K14, scale.K20)):
+            self.mixer.kmetering = True
+        else:
+            self.mixer.kmetering = False
 
     def on_meter_refresh_period_milliseconds_changed(self, sender, value):
         if self.meter_refresh_timer_id is not None:

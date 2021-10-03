@@ -64,6 +64,12 @@ enum midi_behavior_mode {
   Pick_Up
 };
 
+enum meter_mode {
+  Pre_Fader,
+  Post_Fader
+};
+
+
 typedef enum {
   JACK_MIXER_NO_ERROR,
   JACK_MIXER_ERROR_JACK_CLIENT_CREATE,
@@ -108,6 +114,15 @@ get_channels_count(
 const char*
 get_client_name(
   jack_mixer_t mixer);
+
+bool
+get_kmetering(
+  jack_mixer_t mixer);
+
+void
+set_kmetering(
+  jack_mixer_t mixer,
+  bool flag);
 
 int8_t
 get_last_midi_cc(
@@ -156,13 +171,15 @@ void
 channel_stereo_meter_read(
   jack_mixer_channel_t channel,
   double * left_ptr,
-  double * right_ptr);
+  double * right_ptr,
+  enum meter_mode);
 
 /* returned value is in dBFS */
 void
 channel_mono_meter_read(
   jack_mixer_channel_t channel,
-  double * mono_ptr);
+  double * mono_ptr,
+  enum meter_mode);
 
 /* returned values are in dBFS */
 void
@@ -171,14 +188,24 @@ channel_stereo_kmeter_read(
   double * left_ptr,
   double * right_ptr,
   double * left_rms_ptr,
-  double * right_rms_ptr);
+  double * right_rms_ptr,
+  enum meter_mode);
 
 /* returned value is in dBFS */
 void
 channel_mono_kmeter_read(
   jack_mixer_channel_t channel,
   double * mono_ptr,
-  double * mono_rms_ptr);
+  double * mono_rms_ptr,
+  enum meter_mode mode);
+
+void
+channel_mono_kmeter_reset(
+  jack_mixer_channel_t channel);
+
+void
+channel_stereo_kmeter_reset(
+  jack_mixer_channel_t channel);
 
 bool
 channel_is_stereo(
@@ -287,11 +314,13 @@ remove_channels(
 /* returned value is in dBFS */
 double
 channel_abspeak_read(
-  jack_mixer_channel_t channel);
+  jack_mixer_channel_t channel,
+  enum meter_mode modes);
 
 void
 channel_abspeak_reset(
-  jack_mixer_channel_t channel);
+  jack_mixer_channel_t channel,
+  enum meter_mode mode);
 
 void
 channel_out_mute(

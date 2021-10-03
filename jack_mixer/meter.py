@@ -21,6 +21,8 @@ import cairo
 from gi.repository import Gtk
 from gi.repository import Gdk
 
+from . import scale as scalemod
+
 
 log = logging.getLogger(__name__)
 
@@ -31,17 +33,18 @@ class MeterWidget(Gtk.DrawingArea):
     def __init__(self, scale):
         log.debug("Creating MeterWidget for scale %s", scale)
         super().__init__()
-        self.scale = scale
         self.color_bg = Gdk.Color(0, 0, 0)
         self.color_value = None
         self.color_mark = Gdk.Color(int(65535 * 0.2), int(65535 * 0.2), int(65535 * 0.2))
         self.width = 0
         self.height = 0
         self.cache_surface = None
+
         self.min_width = METER_MIN_WIDTH
         self.preferred_width = METER_MAX_WIDTH
         self.current_width_size_request = self.preferred_width
         self.preferred_height = 200
+        self.set_scale(scale)
 
         self.widen()
 
@@ -144,6 +147,7 @@ class MeterWidget(Gtk.DrawingArea):
         cairo_ctx.fill()
 
     def set_scale(self, scale):
+        self.kmetering = isinstance(scale, (scalemod.K14, scalemod.K20))
         self.scale = scale
         self.cache_surface = None
         self.invalidate_all()
@@ -162,9 +166,27 @@ class MonoMeterWidget(MeterWidget):
         width = self.current_width_size_request / 1.5
         x = 0.5 * (self.width - width)
         self.draw_value(cairo_ctx, self.value, x, width)
-        self.draw_peak(cairo_ctx, self.pk, x, width)
 
-    def set_values(self, pk, value):
+        if self.kmetering:
+            self.draw_peak(cairo_ctx, self.pk, x, width)
+
+    def set_value(self, value):
+        if value != self.raw_value:
+            self.raw_value = value
+            self.value = self.scale.db_to_scale(value)
+            self.invalidate_all()
+
+        if value == self.raw_value:
+            return
+
+        self.raw_value = value
+        old_value = self.value
+        self.value = self.scale.db_to_scale(value)
+
+        if (abs(old_value-self.value) * self.height) > 1:
+            self.invalidate_all()
+
+    def set_value_kmeter(self, value, pk):
         if value == self.raw_value and pk == self.raw_pk:
             return
 
@@ -198,6 +220,7 @@ class StereoMeterWidget(MeterWidget):
 
     def draw(self, widget, cairo_ctx):
         self.draw_background(cairo_ctx)
+
         width = self.current_width_size_request / 5.0
         left_x = 0.5 * self.width - self.current_width_size_request / 5.0 - 0.5 * width
         right_x = 0.5 * self.width + self.current_width_size_request / 5.0 - 0.5 * width
@@ -207,7 +230,35 @@ class StereoMeterWidget(MeterWidget):
         self.draw_peak(cairo_ctx, self.pk_left, left_x, width)
         self.draw_peak(cairo_ctx, self.pk_right, right_x, width)
 
-    def set_values(self, pk_l, pk_r, left, right):
+        width = self.current_width_size_request / 5.0
+        left_x = 0.5 * self.width - self.current_width_size_request / 5.0 - 0.5 * width
+        right_x = 0.5 * self.width + self.current_width_size_request / 5.0 - 0.5 * width
+
+        self.draw_value(cairo_ctx, self.left, left_x, width)
+        self.draw_value(cairo_ctx, self.right, right_x, width)
+
+        if self.kmetering:
+            self.draw_peak(cairo_ctx, self.pk_left, left_x, width)
+            self.draw_peak(cairo_ctx, self.pk_right, right_x, width)
+
+    def set_values(self, left, right):
+        if left == self.raw_left and right == self.raw_right:
+            return
+
+        self.raw_left = left
+        self.raw_right = right
+        old_left = self.left
+        old_right = self.right
+        self.left = self.scale.db_to_scale(left)
+        self.right = self.scale.db_to_scale(right)
+
+        if (
+            (abs(old_left - self.left) * self.height) > 0.01
+            or (abs(old_right - self.right) * self.height) > 0.01
+        ):
+            self.invalidate_all()
+
+    def set_values_kmeter(self, left, right, pk_l, pk_r):
         if (
             left == self.raw_left
             and right == self.raw_right

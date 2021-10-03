@@ -63,6 +63,8 @@ class Channel(Gtk.Box, SerializedObject):
         self.css_name = "css_name_%d" % Channel.num_instances
         self.label_name = None
         self.wide = True
+        self.meter_prefader = False
+        self.prefader_button = None
         self.label_chars_wide = 12
         self.label_chars_narrow = 7
         self.channel_properties_dialog = None
@@ -129,6 +131,12 @@ class Channel(Gtk.Box, SerializedObject):
         self.vbox_fader = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.vbox_fader.get_style_context().add_class("vbox_fader")
 
+        self.prefader_button = pre = Gtk.ToggleButton("PRE")
+        pre.get_style_context().add_class("prefader_meter")
+        pre.set_tooltip_text("Pre-fader (on) / Post-fader (off) metering")
+        pre.connect("toggled", self.on_prefader_metering_toggled)
+        pre.set_active(self.meter_prefader)
+
         self.hbox_readouts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_readouts.set_homogeneous(True)
         self.hbox_readouts.pack_start(self.volume_digits, False, True, 0)
@@ -137,7 +145,10 @@ class Channel(Gtk.Box, SerializedObject):
 
         self.hbox_fader = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_fader.pack_start(self.slider, True, False, 0)
-        self.hbox_fader.pack_start(self.meter, True, True, 0)
+        self.vbox_meter = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.vbox_meter.pack_start(self.meter, True, True, 0)
+        self.vbox_meter.pack_start(self.prefader_button, False, True, 0)
+        self.hbox_fader.pack_start(self.vbox_meter, True, True, 0)
         self.event_box_fader = Gtk.EventBox()
         self.event_box_fader.set_events(Gdk.EventMask.SCROLL_MASK)
         self.event_box_fader.connect("scroll-event", self.on_scroll)
@@ -288,6 +299,7 @@ class Channel(Gtk.Box, SerializedObject):
     def on_default_meter_scale_changed(self, gui_factory, scale):
         log.debug("Default meter scale change detected.")
         self.meter.set_scale(scale)
+        self.meter_scale = scale
 
     def on_default_slider_scale_changed(self, gui_factory, scale):
         log.debug("Default slider scale change detected.")
@@ -308,16 +320,25 @@ class Channel(Gtk.Box, SerializedObject):
         self.create_slider_widget()
         # balance slider has no custom variant, no need to re-create it.
 
+    def on_prefader_metering_toggled(self, button):
+        self.use_prefader_metering(button.get_active())
+
     def on_abspeak_adjust(self, abspeak, adjust):
         log.debug("abspeak adjust %f", adjust)
         self.slider_adjustment.set_value_db(self.slider_adjustment.get_value_db() + adjust)
-        self.channel.abspeak = None
+        if self.meter_prefader:
+            self.channel.abspeak_prefader = None
+        else:
+            self.channel.abspeak_postfader = None
         # We want to update gui even if actual decibels have not changed (scale wrap for example)
         # self.update_volume(False)
 
     def on_abspeak_reset(self, abspeak):
         log.debug("abspeak reset")
-        self.channel.abspeak = None
+        if self.meter_prefader:
+            self.channel.abspeak_prefader = None
+        else:
+            self.channel.abspeak_postfader = None
 
     def on_volume_digits_key_pressed(self, widget, event):
         if event.keyval == Gdk.KEY_Return or event.keyval == Gdk.KEY_KP_Enter:
@@ -479,17 +500,47 @@ class Channel(Gtk.Box, SerializedObject):
     def narrow(self):
         self.widen(False)
 
+    def use_prefader_metering(self, flag=True):
+        self.meter_prefader = flag
+        self.prefader_button.set_active(flag)
+
+        if (self.meter.kmetering):
+            # Reset the kmeter rms
+            self.channel.kmeter_reset()
+
     def read_meter(self):
         if not self.channel:
             return
-        if self.stereo:
-            peak_left, peak_right, rms_left, rms_right = self.channel.kmeter
-            self.meter.set_values(peak_left, peak_right, rms_left, rms_right)
-        else:
-            peak, rms = self.channel.kmeter
-            self.meter.set_values(peak, rms)
 
-        self.abspeak.set_peak(self.channel.abspeak)
+        if self.stereo:
+
+            if self.meter.kmetering:
+                if self.meter_prefader:
+                    self.meter.set_values_kmeter(*self.channel.kmeter_prefader)
+                else:
+                    self.meter.set_values_kmeter(*self.channel.kmeter_postfader)
+            else:
+                if self.meter_prefader:
+                    self.meter.set_values(*self.channel.meter_prefader)
+                else:
+                    self.meter.set_values(*self.channel.meter_postfader)
+
+        else:
+            if self.meter.kmetering:
+                if self.meter_prefader:
+                    self.meter.set_value_kmeter(*self.channel.kmeter_prefader)
+                else:
+                    self.meter.set_value_kmeter(*self.channel.kmeter_postfader)
+            else:
+                if self.meter_prefader:
+                    self.meter.set_value(*self.channel.meter_prefader)
+                else:
+                    self.meter.set_value(*self.channel.meter_postfader)
+
+        if self.meter_prefader:
+            self.abspeak.set_peak(self.channel.abspeak_prefader)
+        else:
+            self.abspeak.set_peak(self.channel.abspeak_postfader)
 
     def update_balance(self, update_engine, from_midi=False):
         balance = self.balance_adjustment.get_value()
@@ -522,6 +573,7 @@ class Channel(Gtk.Box, SerializedObject):
         object_backend.add_property("volume", "%f" % self.slider_adjustment.get_value_db())
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
         object_backend.add_property("wide", "%s" % str(self.wide))
+        object_backend.add_property("meter_prefader", "%s" % str(self.meter_prefader))
 
         if hasattr(self.channel, "out_mute"):
             object_backend.add_property("out_mute", str(self.channel.out_mute))
@@ -544,7 +596,11 @@ class Channel(Gtk.Box, SerializedObject):
         elif name == "out_mute":
             self.future_out_mute = value == "True"
             return True
+        elif name == "meter_prefader":
+            self.meter_prefader = (value == "True")
+            return True
         elif name == "volume_midi_cc":
+
             self.future_volume_midi_cc = int(value)
             return True
         elif name == "balance_midi_cc":
@@ -603,6 +659,8 @@ class InputChannel(Channel):
         self.update_balance(update_engine=True)
 
         self.create_fader()
+
+        # Widgets
         self.create_buttons()
 
         if not self.wide:
@@ -816,6 +874,9 @@ class OutputChannel(Channel):
         set_background_color(self.label_name_event_box, self.css_name, self.color)
 
         self.create_fader()
+
+        # Widgets
+
         self.create_buttons()
 
         # add control groups to the input channels, and initialize them

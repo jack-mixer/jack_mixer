@@ -153,7 +153,6 @@ class JackMixer(SerializedObject):
         if callback:
             menuitem.connect("activate", callback)
         if accel:
-            key, mod = Gtk.accelerator_parse(accel)
             self.menu_item_add_accelerator(menuitem, accel)
         return menuitem
 

@@ -24,12 +24,18 @@ from gi.repository import GObject
 
 try:
     import xdg
-    from xdg import BaseDirectory
+
+    try:
+        confdir = xdg.XDG_CONFIG_HOME / "jack_mixer"
+        datadir = xdg.XDG_DATA_HOME / "jack_mixer"
+    except AttributeError:
+        confdir = xdg.BaseDirectory.save_config_path("jack_mixer")
+        datadir = xdg.BaseDirectory.save_data_path("jack_mixer")
 except ImportError:
-    xdg = None
+    confdir = None
+    datadir = None
 
 from .serialization import SerializedObject
-
 
 log = logging.getLogger(__name__)
 
@@ -56,11 +62,9 @@ class Factory(GObject.GObject, SerializedObject):
         self.meter_scales = meter_scales
         self.slider_scales = slider_scales
         self.set_default_preferences()
-        if xdg:
+        if confdir:
             self.config = configparser.ConfigParser()
-            self.path = os.path.join(
-                BaseDirectory.save_config_path("jack_mixer"), "preferences.ini"
-            )
+            self.path = os.path.join(confdir, "preferences.ini")
             if os.path.isfile(self.path):
                 self.read_preferences()
             else:
@@ -217,8 +221,7 @@ class Factory(GObject.GObject, SerializedObject):
     def get_default_project_path(self):
         if self.default_project_path:
             return os.path.expanduser(self.default_project_path)
-        elif xdg:
-            return BaseDirectory.save_data_path("jack_mixer")
+        return datadir
 
     def get_default_slider_scale(self):
         return self.default_slider_scale

@@ -1,12 +1,35 @@
 Change Log
 ==========
+## Version 17 (2021-10-15)
 
+Fixed:
+
+* Uniform fall rate for kmeter peak indicators across different jack
+  period sizes was enforced (#133).
+
+Features:
+
+* Now installs a Ray Session template file that tells Ray Session this
+  version has nsm support (#131).
+* A Spanish translation was added.
+* Ability to reset absolute peak meter readings after a user chosen
+  time was added (#135).
+* Custom slider mouse behavior was changed to mimic that of gtk slider,
+  in particular, the fader no longer jumps to click position but requires
+  a click and drag to move it (#137).
+* Minimum and maximum width for custom sliders was added.
+* Minimum and maximum width for meters was added.
+* Meter redraw period as a user preference was added (#139).
+* Ability to meter pre-fader signal was added (#97).
+
+With contributions from Daniel Sheeler and Christopher Arndt and with
+Daryl Hanlon providing the Spanish translation.
 
 ## Version 16 (2021-04-15)
 
 Fixed:
 
-* Some global settings where not properly persisted in the settings file
+* Some global settings were not properly persisted in the settings file
   when changed in the preferences dialog (#124).
 * Selecting a custom default project path in the preferences dialog via
   folder selection widget did not update the path in the text entry.

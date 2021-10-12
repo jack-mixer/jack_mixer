@@ -9,7 +9,7 @@ Fixed:
 
 Features:
 
-* Now installs a Ray Session template file that tells Ray Session this
+* Install a Ray Session template file that tells Ray Session this
   version has nsm support (#131).
 * A Spanish translation was added.
 * Ability to reset absolute peak meter readings after a user chosen
@@ -21,6 +21,7 @@ Features:
 * Minimum and maximum width for meters was added.
 * Meter redraw period as a user preference was added (#139).
 * Ability to meter pre-fader signal was added (#97).
+* Keypad plus and minus accelerator for channel shrink/expand (#141)
 
 With contributions from Daniel Sheeler and Christopher Arndt and with
 Daryl Hanlon providing the Spanish translation.

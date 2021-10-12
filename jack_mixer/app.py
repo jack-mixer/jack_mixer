@@ -153,11 +153,14 @@ class JackMixer(SerializedObject):
         if callback:
             menuitem.connect("activate", callback)
         if accel:
-            key, mod = Gtk.accelerator_parse(accel)
-            menuitem.add_accelerator(
-                "activate", self.menu_accelgroup, key, mod, Gtk.AccelFlags.VISIBLE
-            )
+            self.menu_item_add_accelerator(menuitem, accel)
         return menuitem
+
+    def menu_item_add_accelerator(self, menuitem, accel):
+        key, mod = Gtk.accelerator_parse(accel)
+        menuitem.add_accelerator(
+            "activate", self.menu_accelgroup, key, mod, Gtk.AccelFlags.VISIBLE
+        )
 
     def create_recent_file_menu(self):
         def filter_func(item):
@@ -299,12 +302,14 @@ class JackMixer(SerializedObject):
         self.channel_remove_output_menu_item.set_submenu(self.channel_remove_output_menu)
 
         edit_menu.append(Gtk.SeparatorMenuItem())
-        edit_menu.append(
-            self.new_menu_item(_("Shrink Channels"), self.on_shrink_channels_cb, "<Control>minus")
-        )
-        edit_menu.append(
-            self.new_menu_item(_("Expand Channels"), self.on_expand_channels_cb, "<Control>plus")
-        )
+        menuitem = self.new_menu_item(_("Shrink Channels"), self.on_shrink_channels_cb,
+                                      "<Control>minus")
+        self.menu_item_add_accelerator(menuitem, "<Control>KP_Subtract")
+        edit_menu.append(menuitem)
+        menuitem = self.new_menu_item(_("Expand Channels"), self.on_expand_channels_cb,
+                                      "<Control>plus")
+        self.menu_item_add_accelerator(menuitem, "<Control>KP_Add")
+        edit_menu.append(menuitem)
         edit_menu.append(Gtk.SeparatorMenuItem())
 
         edit_menu.append(self.new_menu_item('Prefader Metering', self.on_prefader_meters_cb,

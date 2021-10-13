@@ -49,6 +49,9 @@ class PreferencesDialog(Gtk.Dialog):
         vbox = self.get_content_area()
 
         path_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        path_vbox.set_tooltip_text(
+            _("Set the path where mixer project files are saved and loaded from by default")
+        )
         self.path_entry = Gtk.Entry()
         self.path_entry.connect("changed", self.on_path_entry_changed)
         path_vbox.pack_start(self.path_entry, False, False, 3)
@@ -70,10 +73,11 @@ class PreferencesDialog(Gtk.Dialog):
         interface_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         self.language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.language_box.set_tooltip_text(_("Set the interface language and localisation"))
+        self.language_combo = self.create_language_combo()
         interface_vbox.pack_start(self.language_box, True, True, 3)
 
         self.language_box.pack_start(Gtk.Label(_("Language:")), False, True, 5)
-        self.language_combo = self.create_language_combo()
         self.language_box.pack_start(self.language_combo, True, True, 0)
 
         self.confirm_quit_checkbutton = Gtk.CheckButton(_("Confirm quit"))
@@ -85,11 +89,16 @@ class PreferencesDialog(Gtk.Dialog):
         interface_vbox.pack_start(self.confirm_quit_checkbutton, True, True, 3)
 
         self.custom_widgets_checkbutton = Gtk.CheckButton(_("Use custom widgets"))
+        self.custom_widgets_checkbutton.set_tooltip_text(
+            _("Use widgets with custom design for the channel sliders")
+        )
         self.custom_widgets_checkbutton.set_active(self.app.gui_factory.get_use_custom_widgets())
         self.custom_widgets_checkbutton.connect("toggled", self.on_custom_widget_toggled)
         interface_vbox.pack_start(self.custom_widgets_checkbutton, True, True, 3)
 
+        color_tooltip = _("Draw the volume meters with the selected solid color")
         self.vumeter_color_checkbutton = Gtk.CheckButton(_("Use custom vumeter color"))
+        self.vumeter_color_checkbutton.set_tooltip_text(color_tooltip)
         self.vumeter_color_checkbutton.set_active(
             self.app.gui_factory.get_vumeter_color_scheme() == "solid"
         )
@@ -97,6 +106,7 @@ class PreferencesDialog(Gtk.Dialog):
         interface_vbox.pack_start(self.vumeter_color_checkbutton, True, True, 3)
 
         self.custom_color_box = hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.custom_color_box.set_tooltip_text(color_tooltip)
         interface_vbox.pack_start(hbox, True, True, 3)
 
         hbox.set_sensitive(self.vumeter_color_checkbutton.get_active())
@@ -108,10 +118,9 @@ class PreferencesDialog(Gtk.Dialog):
         self.vumeter_color_picker.connect("color-set", self.on_vumeter_color_change)
         hbox.pack_start(self.vumeter_color_picker, True, True, 0)
 
+        reset_peak_meter_tooltip = _("Reset the peak meters after the specified time")
         self.auto_reset_peak_meters_checkbutton = Gtk.CheckButton(_("Auto reset peak meter"))
-        self.auto_reset_peak_meters_checkbutton.set_tooltip_text(_(
-            "Reset peak meters after specified time"
-        ))
+        self.auto_reset_peak_meters_checkbutton.set_tooltip_text(reset_peak_meter_tooltip)
         self.auto_reset_peak_meters_checkbutton.set_active(
             self.app.gui_factory.get_auto_reset_peak_meters()
         )
@@ -123,21 +132,27 @@ class PreferencesDialog(Gtk.Dialog):
         self.auto_reset_peak_meters_time_seconds_box = hbox = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL
         )
+        self.auto_reset_peak_meters_time_seconds_box.set_tooltip_text(reset_peak_meter_tooltip)
         interface_vbox.pack_start(hbox, True, True, 3)
 
         hbox.set_sensitive(self.auto_reset_peak_meters_checkbutton.get_active())
         hbox.pack_start(Gtk.Label(_("Time (s):")), False, True, 5)
-        self.auto_reset_peak_meters_time_seconds_spinbutton = spinbutton = \
-            self.create_auto_reset_peak_meters_time_seconds_spinbutton()
+        self.auto_reset_peak_meters_time_seconds_spinbutton = (
+            spinbutton
+        ) = self.create_auto_reset_peak_meters_time_seconds_spinbutton()
         hbox.pack_start(spinbutton, True, True, 0)
 
         self.meter_refresh_period_milliseconds_box = hbox = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL
         )
+        self.meter_refresh_period_milliseconds_box.set_tooltip_text(
+            _("Update the volume level meters with the specified interval in milliseconds")
+        )
         interface_vbox.pack_start(hbox, True, True, 3)
         hbox.pack_start(Gtk.Label(_("Meter Refresh Period (ms):")), False, True, 5)
-        self.meter_refresh_period_milliseconds_spinbutton = spinbutton = \
-            self.create_meter_refresh_period_milliseconds_spinbutton()
+        self.meter_refresh_period_milliseconds_spinbutton = (
+            spinbutton
+        ) = self.create_meter_refresh_period_milliseconds_spinbutton()
         hbox.pack_start(spinbutton, True, True, 0)
 
         vbox.pack_start(self.create_frame(_("Interface"), interface_vbox), True, True, 0)
@@ -146,12 +161,20 @@ class PreferencesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label=_("Meter scale:")), 0, 1, 0, 1)
+        meter_scale_tooltip = _("Set the scale for all volume meters")
+        meter_scale_label = Gtk.Label(label=_("Meter scale:"))
+        meter_scale_label.set_tooltip_text(meter_scale_tooltip)
+        table.attach(meter_scale_label, 0, 1, 0, 1)
         self.meter_scale_combo = self.create_meter_store_and_combo()
+        self.meter_scale_combo.set_tooltip_text(meter_scale_tooltip)
         table.attach(self.meter_scale_combo, 1, 2, 0, 1)
 
-        table.attach(Gtk.Label(label=_("Slider scale:")), 0, 1, 1, 2)
+        slider_scale_tooltip = _("Set the scale for all volume sliders")
+        slider_scale_label = Gtk.Label(label=_("Slider scale:"))
+        slider_scale_label.set_tooltip_text(slider_scale_tooltip)
+        table.attach(slider_scale_label, 0, 1, 1, 2)
         self.slider_scale_combo = self.create_slider_store_and_combo()
+        self.slider_scale_combo.set_tooltip_text(slider_scale_tooltip)
         table.attach(self.slider_scale_combo, 1, 2, 1, 2)
 
         vbox.pack_start(self.create_frame(_("Scales"), table), True, True, 0)
@@ -160,8 +183,16 @@ class PreferencesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label=_("Control Behavior:")), 0, 1, 0, 1)
+        midi_behavior_tooltip = _(
+            "Set how channel volume and balance are controlled via MIDI:\n\n"
+            "- Jump To Value: channel volume or balance is set immediately to received controller value\n"
+            "- Pick Up: control changes are ignored until a controller value near the current value is received\n"
+        )
+        midi_behavior_label = Gtk.Label(label=_("Control Behavior:"))
+        midi_behavior_label.set_tooltip_text(midi_behavior_tooltip)
+        table.attach(midi_behavior_label, 0, 1, 0, 1)
         self.midi_behavior_combo = self.create_midi_behavior_combo()
+        self.midi_behavior_combo.set_tooltip_text(midi_behavior_tooltip)
         table.attach(self.midi_behavior_combo, 1, 2, 0, 1)
 
         vbox.pack_start(self.create_frame(_("MIDI"), table), True, True, 0)
@@ -222,28 +253,26 @@ class PreferencesDialog(Gtk.Dialog):
         return combo
 
     def create_auto_reset_peak_meters_time_seconds_spinbutton(self):
-        adjustment = \
-            Gtk.Adjustment(value=float(
-                           self.app.gui_factory.get_auto_reset_peak_meters_time_seconds()
-                           ),
-                           lower=0.1,
-                           upper=10.0,
-                           step_increment=0.1,
-                           page_increment=0.5,
-                           page_size=0.0)
+        adjustment = Gtk.Adjustment(
+            value=float(self.app.gui_factory.get_auto_reset_peak_meters_time_seconds()),
+            lower=0.1,
+            upper=10.0,
+            step_increment=0.1,
+            page_increment=0.5,
+            page_size=0.0,
+        )
         spinbutton = Gtk.SpinButton(adjustment=adjustment, climb_rate=1.0, digits=1)
         spinbutton.connect("value-changed", self.on_peak_reset_spinbutton_changed)
         return spinbutton
 
     def create_meter_refresh_period_milliseconds_spinbutton(self):
-        adjustment = \
-            Gtk.Adjustment(value=int(
-                           self.app.gui_factory.get_meter_refresh_period_milliseconds()
-                           ),
-                           lower=1,
-                           upper=1000,
-                           step_increment=1,
-                           page_increment=10)
+        adjustment = Gtk.Adjustment(
+            value=int(self.app.gui_factory.get_meter_refresh_period_milliseconds()),
+            lower=1,
+            upper=1000,
+            step_increment=1,
+            page_increment=10,
+        )
         spinbutton = Gtk.SpinButton(adjustment=adjustment)
         spinbutton.connect("value-changed", self.on_meter_refresh_spinbutton_changed)
         return spinbutton

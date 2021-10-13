@@ -146,11 +146,11 @@ class PreferencesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label=_("Meter scale")), 0, 1, 0, 1)
+        table.attach(Gtk.Label(label=_("Meter scale:")), 0, 1, 0, 1)
         self.meter_scale_combo = self.create_meter_store_and_combo()
         table.attach(self.meter_scale_combo, 1, 2, 0, 1)
 
-        table.attach(Gtk.Label(label=_("Slider scale")), 0, 1, 1, 2)
+        table.attach(Gtk.Label(label=_("Slider scale:")), 0, 1, 1, 2)
         self.slider_scale_combo = self.create_slider_store_and_combo()
         table.attach(self.slider_scale_combo, 1, 2, 1, 2)
 
@@ -160,7 +160,7 @@ class PreferencesDialog(Gtk.Dialog):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
 
-        table.attach(Gtk.Label(label=_("Control Behavior")), 0, 1, 0, 1)
+        table.attach(Gtk.Label(label=_("Control Behavior:")), 0, 1, 0, 1)
         self.midi_behavior_combo = self.create_midi_behavior_combo()
         table.attach(self.midi_behavior_combo, 1, 2, 0, 1)
 

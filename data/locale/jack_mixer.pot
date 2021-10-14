@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: jack_mixer 17\n"
 "Report-Msgid-Bugs-To: https://github.com/jack-mixer/jack_mixer/issues\n"
-"POT-Creation-Date: 2021-10-14 10:48+0200\n"
+"POT-Creation-Date: 2021-10-14 12:58+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -216,6 +216,14 @@ msgstr ""
 
 #: jack_mixer/channel.py:124
 msgid "MON"
+msgstr ""
+
+#: jack_mixer/channel.py:134
+msgid "PRE"
+msgstr ""
+
+#: jack_mixer/channel.py:136
+msgid "Pre-fader (on) / Post-fader (off) metering"
 msgstr ""
 
 #: jack_mixer/channel.py:630

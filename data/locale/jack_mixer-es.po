@@ -9,22 +9,22 @@ msgstr ""
 "Project-Id-Version: jack_mixer 16\n"
 "Report-Msgid-Bugs-To: https://github.com/jack-mixer/jack_mixer/issues\n"
 "POT-Creation-Date: 2021-04-14 17:19+0200\n"
-"PO-Revision-Date: 2021-08-17 14:44+0200\n"
+"PO-Revision-Date: 2021-10-14 14:08+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Last-Translator: \n"
-"Language-Team: \n"
 "X-Generator: Poedit 2.3\n"
 
 #: jack_mixer/app.py:48
 msgid ""
 "A multi-channel audio mixer application for the JACK Audio Connection Kit."
 msgstr ""
-"Una aplicación para la mezcla de audio multi-canal para JACK Audio Connection "
-"Kit."
+"Una aplicación para la mezcla de audio multi-canal para JACK Audio "
+"Connection Kit."
 
 #: jack_mixer/app.py:49
 msgid ""
@@ -56,129 +56,129 @@ msgstr ""
 "with jack_mixer; if not, write to the Free Software Foundation, Inc., 51\n"
 "Franklin Street, Fifth Floor, Boston, MA 02110-130159 USA\n"
 
-#: jack_mixer/app.py:169
+#: jack_mixer/app.py:171
 msgid "jack_mixer XML files"
 msgstr "Archivos XML de jack_mixer"
 
-#: jack_mixer/app.py:182
+#: jack_mixer/app.py:184
 msgid "_Recent Projects"
 msgstr "_Proyectos Recientes"
 
-#: jack_mixer/app.py:218
+#: jack_mixer/app.py:227
 msgid "_Mixer"
 msgstr "_Mezclador"
 
-#: jack_mixer/app.py:220
+#: jack_mixer/app.py:229
 msgid "_Edit"
 msgstr "_Editar"
 
-#: jack_mixer/app.py:222
+#: jack_mixer/app.py:231
 msgid "_Help"
 msgstr "_Ayuda"
 
-#: jack_mixer/app.py:230
+#: jack_mixer/app.py:239
 msgid "New _Input Channel"
 msgstr "Nuevo Canal de _Entrada"
 
-#: jack_mixer/app.py:234
+#: jack_mixer/app.py:243
 msgid "New Output _Channel"
 msgstr "Nuevo _Canal de Salida"
 
-#: jack_mixer/app.py:241
+#: jack_mixer/app.py:250
 msgid "_Open..."
 msgstr "_Abrir..."
 
-#: jack_mixer/app.py:247
+#: jack_mixer/app.py:256
 msgid "_Save"
 msgstr "_Guardar"
 
-#: jack_mixer/app.py:251
+#: jack_mixer/app.py:260
 msgid "Save _As..."
 msgstr "Guardar _Como..."
 
-#: jack_mixer/app.py:256
+#: jack_mixer/app.py:265
 msgid "_Hide"
 msgstr "_Ocultar"
 
-#: jack_mixer/app.py:258
+#: jack_mixer/app.py:267
 msgid "_Quit"
 msgstr "_Salir"
 
-#: jack_mixer/app.py:265
+#: jack_mixer/app.py:274
 msgid "_Edit Input Channel"
 msgstr "_Editar Canal Entrada"
 
-#: jack_mixer/app.py:272
+#: jack_mixer/app.py:281
 msgid "E_dit Output Channel"
 msgstr "E_ditar Canal Salida"
 
-#: jack_mixer/app.py:279
+#: jack_mixer/app.py:288
 msgid "_Remove Input Channel"
 msgstr "E_liminar Canal Entrada"
 
-#: jack_mixer/app.py:286
+#: jack_mixer/app.py:295
 msgid "Re_move Output Channel"
 msgstr "Eli_minar Canal Salida"
 
-#: jack_mixer/app.py:294
+#: jack_mixer/app.py:303
 msgid "Shrink Channels"
 msgstr "Encoger Canales"
 
-#: jack_mixer/app.py:297
+#: jack_mixer/app.py:306
 msgid "Expand Channels"
 msgstr "Expandir Canales"
 
-#: jack_mixer/app.py:301
+#: jack_mixer/app.py:317
 msgid "_Clear"
 msgstr "_Va_ciar"
 
-#: jack_mixer/app.py:306
+#: jack_mixer/app.py:322
 msgid "_Preferences"
 msgstr "_Preferencias"
 
-#: jack_mixer/app.py:313
+#: jack_mixer/app.py:329
 msgid "_About"
 msgstr "_Acerca de"
 
-#: jack_mixer/app.py:363
+#: jack_mixer/app.py:379
 msgid "Input channel creation failed."
 msgstr "Error al crear canal de entrada."
 
-#: jack_mixer/app.py:425
+#: jack_mixer/app.py:441
 msgid "Output channel creation failed."
 msgstr "Error al crear canal de salida."
 
-#: jack_mixer/app.py:484 jack_mixer/app.py:573 jack_mixer/app.py:1158
+#: jack_mixer/app.py:500 jack_mixer/app.py:589 jack_mixer/app.py:1194
 #, python-brace-format
 msgid "Error loading project file '{filename}': {msg}"
 msgstr "Error al cargar el archivo de proyecto '{filename}': {msg}"
 
-#: jack_mixer/app.py:558
+#: jack_mixer/app.py:574
 msgid "XML files"
 msgstr "Archivos XML"
 
-#: jack_mixer/app.py:562
+#: jack_mixer/app.py:578
 msgid "All files"
 msgstr "Todos los archivos"
 
-#: jack_mixer/app.py:583
+#: jack_mixer/app.py:599
 msgid "Open project"
 msgstr "Abrir proyecto"
 
-#: jack_mixer/app.py:631 jack_mixer/app.py:674
+#: jack_mixer/app.py:647 jack_mixer/app.py:690
 #, python-brace-format
 msgid "Error saving project file '{filename}': {msg}"
 msgstr "Error al guardar el archivo de proyecto '{filename}': {msg}"
 
-#: jack_mixer/app.py:638
+#: jack_mixer/app.py:654
 msgid "Save project"
 msgstr "Guardar proyecto"
 
-#: jack_mixer/app.py:691
+#: jack_mixer/app.py:707
 msgid "<b>Quit application?</b>"
 msgstr "<b>¿Salir de la aplicación?</b>"
 
-#: jack_mixer/app.py:694
+#: jack_mixer/app.py:710
 msgid ""
 "All jack_mixer ports will be closed and connections lost,\n"
 "stopping all sound going through jack_mixer.\n"
@@ -190,40 +190,40 @@ msgstr ""
 "\n"
 "¿Deseas seguir?"
 
-#: jack_mixer/app.py:759
+#: jack_mixer/app.py:783
 msgid "Input"
 msgstr "Entrada"
 
-#: jack_mixer/app.py:762
+#: jack_mixer/app.py:786
 msgid "Output"
 msgstr "Salida"
 
-#: jack_mixer/app.py:890
+#: jack_mixer/app.py:914
 msgid "Are you sure you want to clear all channels?"
 msgstr "¿Deseas seguir y eliminar todos los canales?"
 
-#: jack_mixer/app.py:1122
+#: jack_mixer/app.py:1158
 msgid "FILE"
 msgstr "ARCHIVO"
 
-#: jack_mixer/app.py:1123
+#: jack_mixer/app.py:1159
 msgid "load mixer project configuration from FILE"
 msgstr "cargar configuración del mezclador de ARCHIVO"
 
-#: jack_mixer/app.py:1130
+#: jack_mixer/app.py:1166
 msgid "enable debug logging messages"
 msgstr "habilitar mensajes de registro de debug"
 
-#: jack_mixer/app.py:1134
+#: jack_mixer/app.py:1170
 msgid "NAME"
 msgstr "NOMBRE"
 
-#: jack_mixer/app.py:1137
+#: jack_mixer/app.py:1173
 #, python-format
 msgid "set JACK client name (default: %(default)s)"
 msgstr "establecer nombre de cliente de JACK (predeterminado: %(default)s)"
 
-#: jack_mixer/app.py:1148
+#: jack_mixer/app.py:1184
 msgid ""
 "Mixer creation failed:\n"
 "\n"
@@ -233,56 +233,56 @@ msgstr ""
 "\n"
 "{}"
 
-#: jack_mixer/channel.py:113 jack_mixer/channel.py:1329
+#: jack_mixer/channel.py:115 jack_mixer/channel.py:1395
 msgid "M"
 msgstr "M"
 
-#: jack_mixer/channel.py:122
+#: jack_mixer/channel.py:124
 msgid "MON"
 msgstr "MON"
 
-#: jack_mixer/channel.py:569
+#: jack_mixer/channel.py:630
 msgid "S"
 msgstr "S"
 
-#: jack_mixer/channel.py:580
+#: jack_mixer/channel.py:641
 msgid "Cannot create a channel"
 msgstr "No se pudo crear un canal"
 
-#: jack_mixer/channel.py:795
+#: jack_mixer/channel.py:858
 msgid "Cannot create an output channel"
 msgstr "No se pudo crear un canal de salida"
 
-#: jack_mixer/channel.py:940
+#: jack_mixer/channel.py:1006
 #, python-brace-format
 msgid "Channel '{name}' Properties"
 msgstr "Propiedades del Canal '{name}'"
 
-#: jack_mixer/channel.py:981
+#: jack_mixer/channel.py:1047
 msgid "Properties"
 msgstr "Propiedades"
 
-#: jack_mixer/channel.py:986
+#: jack_mixer/channel.py:1052
 msgid "_Name"
 msgstr "_Nombre"
 
-#: jack_mixer/channel.py:995
+#: jack_mixer/channel.py:1061
 msgid "Mode"
 msgstr "Modo"
 
-#: jack_mixer/channel.py:996
+#: jack_mixer/channel.py:1062
 msgid "_Mono"
 msgstr "_Mono"
 
-#: jack_mixer/channel.py:997
+#: jack_mixer/channel.py:1063
 msgid "_Stereo"
 msgstr "E_stéreo"
 
-#: jack_mixer/channel.py:1002
+#: jack_mixer/channel.py:1068
 msgid "MIDI Control Changes"
 msgstr "MIDI Control Changes"
 
-#: jack_mixer/channel.py:1008
+#: jack_mixer/channel.py:1074
 #, python-brace-format
 msgid ""
 "{param} MIDI Control Change number (0-127, set to -1 to assign next free CC "
@@ -291,110 +291,110 @@ msgstr ""
 "{param} Número de MIDI Control Change (0-127, establecido en -1 para asignar "
 "el siguiente número CC libre)"
 
-#: jack_mixer/channel.py:1010
+#: jack_mixer/channel.py:1076
 msgid "_Volume"
 msgstr "_Volumen"
 
-#: jack_mixer/channel.py:1014
+#: jack_mixer/channel.py:1080
 msgid "Volume"
 msgstr "Volumen"
 
-#: jack_mixer/channel.py:1017 jack_mixer/channel.py:1028
-#: jack_mixer/channel.py:1039 jack_mixer/channel.py:1064
+#: jack_mixer/channel.py:1083 jack_mixer/channel.py:1094
+#: jack_mixer/channel.py:1105 jack_mixer/channel.py:1130
 msgid "Learn"
 msgstr "Aprender"
 
-#: jack_mixer/channel.py:1021
+#: jack_mixer/channel.py:1087
 msgid "_Balance"
 msgstr "_Balance"
 
-#: jack_mixer/channel.py:1025
+#: jack_mixer/channel.py:1091
 msgid "Balance"
 msgstr "Balance"
 
-#: jack_mixer/channel.py:1032
+#: jack_mixer/channel.py:1098
 msgid "M_ute"
 msgstr "M_ute"
 
-#: jack_mixer/channel.py:1036
+#: jack_mixer/channel.py:1102
 msgid "Mute"
 msgstr "Mute"
 
-#: jack_mixer/channel.py:1046
+#: jack_mixer/channel.py:1112
 msgid "_Direct Out(s)"
 msgstr "Sali_da(s) Directa(s)"
 
-#: jack_mixer/channel.py:1051
+#: jack_mixer/channel.py:1117
 msgid "Add direct post-fader output(s) for channel."
 msgstr "Añadir salida(s) directas post-fader para canal."
 
-#: jack_mixer/channel.py:1057
+#: jack_mixer/channel.py:1123
 msgid "S_olo"
 msgstr "S_olo"
 
-#: jack_mixer/channel.py:1061
+#: jack_mixer/channel.py:1127
 msgid "Solo"
 msgstr "Solo"
 
-#: jack_mixer/channel.py:1098
+#: jack_mixer/channel.py:1164
 msgid "Please move the MIDI control you want to use for this function."
 msgstr ""
 "Por favor mueve el control MIDI que quieres utilizar para esta función."
 
-#: jack_mixer/channel.py:1101
+#: jack_mixer/channel.py:1167
 msgid "This window will close in 5 seconds."
 msgstr "Esta ventana se cerrará en 5 segundos."
 
-#: jack_mixer/channel.py:1107
+#: jack_mixer/channel.py:1173
 #, python-brace-format
 msgid "This window will close in {seconds} seconds."
 msgstr "Esta ventana se cerrará en {seconds} segundos."
 
-#: jack_mixer/channel.py:1188
+#: jack_mixer/channel.py:1254
 msgid "Value"
 msgstr "Valor"
 
-#: jack_mixer/channel.py:1189
+#: jack_mixer/channel.py:1255
 msgid "-_Inf"
 msgstr "-_Inf"
 
-#: jack_mixer/channel.py:1190
+#: jack_mixer/channel.py:1256
 msgid "_0dB"
 msgstr "_0dB"
 
-#: jack_mixer/channel.py:1197
+#: jack_mixer/channel.py:1263
 msgid "New Input Channel"
 msgstr "Nuevo Canal Entrada"
 
-#: jack_mixer/channel.py:1230
+#: jack_mixer/channel.py:1296
 msgid "_Color"
 msgstr "_Color"
 
-#: jack_mixer/channel.py:1239
+#: jack_mixer/channel.py:1305
 msgid "Input Channels"
 msgstr "Canales Entrada"
 
-#: jack_mixer/channel.py:1241
+#: jack_mixer/channel.py:1307
 msgid "_Display solo buttons"
 msgstr "_Mostrar botones de solo"
 
-#: jack_mixer/channel.py:1263
+#: jack_mixer/channel.py:1329
 msgid "New Output Channel"
 msgstr "Nuevo Canal Salida"
 
-#: jack_mixer/channel.py:1331
+#: jack_mixer/channel.py:1397
 msgid "Mute output channel send"
 msgstr "Silenciar envío canal salida"
 
-#: jack_mixer/channel.py:1337
+#: jack_mixer/channel.py:1403
 msgid "Solo output send"
 msgstr "Solo envío salida"
 
-#: jack_mixer/channel.py:1341
+#: jack_mixer/channel.py:1407
 msgid "P"
 msgstr "P"
 
-#: jack_mixer/channel.py:1343
+#: jack_mixer/channel.py:1409
 msgid "Pre (on) / Post (off) fader send"
 msgstr "Envío fader Pre (on) / Post (off)"
 
@@ -402,23 +402,23 @@ msgstr "Envío fader Pre (on) / Post (off)"
 msgid "Use system setting"
 msgstr "Utilizar configuración del sistema"
 
-#: jack_mixer/gui.py:69
+#: jack_mixer/gui.py:70
 msgid "Cannot load PyXDG. "
 msgstr "No se pudo cargar PyXDG. "
 
-#: jack_mixer/gui.py:70
+#: jack_mixer/gui.py:71
 msgid "Your preferences will not be preserved across jack_mixer invocations."
 msgstr ""
 "Tus preferencias no se conservarán en diferentes invocaciones de jack_mixer."
 
-#: jack_mixer/gui.py:152
+#: jack_mixer/gui.py:173
 #, python-format
 msgid "Ignoring default_meter_scale setting, because '%s' scale is not known."
 msgstr ""
 "Ignorando la configuración default_meter_scale, porque la escala '%s' no es "
 "conocida."
 
-#: jack_mixer/gui.py:163
+#: jack_mixer/gui.py:184
 #, python-format
 msgid "Ignoring default_slider_scale setting, because '%s' scale is not known."
 msgstr ""
@@ -458,30 +458,46 @@ msgid "Custom color:"
 msgstr "Color personalizado:"
 
 #: jack_mixer/preferences.py:111
+msgid "Auto reset peak meter"
+msgstr "Auto resetear medidor de pico"
+
+#: jack_mixer/preferences.py:113
+msgid "Reset peak meters after specified time"
+msgstr "Auto resetear medidores de pico tras tiempo especificado"
+
+#: jack_mixer/preferences.py:129
+msgid "Time (s):"
+msgstr "Tiempo (s):"
+
+#: jack_mixer/preferences.py:138
+msgid "Meter Refresh Period (ms):"
+msgstr "Periodo Refresco Medidor (ms):"
+
+#: jack_mixer/preferences.py:143
 msgid "Interface"
 msgstr "Interfaz"
 
-#: jack_mixer/preferences.py:117
+#: jack_mixer/preferences.py:149
 msgid "Meter scale"
 msgstr "Escala medidor"
 
-#: jack_mixer/preferences.py:121
+#: jack_mixer/preferences.py:153
 msgid "Slider scale"
 msgstr "Escala potenciómetro"
 
-#: jack_mixer/preferences.py:125
+#: jack_mixer/preferences.py:157
 msgid "Scales"
 msgstr "Escalas"
 
-#: jack_mixer/preferences.py:131
+#: jack_mixer/preferences.py:163
 msgid "Control Behavior"
 msgstr "Controlar Comportamiento"
 
-#: jack_mixer/preferences.py:135
+#: jack_mixer/preferences.py:167
 msgid "MIDI"
 msgstr "MIDI"
 
-#: jack_mixer/preferences.py:221
+#: jack_mixer/preferences.py:280
 msgid "You need to restart the application for this setting to take effect."
 msgstr ""
 "Debes reiniciar la aplicación para que esta configuración surta efecto."
@@ -522,11 +538,11 @@ msgstr "Escala K14"
 msgid "Document type '{type}' not supported."
 msgstr "Documento del tipo '{type}' no soportado."
 
-#: jack_mixer/slider.py:249
+#: jack_mixer/slider.py:260
 msgid "Center"
 msgstr "Centro"
 
-#: jack_mixer/slider.py:252
+#: jack_mixer/slider.py:263
 #, python-brace-format
 msgid "Left: {left} / Right: {right}"
 msgstr "Izquierda: {left} / Derecha: {right}"
@@ -535,35 +551,35 @@ msgstr "Izquierda: {left} / Derecha: {right}"
 msgid "usage: "
 msgstr "utilización: "
 
-#: /usr/lib/python3.9/argparse.py:854
+#: /usr/lib/python3.9/argparse.py:856
 msgid ".__call__() not defined"
 msgstr ".__call__() no definido"
 
-#: /usr/lib/python3.9/argparse.py:1197
+#: /usr/lib/python3.9/argparse.py:1199
 #, python-format
 msgid "unknown parser %(parser_name)r (choices: %(choices)s)"
 msgstr "unknown parser %(parser_name)r (opciones: %(choices)s)"
 
-#: /usr/lib/python3.9/argparse.py:1257
+#: /usr/lib/python3.9/argparse.py:1259
 #, python-format
 msgid "argument \"-\" with mode %r"
 msgstr "argumento \"-\" con modo %r"
 
-#: /usr/lib/python3.9/argparse.py:1266
+#: /usr/lib/python3.9/argparse.py:1268
 #, python-format
 msgid "can't open '%(filename)s': %(error)s"
 msgstr "no se puede abrir '%(filename)s': %(error)s"
 
-#: /usr/lib/python3.9/argparse.py:1475
+#: /usr/lib/python3.9/argparse.py:1477
 #, python-format
 msgid "cannot merge actions - two groups are named %r"
 msgstr "no se pueden fusionar acciones - dos grupos tienen el nombre %r"
 
-#: /usr/lib/python3.9/argparse.py:1513
+#: /usr/lib/python3.9/argparse.py:1515
 msgid "'required' is an invalid argument for positionals"
 msgstr "'required' es un argumento no válido para posicionales"
 
-#: /usr/lib/python3.9/argparse.py:1535
+#: /usr/lib/python3.9/argparse.py:1537
 #, python-format
 msgid ""
 "invalid option string %(option)r: must start with a character "
@@ -572,113 +588,113 @@ msgstr ""
 "cadena de opciones no válida %(option)r: debe comenzar con un carácter "
 "%(prefix_chars)r"
 
-#: /usr/lib/python3.9/argparse.py:1553
+#: /usr/lib/python3.9/argparse.py:1555
 #, python-format
 msgid "dest= is required for options like %r"
 msgstr "dest= se require para opciones como %r"
 
-#: /usr/lib/python3.9/argparse.py:1570
+#: /usr/lib/python3.9/argparse.py:1572
 #, python-format
 msgid "invalid conflict_resolution value: %r"
 msgstr "valor de conflict_resolution no válido: %r"
 
-#: /usr/lib/python3.9/argparse.py:1588
+#: /usr/lib/python3.9/argparse.py:1590
 #, python-format
 msgid "conflicting option string: %s"
 msgid_plural "conflicting option strings: %s"
 msgstr[0] "conflicto de cadena de opciones: %s"
 msgstr[1] ""
 
-#: /usr/lib/python3.9/argparse.py:1654
+#: /usr/lib/python3.9/argparse.py:1656
 msgid "mutually exclusive arguments must be optional"
 msgstr "los argumentos recíprocamente excluyentes deben ser opcionales"
 
-#: /usr/lib/python3.9/argparse.py:1721
+#: /usr/lib/python3.9/argparse.py:1723
 msgid "positional arguments"
 msgstr "argumentos posicionales"
 
-#: /usr/lib/python3.9/argparse.py:1722
+#: /usr/lib/python3.9/argparse.py:1724
 msgid "optional arguments"
 msgstr "argumentos opcionales"
 
-#: /usr/lib/python3.9/argparse.py:1737
+#: /usr/lib/python3.9/argparse.py:1739
 msgid "show this help message and exit"
 msgstr "mostrar este mensaje de ayuda y salir"
 
-#: /usr/lib/python3.9/argparse.py:1768
+#: /usr/lib/python3.9/argparse.py:1770
 msgid "cannot have multiple subparser arguments"
 msgstr "no se pueden tener múltiples argumentos de subanalizadores"
 
-#: /usr/lib/python3.9/argparse.py:1820 /usr/lib/python3.9/argparse.py:2331
+#: /usr/lib/python3.9/argparse.py:1822 /usr/lib/python3.9/argparse.py:2333
 #, python-format
 msgid "unrecognized arguments: %s"
 msgstr "argumentos no reconocidos: %s"
 
-#: /usr/lib/python3.9/argparse.py:1921
+#: /usr/lib/python3.9/argparse.py:1923
 #, python-format
 msgid "not allowed with argument %s"
 msgstr "no se permite con argumento %s"
 
-#: /usr/lib/python3.9/argparse.py:1967 /usr/lib/python3.9/argparse.py:1981
+#: /usr/lib/python3.9/argparse.py:1969 /usr/lib/python3.9/argparse.py:1983
 #, python-format
 msgid "ignored explicit argument %r"
 msgstr "argumento explícito %r ignorado"
 
-#: /usr/lib/python3.9/argparse.py:2088
+#: /usr/lib/python3.9/argparse.py:2090
 #, python-format
 msgid "the following arguments are required: %s"
 msgstr "se requieren los siguientes argumentos: %s"
 
-#: /usr/lib/python3.9/argparse.py:2103
+#: /usr/lib/python3.9/argparse.py:2105
 #, python-format
 msgid "one of the arguments %s is required"
 msgstr "se requiere uno de los argumentos %s"
 
-#: /usr/lib/python3.9/argparse.py:2146
+#: /usr/lib/python3.9/argparse.py:2148
 msgid "expected one argument"
 msgstr "se espera un argumento"
 
-#: /usr/lib/python3.9/argparse.py:2147
+#: /usr/lib/python3.9/argparse.py:2149
 msgid "expected at most one argument"
 msgstr "se espera un argumento máximo"
 
-#: /usr/lib/python3.9/argparse.py:2148
+#: /usr/lib/python3.9/argparse.py:2150
 msgid "expected at least one argument"
 msgstr "se espera un argumento mínimo"
 
-#: /usr/lib/python3.9/argparse.py:2152
+#: /usr/lib/python3.9/argparse.py:2154
 #, python-format
 msgid "expected %s argument"
 msgid_plural "expected %s arguments"
 msgstr[0] "se espera argumento %s"
 msgstr[1] "expected %s arguments"
 
-#: /usr/lib/python3.9/argparse.py:2210
+#: /usr/lib/python3.9/argparse.py:2212
 #, python-format
 msgid "ambiguous option: %(option)s could match %(matches)s"
 msgstr "opción ambigua:  %(option)s podría(n) corresponder a %(matches)s"
 
-#: /usr/lib/python3.9/argparse.py:2274
+#: /usr/lib/python3.9/argparse.py:2276
 #, python-format
 msgid "unexpected option string: %s"
 msgstr "cadena de opciones no esperada: %s"
 
-#: /usr/lib/python3.9/argparse.py:2471
+#: /usr/lib/python3.9/argparse.py:2473
 #, python-format
 msgid "%r is not callable"
 msgstr "%r no es invocable"
 
-#: /usr/lib/python3.9/argparse.py:2488
+#: /usr/lib/python3.9/argparse.py:2490
 #, python-format
 msgid "invalid %(type)s value: %(value)r"
 msgstr "valor %(type)s no válido: %(value)r"
 
-#: /usr/lib/python3.9/argparse.py:2499
+#: /usr/lib/python3.9/argparse.py:2501
 #, python-format
 msgid "invalid choice: %(value)r (choose from %(choices)s)"
 msgstr "elección no válida: %(value)r (elegir entre %(choices)s)"
 
-#: /usr/lib/python3.9/argparse.py:2575
+#: /usr/lib/python3.9/argparse.py:2577
 #, python-format
 msgid "%(prog)s: error: %(message)s\n"
 msgstr "%(prog)s: error: %(message)s\n"
@@ -728,7 +744,6 @@ msgid "Unknown argument, aborting.\n"
 msgstr "Argumento desconocido, abortando.\n"
 
 #: src/jack_mix_box.c:140
-#, c-format
 msgid "You must specify at least one input channel.\n"
 msgstr "Debes especificar al menos un canal de entrada.\n"
 
@@ -738,12 +753,12 @@ msgid "Failed to add channel %d, aborting.\n"
 msgstr "Error al añadir el canal %d, abortando.\n"
 
 #. JACK_MIXER_NO_ERROR
-#: src/jack_mixer.c:212
+#: src/jack_mixer.c:222
 msgid "No error.\n"
 msgstr "No error.\n"
 
 #. JACK_MIXER_ERROR_JACK_CLIENT_CREATE
-#: src/jack_mixer.c:214
+#: src/jack_mixer.c:224
 msgid ""
 "Could not create JACK client.\n"
 "Please make sure JACK daemon is running.\n"
@@ -752,81 +767,86 @@ msgstr ""
 "Por favor asegúrate de que el JACK se está ejecutando.\n"
 
 #. JACK_MIXER_ERROR_JACK_MIDI_IN_CREATE
-#: src/jack_mixer.c:216
+#: src/jack_mixer.c:226
 msgid "Could not create JACK MIDI in port.\n"
 msgstr "No se pudo crear el puerto de entrada JACK MIDI\n"
 
 #. JACK_MIXER_ERROR_JACK_MIDI_OUT_CREATE
-#: src/jack_mixer.c:218
+#: src/jack_mixer.c:228
 msgid "Could not create JACK MIDI out port.\n"
 msgstr "No se pudo crear el puerto de salida JACK MIDI\n"
 
 #. JACK_MIXER_ERROR_JACK_SET_PROCESS_CALLBACK
-#: src/jack_mixer.c:220
+#: src/jack_mixer.c:230
 msgid "Could not set JACK process callback.\n"
 msgstr "No se pudo establecer callback de proceso de JACK.\n"
 
+#. JACK_MIXER_ERROR_JACK_SET_BUFFER_SIZE_CALLBACK
+#: src/jack_mixer.c:232
+msgid "Could not set JACK buffer size callback.\n"
+msgstr "No se pudo establecer callback del tamaño de buffer de JACK.\n"
+
 #. JACK_MIXER_ERROR_JACK_ACTIVATE
-#: src/jack_mixer.c:222
+#: src/jack_mixer.c:234
 msgid "Could not activate JACK client.\n"
 msgstr "No se pudo activar cliente de JACK.\n"
 
 #. JACK_MIXER_ERROR_CHANNEL_MALLOC
-#: src/jack_mixer.c:224
+#: src/jack_mixer.c:236
 msgid "Could not allocate memory for channel.\n"
 msgstr "No se pudo asignar memoria para el canal.\n"
 
 #. JACK_MIXER_ERROR_CHANNEL_NAME_MALLOC
-#: src/jack_mixer.c:226
+#: src/jack_mixer.c:238
 msgid "Could not allocate memory for channel name.\n"
 msgstr "No se pudo asignar memoria para el canal nombre.\n"
 
 #. JACK_MIXER_ERROR_PORT_REGISTER
-#: src/jack_mixer.c:228
+#: src/jack_mixer.c:240
 msgid "Could not register JACK port for channel.\n"
 msgstr "No se pudo registrar puerto JACK para el canal.\n"
 
 #. JACK_MIXER_ERROR_PORT_REGISTER_LEFT
-#: src/jack_mixer.c:230
+#: src/jack_mixer.c:242
 msgid "Could not register JACK port for left channel.\n"
 msgstr "No se pudo registrar puerto JACK para el canal izquierdo.\n"
 
 #. JACK_MIXER_ERROR_PORT_REGISTER_RIGHT
-#: src/jack_mixer.c:232
+#: src/jack_mixer.c:244
 msgid "Could not register JACK port for right channel.\n"
 msgstr "No se pudo registrar puerto JACK para el canal derecho.\n"
 
 #. JACK_MIXER_ERROR_JACK_RENAME_PORT
-#: src/jack_mixer.c:234
+#: src/jack_mixer.c:246
 msgid "Could not rename JACK port for channel.\n"
 msgstr "No se pudo renombrar puerto JACK para el canal.\n"
 
 #. JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT
-#: src/jack_mixer.c:236
+#: src/jack_mixer.c:248
 msgid "Could not rename JACK port for left channel.\n"
 msgstr "No se pudo renombrar puerto JACK para el canal izquierdo.\n"
 
 #. JACK_MIXER_ERROR_JACK_RENAME_PORT_LEFT
-#: src/jack_mixer.c:238
+#: src/jack_mixer.c:250
 msgid "Could not rename JACK port for right channel.\n"
 msgstr "No se pudo renombrar puerto JACK para el canal derecho.\n"
 
 #. JACK_MIXER_ERROR_PORT_NAME_MALLOC
-#: src/jack_mixer.c:240
+#: src/jack_mixer.c:252
 msgid "Could not allocate memory for port name.\n"
 msgstr "No se pudo asignar memoria para el puerto nombre.\n"
 
 #. JACK_MIXER_ERROR_INVALID_CC
-#: src/jack_mixer.c:242
+#: src/jack_mixer.c:254
 msgid "Control Change number out of range.\n"
 msgstr "Número Control Change fuera de rango.\n"
 
 #. JACK_MIXER_ERROR_NO_FREE_CC
-#: src/jack_mixer.c:244
+#: src/jack_mixer.c:256
 msgid "No free Control Change number.\n"
 msgstr "Ningún número Control Change libre.\n"
 
-#: src/jack_mixer.c:748
+#: src/jack_mixer.c:811
 #, c-format
 msgid "%s: volume is %f dbFS for mixer channel: %s\n"
 msgstr "%s: volumen es %f dbFS para canal del mezclador: %s\n"

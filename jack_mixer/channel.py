@@ -131,9 +131,9 @@ class Channel(Gtk.Box, SerializedObject):
         self.vbox_fader = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.vbox_fader.get_style_context().add_class("vbox_fader")
 
-        self.prefader_button = pre = Gtk.ToggleButton("PRE")
+        self.prefader_button = pre = Gtk.ToggleButton(_("PRE"))
         pre.get_style_context().add_class("prefader_meter")
-        pre.set_tooltip_text("Pre-fader (on) / Post-fader (off) metering")
+        pre.set_tooltip_text(_("Pre-fader (on) / Post-fader (off) metering"))
         pre.connect("toggled", self.on_prefader_metering_toggled)
         pre.set_active(self.meter_prefader)
 

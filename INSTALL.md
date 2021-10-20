@@ -28,7 +28,7 @@ Runtime requirements:
 
 Optional run-time dependencies:
 
-* [pyxdg] (for saving your preferences, strongly recommended)
+* [appdirs] (for saving your preferences, strongly recommended)
 * [NSM] (for NSM session management support)
 
 The run-time Python dependencies are checked by meson when setting up the

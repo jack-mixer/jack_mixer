@@ -385,7 +385,7 @@ msgid "Use system setting"
 msgstr ""
 
 #: jack_mixer/gui.py:70
-msgid "Cannot load PyXDG. "
+msgid "Cannot load appdirs. "
 msgstr ""
 
 #: jack_mixer/gui.py:71

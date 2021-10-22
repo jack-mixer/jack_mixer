@@ -392,8 +392,8 @@ msgid "Use system setting"
 msgstr "Utiliser le paramètre système"
 
 #: jack_mixer/gui.py:69
-msgid "Cannot load PyXDG. "
-msgstr "Impossible de charger PyXDG."
+msgid "Cannot load appdirs. "
+msgstr "Impossible de charger appdirs."
 
 #: jack_mixer/gui.py:70
 msgid "Your preferences will not be preserved across jack_mixer invocations."

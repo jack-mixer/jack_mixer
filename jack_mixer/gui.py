@@ -23,10 +23,13 @@ import gi  # noqa: F401
 from gi.repository import GObject
 
 try:
-    import xdg
-    from xdg import BaseDirectory
+    import appdirs
+
+    confdir = appdirs.user_config_dir("jack_mixer")
+    datadir = appdirs.user_data_dir("jack_mixer")
 except ImportError:
-    xdg = None
+    confdir = None
+    datadir = None
 
 from .serialization import SerializedObject
 
@@ -56,18 +59,17 @@ class Factory(GObject.GObject, SerializedObject):
         self.meter_scales = meter_scales
         self.slider_scales = slider_scales
         self.set_default_preferences()
-        if xdg:
+        if confdir:
+            os.makedirs(confdir, exist_ok=True)
             self.config = configparser.ConfigParser()
-            self.path = os.path.join(
-                BaseDirectory.save_config_path("jack_mixer"), "preferences.ini"
-            )
+            self.path = os.path.join(confdir, "preferences.ini")
             if os.path.isfile(self.path):
                 self.read_preferences()
             else:
                 self.write_preferences()
         else:
             log.warning(
-                _("Cannot load PyXDG. ")
+                _("Cannot load appdirs. ")
                 + _("Your preferences will not be preserved across jack_mixer invocations.")
             )
 
@@ -157,7 +159,7 @@ class Factory(GObject.GObject, SerializedObject):
     def _update_setting(self, name, value):
         if value != getattr(self, name):
             setattr(self, name, value)
-            if xdg:
+            if confdir:
                 self.write_preferences()
             signal = "{}-changed".format(name.replace("_", "-"))
             self.emit(signal, value)
@@ -217,8 +219,9 @@ class Factory(GObject.GObject, SerializedObject):
     def get_default_project_path(self):
         if self.default_project_path:
             return os.path.expanduser(self.default_project_path)
-        elif xdg:
-            return BaseDirectory.save_data_path("jack_mixer")
+        elif datadir:
+            os.makedirs(datadir, exist_ok=True)
+            return datadir
 
     def get_default_slider_scale(self):
         return self.default_slider_scale

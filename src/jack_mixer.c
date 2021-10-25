@@ -1511,6 +1511,10 @@ set_kmeters_peak_params(
     channel_ptr->kmeter_right._hold = hold;
     channel_ptr->kmeter_left._fall = fall;
     channel_ptr->kmeter_right._fall = fall;
+    channel_ptr->kmeter_prefader_left._hold = hold;
+    channel_ptr->kmeter_prefader_right._hold = hold;
+    channel_ptr->kmeter_prefader_left._fall = fall;
+    channel_ptr->kmeter_prefader_right._fall = fall;
   }
 
 static int jack_buffer_size_cb(jack_nframes_t nframes, void *arg) {

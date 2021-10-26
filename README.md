@@ -66,7 +66,7 @@ You can reach Frédéric at `fpeters (a.t) 0d (dot) be`, and Nedko at
 `nedko (a.t) arnaudov (dot) name`. Most recently, the primary developers are
 Daniel Sheeler at `dsheeler (a.t) pobox (dot) com` and Christopher Arndt at
 `chris (a.t) chrisarndt (dot) de`, and you can also usually find these folks in
-`#jack_mixer` or `#lad` on FreeNode (as *fpeters*, *nedko*, *dsheeler* and
+`#jack_mixer` or `#lad` on Libera.Chat (as *fpeters*, *nedko*, *dsheeler* and
 *strogon14*).
 
 If you want to get involved with jack_mixer's development, documentation or

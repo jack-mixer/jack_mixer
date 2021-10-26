@@ -361,6 +361,10 @@ class JackMixer(SerializedObject):
         self.window.connect("destroy", Gtk.main_quit)
         self.window.connect("delete-event", self.on_delete_event)
 
+    def show_all(self):
+        self.window.show_all()
+        for channel in self.output_channels + self.channels:
+            channel.on_metering_toggled(channel.metering_button)
     # ---------------------------------------------------------------------------------------------
     # Channel creation
 
@@ -486,7 +490,7 @@ class JackMixer(SerializedObject):
 
     def nsm_show_cb(self):
         width, height = self.window.get_size()
-        self.window.show_all()
+        self.show_all()
         self.paned.set_position(self.paned_position / self.width * width)
 
         self.visible = True
@@ -782,7 +786,7 @@ class JackMixer(SerializedObject):
             setattr(self, "_add_{}_values".format(inout), result)
             (self.add_channel if inout == "input" else self.add_output_channel)(**result)
             if self.visible or self.nsm_client is None:
-                self.window.show_all()
+                self.show_all()
 
     def on_add_input_channel(self, widget):
         return self.on_add_channel("input", _("Input"))
@@ -1054,7 +1058,7 @@ class JackMixer(SerializedObject):
         del self.unserialized_channels
         width, height = self.window.get_size()
         if self.visible or not from_nsm:
-            self.window.show_all()
+            self.show_all()
 
         if self.output_channels:
             self.output_channels[-1].volume_digits.select_region(0, 0)
@@ -1128,7 +1132,7 @@ class JackMixer(SerializedObject):
 
         if self.visible or self.nsm_client is None:
             width, height = self.window.get_size()
-            self.window.show_all()
+            self.show_all()
             if hasattr(self, "paned_position"):
                 self.paned.set_position(self.paned_position / self.width * width)
 

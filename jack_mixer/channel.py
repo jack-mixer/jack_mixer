@@ -142,7 +142,6 @@ class Channel(Gtk.Box, SerializedObject):
         mb.get_style_context().add_class("metering")
         mb.set_tooltip_text(_("Show (on) / Hide (off) metering"))
         mb.connect("toggled", self.on_metering_toggled)
-        self.metering_button.set_active(self.channel.metering)
 
         self.hbox_readouts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_readouts.set_homogeneous(True)
@@ -165,6 +164,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.vbox_fader.pack_end(self.balance, False, True, 0)
 
         self.pack_start(self.vbox_fader, True, True, 0)
+        self.metering_button.set_active(self.channel.metering)
 
     def create_slider_widget(self):
         parent = None

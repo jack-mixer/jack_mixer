@@ -100,13 +100,14 @@ class JackMixer(SerializedObject):
         self.last_project_path = None
         self._monitored_channel = None
         self._init_solo_channels = None
+        self.last_xml_serialization = None
 
         if os.environ.get("NSM_URL"):
             self.nsm_client = NSMClient(
                 prettyName=__program__,
                 saveCallback=self.nsm_save_cb,
                 openOrNewCallback=self.nsm_open_cb,
-                supportsSaveStatus=False,
+                supportsSaveStatus=True,
                 hideGUICallback=self.nsm_hide_cb,
                 showGUICallback=self.nsm_show_cb,
                 exitProgramCallback=self.nsm_exit_cb,
@@ -477,6 +478,12 @@ class JackMixer(SerializedObject):
 
     def nsm_react(self):
         self.nsm_client.reactToMessage()
+        if self.last_xml_serialization == None:
+            self.last_xml_serialization = self.get_xml_serialization()
+        if self.last_xml_serialization.doc.toxml() != self.get_xml_serialization().doc.toxml():
+            self.nsm_client.announceSaveStatus(False)
+        else:
+            self.nsm_client.announceSaveStatus(True)
         return True
 
     def nsm_hide_cb(self, *args):
@@ -511,6 +518,7 @@ class JackMixer(SerializedObject):
         self.current_filename = path + ".xml"
         with open(self.current_filename, "w") as fp:
             self.save_to_xml(fp)
+            self.last_xml_serialization = self.get_xml_serialization()
 
     def nsm_exit_cb(self, path, session_name, client_name):
         Gtk.main_quit()
@@ -1021,11 +1029,15 @@ class JackMixer(SerializedObject):
     # ---------------------------------------------------------------------------------------------
     # Mixer project (de-)serialization and file handling
 
-    def save_to_xml(self, file):
-        log.debug("Saving to XML...")
+    def get_xml_serialization(self):
         b = XmlSerialization()
         s = Serializator()
         s.serialize(self, b)
+        return b
+
+    def save_to_xml(self, file):
+        log.debug("Saving to XML...")
+        b = self.get_xml_serialization()
         b.save(file)
 
     def load_from_xml(self, file, silence_errors=False, from_nsm=False):

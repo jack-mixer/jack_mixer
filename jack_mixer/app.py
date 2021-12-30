@@ -101,6 +101,7 @@ class JackMixer(SerializedObject):
         self._monitored_channel = None
         self._init_solo_channels = None
         self.last_xml_serialization = None
+        self.cached_xml_serialization = None
 
         if os.environ.get("NSM_URL"):
             self.nsm_client = NSMClient(
@@ -478,12 +479,18 @@ class JackMixer(SerializedObject):
 
     def nsm_react(self):
         self.nsm_client.reactToMessage()
-        if self.last_xml_serialization == None:
-            self.last_xml_serialization = self.get_xml_serialization()
-        if self.last_xml_serialization.doc.toxml() != self.get_xml_serialization().doc.toxml():
+        current_xml_serialization = self.get_xml_serialization().doc.toxml()
+        if self.last_xml_serialization is None:
+            self.last_xml_serialization = current_xml_serialization
+        if self.cached_xml_serialization is None:
+            self.cached_xml_serialization = current_xml_serialization
+        if self.cached_xml_serialization == current_xml_serialization:
+            return True
+        if self.last_xml_serialization != current_xml_serialization:
             self.nsm_client.announceSaveStatus(False)
         else:
             self.nsm_client.announceSaveStatus(True)
+        self.cached_xml_serialization = current_xml_serialization
         return True
 
     def nsm_hide_cb(self, *args):
@@ -518,7 +525,7 @@ class JackMixer(SerializedObject):
         self.current_filename = path + ".xml"
         with open(self.current_filename, "w") as fp:
             self.save_to_xml(fp)
-            self.last_xml_serialization = self.get_xml_serialization()
+            self.last_xml_serialization = self.get_xml_serialization().doc.toxml()
 
     def nsm_exit_cb(self, path, session_name, client_name):
         Gtk.main_quit()

@@ -491,6 +491,7 @@ class JackMixer(SerializedObject):
         else:
             self.nsm_client.announceSaveStatus(True)
         self.cached_xml_serialization = current_xml_serialization
+
         return True
 
     def nsm_hide_cb(self, *args):

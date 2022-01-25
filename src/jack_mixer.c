@@ -104,6 +104,7 @@ struct channel {
 
   bool NaN_detected;
 
+  int8_t midi_channel_index;
   int8_t midi_cc_volume_index;
   int8_t midi_cc_balance_index;
   int8_t midi_cc_mute_index;
@@ -428,6 +429,23 @@ channel_set_balance_midi_cc(
 }
 
 int8_t
+channel_get_midi_channel(
+  jack_mixer_channel_t channel)
+{
+  // prolly need to set this index somewhere else
+  return channel_ptr->midi_channel_index;
+}
+
+int
+channel_set_midi_channel(
+  jack_mixer_channel_t channel,
+  int8_t new_channel)
+{
+  // def need to make a real function do things here
+  return 0;
+}
+
+int8_t
 channel_get_volume_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -526,6 +544,14 @@ channel_set_solo_midi_cc(
   }
   channel_ptr->mixer_ptr->midi_cc_map[new_cc] = channel_ptr;
   channel_ptr->midi_cc_solo_index = new_cc;
+  return 0;
+}
+
+int
+channel_autoset_midi_channel(
+  jack_mixer_channel_t channel)
+{
+  // check out what the autoset things really do
   return 0;
 }
 

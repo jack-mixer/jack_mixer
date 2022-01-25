@@ -57,6 +57,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.post_fader_output_channel = None
         self.future_out_mute = None
         self.future_volume_midi_cc = None
+        self.future_midi_channel = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
         self.future_solo_midi_cc = None
@@ -577,6 +578,8 @@ class Channel(Gtk.Box, SerializedObject):
 
         if hasattr(self.channel, "out_mute"):
             object_backend.add_property("out_mute", str(self.channel.out_mute))
+        if self.channel.midi_channel != -1:
+            object_backend.add_property("midi_channel", str(self.channel.midi_channel))
         if self.channel.volume_midi_cc != -1:
             object_backend.add_property("volume_midi_cc", str(self.channel.volume_midi_cc))
         if self.channel.balance_midi_cc != -1:
@@ -599,8 +602,10 @@ class Channel(Gtk.Box, SerializedObject):
         elif name == "meter_prefader":
             self.meter_prefader = (value == "True")
             return True
+        elif name == "midi_channel":
+            self.future_midi_channel = int(value)
+            return True
         elif name == "volume_midi_cc":
-
             self.future_volume_midi_cc = int(value)
             return True
         elif name == "balance_midi_cc":
@@ -642,6 +647,8 @@ class InputChannel(Channel):
 
         super().realize()
 
+        if self.future_midi_channel is not None:
+            self.channel.midi_channel = self.future_midi_channel
         if self.future_volume_midi_cc is not None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc is not None:
@@ -859,6 +866,8 @@ class OutputChannel(Channel):
 
         super().realize()
 
+        if self.future_midi_channel is not None:
+            self.channel.midi_channel = self.future_midi_channel
         if self.future_volume_midi_cc is not None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc is not None:
@@ -1150,6 +1159,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             self.mono.set_active(True)
         self.mono.set_sensitive(False)
         self.stereo.set_sensitive(False)
+        self.entry_midi_channel.set_value(self.channel.channel.midi_channel)
         self.entry_volume_cc.set_value(self.channel.channel.volume_midi_cc)
         self.entry_balance_cc.set_value(self.channel.channel.balance_midi_cc)
         self.entry_mute_cc.set_value(self.channel.channel.mute_midi_cc)
@@ -1289,6 +1299,7 @@ class NewInputChannelDialog(NewChannelDialog):
             "name": self.entry_name.get_text(),
             "stereo": self.stereo.get_active(),
             "direct_output": self.direct_output.get_active(),
+            "midi_channel": int(self.entry_midi_channel.get_value()),
             "volume_cc": int(self.entry_volume_cc.get_value()),
             "balance_cc": int(self.entry_balance_cc.get_value()),
             "mute_cc": int(self.entry_mute_cc.get_value()),

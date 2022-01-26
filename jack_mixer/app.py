@@ -433,6 +433,7 @@ class JackMixer(SerializedObject):
         self,
         name,
         stereo=True,
+        midi_channel=1,
         volume_cc=-1,
         balance_cc=-1,
         mute_cc=-1,

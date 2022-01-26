@@ -56,8 +56,8 @@ class Channel(Gtk.Box, SerializedObject):
         self.wants_direct_output = direct_output
         self.post_fader_output_channel = None
         self.future_out_mute = None
-        self.future_volume_midi_cc = None
         self.future_midi_channel = None
+        self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
         self.future_solo_midi_cc = None
@@ -420,6 +420,7 @@ class Channel(Gtk.Box, SerializedObject):
             if self.app.monitored_channel is self:
                 self.app.monitored_channel = None
 
+    # should probs have a param here for MIDI channel
     def assign_midi_ccs(self, volume_cc, balance_cc, mute_cc, solo_cc=None):
         try:
             if volume_cc != -1:
@@ -1255,7 +1256,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                 sensitive = True
         self.ok_button.set_sensitive(sensitive)
 
-
+# prolly where the values of the dialog persist?
 class NewChannelDialog(ChannelPropertiesDialog):
     def create_ui(self):
         super().create_ui()
@@ -1286,6 +1287,7 @@ class NewInputChannelDialog(NewChannelDialog):
         self.direct_output.set_active(values.get("direct_output", True))
         # don't set MIDI CCs to previously used values, because they
         # would overwrite existing mappings, if accepted.
+        self.entry_midi_channel.set_value(1)
         self.entry_volume_cc.set_value(-1)
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)

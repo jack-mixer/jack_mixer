@@ -443,13 +443,13 @@ cdef class Channel:
             raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     @property
-    def midi_channel(self):
+    def midi_channel_midi_cc(self):
         """MIDI channel to control audio channel."""
-        return channel_get_midi_channel(self._channel)
+        return channel_get_midi_channel_midi_cc(self._channel)
 
-    @midi_channel.setter
-    def midi_channel(self, int channel):
-        if channel_set_midi_channel(self._channel, channel) != 0:
+    @midi_channel_midi_cc.setter
+    def midi_channel_midi_cc(self, int channel):
+        if channel_set_midi_channel_midi_cc(self._channel, channel) != 0:
             raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     @property

@@ -1362,6 +1362,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
 
         # don't set MIDI CCs to previously used values, because they
         # would overwrite existing mappings, if accepted.
+        self.entry_midi_channel_cc.set_value(-1)
         self.entry_volume_cc.set_value(-1)
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)
@@ -1376,6 +1377,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         return {
             "name": self.entry_name.get_text(),
             "stereo": self.stereo.get_active(),
+            "midi_channel_cc": int(self.entry_midi_channel_cc.get_value()),
             "volume_cc": int(self.entry_volume_cc.get_value()),
             "balance_cc": int(self.entry_balance_cc.get_value()),
             "mute_cc": int(self.entry_mute_cc.get_value()),

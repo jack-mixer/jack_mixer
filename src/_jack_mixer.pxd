@@ -128,18 +128,18 @@ cdef extern from "jack_mixer.h":
     cdef int channel_autoset_mute_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_autoset_solo_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_autoset_volume_midi_cc(jack_mixer_channel_t channel)
-    cdef int channel_autoset_midi_channel(jack_mixer_channel_t channel)
+    cdef int channel_autoset_midi_channel_midi_cc(jack_mixer_channel_t channel)
 
     cdef int channel_get_balance_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_get_mute_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_get_solo_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_get_volume_midi_cc(jack_mixer_channel_t channel)
-    cdef int channel_get_midi_channel(jack_mixer_channel_t channel)
+    cdef int channel_get_midi_channel_midi_cc(jack_mixer_channel_t channel)
     cdef int channel_set_balance_midi_cc(jack_mixer_channel_t channel, int new_cc)
     cdef int channel_set_mute_midi_cc(jack_mixer_channel_t channel, int new_cc)
     cdef int channel_set_solo_midi_cc(jack_mixer_channel_t channel, int new_cc)
     cdef int channel_set_volume_midi_cc(jack_mixer_channel_t channel, int new_cc)
-    cdef int channel_set_midi_channel(jack_mixer_channel_t channel, int new_channel)
+    cdef int channel_set_midi_channel_midi_cc(jack_mixer_channel_t channel, int new_channel)
 
     cdef void channel_set_midi_scale(jack_mixer_channel_t channel, jack_mixer_scale_t scale)
 

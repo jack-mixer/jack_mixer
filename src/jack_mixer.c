@@ -429,7 +429,7 @@ channel_set_balance_midi_cc(
 }
 
 int8_t
-channel_get_midi_channel(
+channel_get_midi_channel_midi_cc(
   jack_mixer_channel_t channel)
 {
   // prolly need to set this index somewhere else
@@ -437,7 +437,7 @@ channel_get_midi_channel(
 }
 
 int
-channel_set_midi_channel(
+channel_set_midi_channel_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_channel)
 {
@@ -548,7 +548,7 @@ channel_set_solo_midi_cc(
 }
 
 int
-channel_autoset_midi_channel(
+channel_autoset_midi_channel_midi_cc(
   jack_mixer_channel_t channel)
 {
   // check out what the autoset things really do

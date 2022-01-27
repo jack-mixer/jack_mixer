@@ -297,7 +297,7 @@ channel_set_midi_cc_balance_picked_up(
   bool status);
 
 int
-channel_autoset_midi_channel(
+channel_autoset_midi_channel_midi_cc(
   jack_mixer_channel_t channel);
 
 int

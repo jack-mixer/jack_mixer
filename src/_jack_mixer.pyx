@@ -474,6 +474,10 @@ cdef class Channel:
         """Auto assign MIDI CC for channel solo status."""
         return channel_autoset_solo_midi_cc(self._channel)
 
+    def autoset_midi_channel_midi_cc(self):
+        """Auto assign MIDI channel."""
+        return channel_autoset_midi_channel_midi_cc(self._channel)
+
     def autoset_volume_midi_cc(self):
         """Auto assign MIDI CC for channel volume."""
         return channel_autoset_volume_midi_cc(self._channel)

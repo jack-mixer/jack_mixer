@@ -1050,6 +1050,7 @@ class JackMixer(SerializedObject):
         b = self.get_xml_serialization()
         b.save(file)
 
+    # I think I broke loading XML (or perhaps saving) with my midi channel changes
     def load_from_xml(self, file, silence_errors=False, from_nsm=False):
         log.debug("Loading from XML...")
         self.unserialized_channels = []

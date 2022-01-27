@@ -276,6 +276,7 @@ class Channel(Gtk.Box, SerializedObject):
     # ---------------------------------------------------------------------------------------------
     # Signal/event handlers
 
+    # this is where the double click happens for channel props
     def on_label_mouse(self, widget, event):
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:
@@ -1245,12 +1246,11 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                     self.channel.post_fader_output_channel = None
 
             for control in ("midi_channel", "volume", "balance", "mute", "solo"):
-                # whelp, naming the attribute "midi_channel" rather then "midi_channel_cc" seems like it would be excluded from the following line.
                 widget = getattr(self, "entry_{}_cc".format(control), None)
                 if widget is not None:
                     value = int(widget.get_value())
                     if value != -1:
-                        # oh, yeah. this won't work...I guess I change the name to "channel" which seems ambiguous, or midichannel
+                        # looking for where midi_channel_midi_cc can persist in a running session. Is this in the C function?
                         setattr(self.channel.channel, "{}_midi_cc".format(control), value)
 
         self.hide()

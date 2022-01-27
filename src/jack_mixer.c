@@ -441,7 +441,17 @@ channel_set_midi_channel_midi_cc(
   jack_mixer_channel_t channel,
   int8_t new_channel)
 {
-  // def need to make a real function do things here
+  if (new_channel < 0) {
+    _jack_mixer_error = JACK_MIXER_ERROR_INVALID_CC;
+    return -1;
+  }
+
+  unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_channel);
+  if (channel_ptr->midi_channel_index != -1) {
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_channel_index] = NULL;
+  }
+  channel_ptr->mixer_ptr->midi_cc_map[new_channel] = channel_ptr;
+  channel_ptr->midi_channel_index = new_channel;
   return 0;
 }
 
@@ -551,8 +561,21 @@ int
 channel_autoset_midi_channel_midi_cc(
   jack_mixer_channel_t channel)
 {
-  // check out what the autoset things really do
-  return 0;
+  struct jack_mixer *mixer_ptr = channel_ptr->mixer_ptr;
+
+  for (int i = 1 ; i < 16 ; i++)
+  {
+    if (!mixer_ptr->midi_cc_map[i])
+    {
+      mixer_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_channel_index = i;
+
+      LOG_DEBUG("New channel \"%s\" MIDI channel mapped to %i.\n", channel_ptr->name, i);
+      return i;
+    }
+  }
+  _jack_mixer_error = JACK_MIXER_ERROR_NO_FREE_CC;
+  return -1;
 }
 
 int

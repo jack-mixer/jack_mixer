@@ -421,7 +421,16 @@ class Channel(Gtk.Box, SerializedObject):
                 self.app.monitored_channel = None
 
     # should probs have a param here for MIDI channel
-    def assign_midi_ccs(self, volume_cc, balance_cc, mute_cc, solo_cc=None):
+    def assign_midi_ccs(self, midi_channel_cc, volume_cc, balance_cc, mute_cc, solo_cc=None):
+        try:
+            if midi_channel_cc != -1:
+                self.channel.midi_channel_midi_cc = midi_channel_cc
+            else:
+                midi_channel_cc = self.channel.autoset_midi_channel_midi_cc()
+
+            log.debug("Channel '%s' MIDI channel assigned to #%s.", self.channel.name, midi_channel_cc)
+        except Exception as exc:
+            log.error("Channel '%s' MIDI channel assignment failed: %s", self.channel.name, exc)
         try:
             if volume_cc != -1:
                 self.channel.volume_midi_cc = volume_cc

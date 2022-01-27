@@ -387,7 +387,7 @@ class JackMixer(SerializedObject):
             error_dialog(self.window, _("Input channel creation failed."))
             return
 
-        channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc, solo_cc)
+        channel.assign_midi_ccs(midi_channel_cc, volume_cc, balance_cc, mute_cc, solo_cc)
         return channel
 
     def add_channel_precreated(self, channel):
@@ -450,7 +450,7 @@ class JackMixer(SerializedObject):
             error_dialog(self.window, _("Output channel creation failed."))
             return
 
-        channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc)
+        channel.assign_midi_ccs(midi_channel_cc, volume_cc, balance_cc, mute_cc)
         return channel
 
     def add_output_channel_precreated(self, channel):

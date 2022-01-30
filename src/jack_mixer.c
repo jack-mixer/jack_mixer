@@ -1603,7 +1603,7 @@ process(
   void * midi_buffer;
   double volume, balance;
   uint8_t cc_channel_index;
-  uint8_t cc_num, cc_val, cur_cc_val;
+  uint8_t cc_num, cc_val, cur_cc_val, cc_channel;
 #endif
 
   /* Get input ports buffer pointers */
@@ -1638,14 +1638,17 @@ process(
 
     assert(in_event.time < nframes);
 
+    // mask out the first bits, keep the second bits for MIDI channel
+    cc_channel = (uint8_t)(in_event.buffer[0] & 0x0F );
     cc_num = (uint8_t)(in_event.buffer[1] & 0x7F);
     cc_val = (uint8_t)(in_event.buffer[2] & 0x7F);
     mixer_ptr->last_midi_cc = (int8_t)cc_num;
-
-    LOG_DEBUG("%u: CC#%u -> %u\n", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
+    LOG_DEBUG("MIDI CHANNEL %u: CC#%u -> %u\n", cc_channel, cc_num, cc_val);
 
     /* Do we have a mapping for particular CC? */
     channel_ptr = mixer_ptr->midi_cc_map[cc_num];
+    // this is our global channel
+    mixer_ptr->midi_cc_map[cc_channel];
     if (channel_ptr)
     {
       if (channel_ptr->midi_cc_balance_index == cc_num)

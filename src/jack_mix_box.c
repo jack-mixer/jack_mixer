@@ -48,13 +48,14 @@ usage()
 {
 	const char* _usage = _(
 "Usage: "
-"jack_mix_box [-n <name>] [-p] [-s] [-v <dB>] MIDI_CC...\n"
+"jack_mix_box [-n <name>] [-p] [-s] [-v <dB>|-v <dB>|...] MIDI_CC...\n"
 "\n"
 "-h|--help    print this help message\n"
 "-n|--name    set JACK client name\n"
 "-p|--pickup  enable MIDI pickup mode (default: jump-to-value)\n"
 "-s|--stereo  make all input channels stereo with left+right input\n"
 "-v|--volume  initial volume gain in dBFS (default 0.0, i.e. unity gain)\n"
+"             (may be used 0,1 or as many times as there are MIDI_CC arguments)\n"
 "\n"
 "Each positional argument is interpreted as a MIDI Control Change number and\n"
 "adds a mixer channel with one (mono) or left+right (stereo) inputs, whose\n"
@@ -88,9 +89,11 @@ main(int argc, char *argv[])
 	int channel_index;
 	bool bStereo = false;
 	enum midi_behavior_mode ePickup = Jump_To_Value;
-	double initialVolume = 0.0f; //in dbFS
+	double initialVolume[argc]; //slighty bigger array than needed, but we avoid dynamic memry allocation
 	char * localedir;
+	int volume_index = 0;
 
+	initialVolume[0] = 0.0f; //in dbFS, always init the 1st input
 	localedir = getenv("LOCALEDIR");
 	setlocale(LC_ALL, "");
 	bindtextdomain("jack_mixer", localedir != NULL ? localedir : LOCALEDIR);
@@ -121,7 +124,7 @@ main(int argc, char *argv[])
 				bStereo = true;
 				break;
 			case 'v':
-				initialVolume = strtod(optarg, NULL);
+				initialVolume[volume_index++] = strtod(optarg, NULL);
 				break;
 			case 'h':
 				usage();
@@ -131,14 +134,20 @@ main(int argc, char *argv[])
 				ePickup = Pick_Up;
 				break;
 			default:
-				fprintf(stderr, _("Unknown argument, aborting.\n"));
+				fprintf(stderr, _("ERROR: Unknown argument, aborting.\n"));
 				exit(1);
 		}
 	}
 
 	if (optind == argc) {
-		fputs(_("You must specify at least one input channel.\n"), stderr);
+		fputs(_("ERROR: You must specify at least one input channel.\n"), stderr);
 		exit(1);
+	}
+
+	if ((volume_index >= 2) && ( volume_index != (argc - optind)))
+	{
+		fprintf(stderr, "ERROR: need to specify either no -v option, or exactly 1 or as many -v as the number of MIDI_CC arguments (provided %d, but required %d).\n",volume_index, argc - optind);
+		exit(-1);
 	}
 
 	scale = scale_create();
@@ -160,6 +169,15 @@ main(int argc, char *argv[])
 	channel_volume_write(main_mix_channel, 0.0);
 	set_midi_behavior_mode(mixer, ePickup);
 
+	/* extrapolate the given value for initialVolume to all the rest */
+	if (volume_index < 2)
+	{
+		for (int i = 1; i < argc; i++)
+		{
+			initialVolume[i] = initialVolume[0];
+		}
+	}
+
 	channel_index = 0;
 	while (optind < argc) {
 		char *channel_name;
@@ -178,7 +196,7 @@ main(int argc, char *argv[])
 		}
 		channel_set_volume_midi_cc(channel, atoi(argv[optind++]));
 		channel_set_midi_scale(channel, scale);
-		channel_volume_write(channel, initialVolume);
+		channel_volume_write(channel, initialVolume[channel_index -1]);
 		free(channel_name);
 	}
 

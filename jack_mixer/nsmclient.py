@@ -4,12 +4,12 @@
 PyNSMClient -  A New Session Manager Client-Library in one file.
 
 The Non-Session-Manager by Jonathan Moore Liles <male@tuxfamily.org>: http://non.tuxfamily.org/nsm/
-New Session Manager, by LinuxAudio.org: https://new-session-manager.jackaudio.org/
+New Session Manager by Nils Hilbricht et al  https://new-session-manager.jackaudio.org
 With help from code fragments from https://github.com/attwad/python-osc ( DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE v2 )
 
 MIT License
 
-Copyright 2014-2020 Nils Hilbricht https://www.laborejo.org
+Copyright (c) since 2014: Laborejo Software Suite <info@laborejo.org>, All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 """
 
 import logging;
-logger = None #filled by init with prettyName
+logger: logging.Logger  #filled by init with client logger.
 
 import struct
 import socket
@@ -387,7 +387,8 @@ class NSMClient(object):
         else:
             #osc.udp://hostname:portnumber/
             o = urlparse(nsmOSCUrl)
-            return o.hostname, o.port
+            #return o.hostname, o.port #this always make the hostname lowercase. usually it does not matter, but we got crash reports. Alternative:
+            return o.netloc.split(":")[0], o.port
 
     def getExecutableName(self):
         """Finding the actual executable name can be a bit hard

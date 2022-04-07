@@ -192,7 +192,7 @@ interpolate(
 {
   double ret;
   double frac = 0.01;
-  LOG_DEBUG("Interpolation: start=%f -> end=%f, step=%d\n", start, end, step);
+  LOG_DEBUG("Interpolation: start=%f -> end=%f, step=%d", start, end, step);
   if (start <= 0) {
     if (step <= frac * steps) {
       ret = frac * end * step / steps;
@@ -212,7 +212,7 @@ interpolate(
   else {
     ret = db_to_value(value_to_db(start) + (value_to_db(end) - value_to_db(start)) *step /steps);
   }
-  LOG_DEBUG("Interpolated value: %f\n", ret);
+  LOG_DEBUG("Interpolated value: %f", ret);
   return ret;
 }
 
@@ -495,7 +495,7 @@ channel_set_midi_cc_volume_picked_up(
   jack_mixer_channel_t channel,
   bool status)
 {
-  LOG_DEBUG("Setting channel %s volume picked up to %d.\n", channel_ptr->name, status);
+  LOG_DEBUG("Setting channel %s volume picked up to %d.", channel_ptr->name, status);
   channel_ptr->midi_cc_volume_picked_up = status;
 }
 
@@ -504,7 +504,7 @@ channel_set_midi_cc_balance_picked_up(
   jack_mixer_channel_t channel,
   bool status)
 {
-  LOG_DEBUG("Setting channel %s balance picked up to %d.\n", channel_ptr->name, status);
+  LOG_DEBUG("Setting channel %s balance picked up to %d.", channel_ptr->name, status);
   channel_ptr->midi_cc_balance_picked_up = status;
 }
 
@@ -542,7 +542,7 @@ channel_autoset_volume_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_volume_index = i;
 
-      LOG_DEBUG("New channel \"%s\" volume mapped to CC#%i.\n", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" volume mapped to CC#%i.", channel_ptr->name, i);
       return i;
     }
   }
@@ -563,7 +563,7 @@ channel_autoset_balance_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_balance_index = i;
 
-      LOG_DEBUG("New channel \"%s\" balance mapped to CC#%i.\n", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" balance mapped to CC#%i.", channel_ptr->name, i);
       return i;
     }
   }
@@ -584,7 +584,7 @@ channel_autoset_mute_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_mute_index = i;
 
-      LOG_DEBUG("New channel \"%s\" mute mapped to CC#%i.\n", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" mute mapped to CC#%i.", channel_ptr->name, i);
       return i;
     }
   }
@@ -605,7 +605,7 @@ channel_autoset_solo_midi_cc(
       mixer_ptr->midi_cc_map[i] = channel_ptr;
       channel_ptr->midi_cc_solo_index = i;
 
-      LOG_DEBUG("New channel \"%s\" solo mapped to CC#%i.\n", channel_ptr->name, i);
+      LOG_DEBUG("New channel \"%s\" solo mapped to CC#%i.", channel_ptr->name, i);
       return i;
     }
   }
@@ -785,7 +785,7 @@ channel_volume_write(
     channel_ptr->midi_out_has_events |= CHANNEL_VOLUME;
   }
   channel_ptr->volume_new = value;
-  LOG_DEBUG("\"%s\" volume -> %f.\n", channel_ptr->name, value);
+  LOG_DEBUG("\"%s\" volume -> %f.", channel_ptr->name, value);
 }
 
 double
@@ -829,7 +829,7 @@ channel_balance_write(
     channel_ptr->midi_out_has_events |= CHANNEL_BALANCE;
   }
   channel_ptr->balance_new = balance;
-  LOG_DEBUG("\"%s\" balance -> %f\n", channel_ptr->name, balance);
+  LOG_DEBUG("\"%s\" balance -> %f", channel_ptr->name, balance);
 }
 
 double
@@ -876,7 +876,7 @@ channel_out_mute(
   if (!channel_ptr->out_mute) {
     channel_ptr->out_mute = true;
     channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
-    LOG_DEBUG("\"%s\" muted.\n", channel_ptr->name);
+    LOG_DEBUG("\"%s\" muted.", channel_ptr->name);
   }
 }
 
@@ -887,7 +887,7 @@ channel_out_unmute(
   if (channel_ptr->out_mute) {
     channel_ptr->out_mute = false;
     channel_ptr->midi_out_has_events |= CHANNEL_MUTE;
-    LOG_DEBUG("\"%s\" un-muted.\n", channel_ptr->name);
+    LOG_DEBUG("\"%s\" un-muted.", channel_ptr->name);
   }
 }
 
@@ -906,7 +906,7 @@ channel_solo(
     return;
   channel_ptr->mixer_ptr->soloed_channels = g_slist_prepend(channel_ptr->mixer_ptr->soloed_channels, channel);
   channel_ptr->midi_out_has_events |= CHANNEL_SOLO;
-  LOG_DEBUG("\"%s\" soloed.\n", channel_ptr->name);
+  LOG_DEBUG("\"%s\" soloed.", channel_ptr->name);
 }
 
 void
@@ -917,7 +917,7 @@ channel_unsolo(
     return;
   channel_ptr->mixer_ptr->soloed_channels = g_slist_remove(channel_ptr->mixer_ptr->soloed_channels, channel);
   channel_ptr->midi_out_has_events |= CHANNEL_SOLO;
-  LOG_DEBUG("\"%s\" un-soloed.\n", channel_ptr->name);
+  LOG_DEBUG("\"%s\" un-soloed.", channel_ptr->name);
 }
 
 bool
@@ -1593,7 +1593,7 @@ process(
     cc_val = (uint8_t)(in_event.buffer[2] & 0x7F);
     mixer_ptr->last_midi_cc = (int8_t)cc_num;
 
-    LOG_DEBUG("%u: CC#%u -> %u\n", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
+    LOG_DEBUG("%u: CC#%u -> %u", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
 
     /* Do we have a mapping for particular CC? */
     channel_ptr = mixer_ptr->midi_cc_map[cc_num];
@@ -1705,7 +1705,7 @@ process(
                                                value_to_db(channel_ptr->volume_new)));
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u\n",
+            "%u: CC#%u <- %u",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1727,7 +1727,7 @@ process(
           }
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u\n",
+            "%u: CC#%u <- %u",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1743,7 +1743,7 @@ process(
           midi_out_buffer[2] = (unsigned char)(channel_is_out_muted(channel_ptr) ? 127 : 0);
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u\n",
+            "%u: CC#%u <- %u",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1759,7 +1759,7 @@ process(
           midi_out_buffer[2] = (unsigned char)(channel_is_soloed(channel_ptr) ? 127 : 0);
 
           LOG_DEBUG(
-            "%u: CC#%u <- %u\n",
+            "%u: CC#%u <- %u",
             (unsigned int)midi_out_buffer[0],
             (unsigned int)midi_out_buffer[1],
             (unsigned int)midi_out_buffer[2]);
@@ -1821,7 +1821,7 @@ create(
     mixer_ptr->midi_cc_map[i] = NULL;
   }
 
-  LOG_DEBUG("Initializing JACK.\n");
+  LOG_DEBUG("Initializing JACK.");
   mixer_ptr->jack_client = jack_client_open(jack_client_name_ptr, 0, NULL);
   if (mixer_ptr->jack_client == NULL)
   {
@@ -1829,8 +1829,8 @@ create(
     goto exit_destroy_mutex;
   }
 
-  LOG_DEBUG("JACK client created.\n");
-  LOG_DEBUG("Sample rate: %u\n", jack_get_sample_rate(mixer_ptr->jack_client));
+  LOG_DEBUG("JACK client created.");
+  LOG_DEBUG("Sample rate: %u", jack_get_sample_rate(mixer_ptr->jack_client));
 
 
 #if defined(HAVE_JACK_MIDI)
@@ -1895,7 +1895,7 @@ void
 destroy(
   jack_mixer_t mixer)
 {
-  LOG_DEBUG("Uninitializing JACK.\n");
+  LOG_DEBUG("Uninitializing JACK.");
   assert(mixer_ctx_ptr->jack_client != NULL);
   jack_client_close(mixer_ctx_ptr->jack_client);
   pthread_mutex_destroy(&mixer_ctx_ptr->mutex);

@@ -1200,7 +1200,7 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.DEBUG if args.debug else logging.INFO, format="%(levelname)s: %(message)s"
+        level=logging.DEBUG if args.debug else logging.INFO, format="[{}] %(levelname)s: %(message)s".format(__program__)
     )
 
     try:

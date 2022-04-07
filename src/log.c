@@ -18,6 +18,7 @@
  *
  *****************************************************************************/
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -25,12 +26,15 @@
 
 #include "log.h"
 
+
 void jack_mixer_log(int level, const char * format, ...)
 {
   (void)level;
   va_list arglist;
 
   va_start(arglist, format);
-  vfprintf(stderr, format, arglist);
+  char format_with_name_prefix[512]; //512 string length for the log message. Buffer overflow risk negated by using snfprint:
+  snprintf(format_with_name_prefix, 512, "[jack_mixer] %s\n", format);
+  vfprintf(stderr, format_with_name_prefix, arglist);
   va_end(arglist);
 }

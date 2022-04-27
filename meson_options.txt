@@ -15,7 +15,7 @@ option('check-py-modules',
 )
 option('verbose',
     type: 'boolean',
-    value: false,
+    value: true,
     description: 'Turn on debug logging (for development)'
 )
 option('wheel',

@@ -56,6 +56,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.wants_direct_output = direct_output
         self.post_fader_output_channel = None
         self.future_out_mute = None
+        self.future_midi_channel_midi_cc = None
         self.future_volume_midi_cc = None
         self.future_balance_midi_cc = None
         self.future_mute_midi_cc = None
@@ -275,6 +276,7 @@ class Channel(Gtk.Box, SerializedObject):
     # ---------------------------------------------------------------------------------------------
     # Signal/event handlers
 
+    # this is where the double click happens for channel props
     def on_label_mouse(self, widget, event):
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:
@@ -419,7 +421,17 @@ class Channel(Gtk.Box, SerializedObject):
             if self.app.monitored_channel is self:
                 self.app.monitored_channel = None
 
-    def assign_midi_ccs(self, volume_cc, balance_cc, mute_cc, solo_cc=None):
+    # should probs have a param here for MIDI channel
+    def assign_midi_ccs(self, midi_channel_cc, volume_cc, balance_cc, mute_cc, solo_cc=None):
+        try:
+            if midi_channel_cc != -1:
+                self.channel.midi_channel_midi_cc = midi_channel_cc
+            else:
+                midi_channel_cc = self.channel.autoset_midi_channel_midi_cc()
+
+            log.debug("Channel '%s' MIDI channel assigned to #%s.", self.channel.name, midi_channel_cc)
+        except Exception as exc:
+            log.error("Channel '%s' MIDI channel assignment failed: %s", self.channel.name, exc)
         try:
             if volume_cc != -1:
                 self.channel.volume_midi_cc = volume_cc
@@ -577,6 +589,8 @@ class Channel(Gtk.Box, SerializedObject):
 
         if hasattr(self.channel, "out_mute"):
             object_backend.add_property("out_mute", str(self.channel.out_mute))
+        if self.channel.midi_channel_midi_cc != -1:
+            object_backend.add_property("midi_channel_midi_cc", str(self.channel.midi_channel_midi_cc))
         if self.channel.volume_midi_cc != -1:
             object_backend.add_property("volume_midi_cc", str(self.channel.volume_midi_cc))
         if self.channel.balance_midi_cc != -1:
@@ -599,8 +613,10 @@ class Channel(Gtk.Box, SerializedObject):
         elif name == "meter_prefader":
             self.meter_prefader = (value == "True")
             return True
+        elif name == "midi_channel":
+            self.future_midi_channel_midi_cc = int(value)
+            return True
         elif name == "volume_midi_cc":
-
             self.future_volume_midi_cc = int(value)
             return True
         elif name == "balance_midi_cc":
@@ -642,6 +658,8 @@ class InputChannel(Channel):
 
         super().realize()
 
+        if self.future_midi_channel_midi_cc is not None:
+            self.channel.midi_channel = self.future_midi_channel_midi_cc
         if self.future_volume_midi_cc is not None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc is not None:
@@ -859,6 +877,8 @@ class OutputChannel(Channel):
 
         super().realize()
 
+        if self.future_midi_channel_midi_cc is not None:
+            self.channel.midi_channel_midi_cc = self.future_midi_channel_midi_cc
         if self.future_volume_midi_cc is not None:
             self.channel.volume_midi_cc = self.future_volume_midi_cc
         if self.future_balance_midi_cc is not None:
@@ -1073,38 +1093,47 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         cc_tooltip = _(
             "{param} MIDI Control Change number " "(0-127, set to -1 to assign next free CC #)"
         )
+        channel_label = Gtk.Label.new_with_mnemonic(_("_Channel"))
+        channel_label.set_halign(Gtk.Align.START)
+        grid.attach(channel_label,0,0,1,1)
+        self.entry_midi_channel_cc = Gtk.SpinButton.new_with_range(1, 16, 1)
+        self.entry_midi_channel_cc.set_tooltip_text(cc_tooltip.format(param=_("Channel")))
+        channel_label.set_mnemonic_widget(self.entry_midi_channel_cc)
+        grid.attach(self.entry_midi_channel_cc, 1, 0, 1, 1)
+
         volume_label = Gtk.Label.new_with_mnemonic(_("_Volume"))
         volume_label.set_halign(Gtk.Align.START)
-        grid.attach(volume_label, 0, 0, 1, 1)
+        grid.attach(volume_label, 0, 1, 1, 1)
         self.entry_volume_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_volume_cc.set_tooltip_text(cc_tooltip.format(param=_("Volume")))
         volume_label.set_mnemonic_widget(self.entry_volume_cc)
-        grid.attach(self.entry_volume_cc, 1, 0, 1, 1)
+        grid.attach(self.entry_volume_cc, 1, 1, 1, 1)
         self.button_sense_midi_volume = Gtk.Button(_("Learn"))
         self.button_sense_midi_volume.connect("clicked", self.on_sense_midi_volume_clicked)
-        grid.attach(self.button_sense_midi_volume, 2, 0, 1, 1)
+        grid.attach(self.button_sense_midi_volume, 2, 1, 1, 1)
 
         balance_label = Gtk.Label.new_with_mnemonic(_("_Balance"))
         balance_label.set_halign(Gtk.Align.START)
-        grid.attach(balance_label, 0, 1, 1, 1)
+        grid.attach(balance_label, 0, 2, 1, 1)
         self.entry_balance_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_balance_cc.set_tooltip_text(cc_tooltip.format(param=_("Balance")))
         balance_label.set_mnemonic_widget(self.entry_balance_cc)
-        grid.attach(self.entry_balance_cc, 1, 1, 1, 1)
+        grid.attach(self.entry_balance_cc, 1, 2, 1, 1)
+
         self.button_sense_midi_balance = Gtk.Button(_("Learn"))
         self.button_sense_midi_balance.connect("clicked", self.on_sense_midi_balance_clicked)
-        grid.attach(self.button_sense_midi_balance, 2, 1, 1, 1)
+        grid.attach(self.button_sense_midi_balance, 2, 2, 1, 1)
 
         mute_label = Gtk.Label.new_with_mnemonic(_("M_ute"))
         mute_label.set_halign(Gtk.Align.START)
-        grid.attach(mute_label, 0, 2, 1, 1)
+        grid.attach(mute_label, 0, 3, 1, 1)
         self.entry_mute_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
         self.entry_mute_cc.set_tooltip_text(cc_tooltip.format(param=_("Mute")))
         mute_label.set_mnemonic_widget(self.entry_mute_cc)
-        grid.attach(self.entry_mute_cc, 1, 2, 1, 1)
+        grid.attach(self.entry_mute_cc, 1, 3, 1, 1)
         self.button_sense_midi_mute = Gtk.Button(_("Learn"))
         self.button_sense_midi_mute.connect("clicked", self.on_sense_midi_mute_clicked)
-        grid.attach(self.button_sense_midi_mute, 2, 2, 1, 1)
+        grid.attach(self.button_sense_midi_mute, 2, 3, 1, 1)
 
         if isinstance(self, NewInputChannelDialog) or (
             self.channel and isinstance(self.channel, InputChannel)
@@ -1122,14 +1151,14 @@ class ChannelPropertiesDialog(Gtk.Dialog):
         ):
             solo_label = Gtk.Label.new_with_mnemonic(_("S_olo"))
             solo_label.set_halign(Gtk.Align.START)
-            grid.attach(solo_label, 0, 3, 1, 1)
+            grid.attach(solo_label, 0, 4, 1, 1)
             self.entry_solo_cc = Gtk.SpinButton.new_with_range(-1, 127, 1)
             self.entry_solo_cc.set_tooltip_text(cc_tooltip.format(param=_("Solo")))
             solo_label.set_mnemonic_widget(self.entry_solo_cc)
-            grid.attach(self.entry_solo_cc, 1, 3, 1, 1)
+            grid.attach(self.entry_solo_cc, 1, 4, 1, 1)
             self.button_sense_midi_solo = Gtk.Button(_("Learn"))
             self.button_sense_midi_solo.connect("clicked", self.on_sense_midi_solo_clicked)
-            grid.attach(self.button_sense_midi_solo, 2, 3, 1, 1)
+            grid.attach(self.button_sense_midi_solo, 2, 4, 1, 1)
 
         self.vbox.show_all()
 
@@ -1141,6 +1170,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
             self.mono.set_active(True)
         self.mono.set_sensitive(False)
         self.stereo.set_sensitive(False)
+        self.entry_midi_channel_cc.set_value(self.channel.channel.midi_channel_midi_cc)
         self.entry_volume_cc.set_value(self.channel.channel.volume_midi_cc)
         self.entry_balance_cc.set_value(self.channel.channel.balance_midi_cc)
         self.entry_mute_cc.set_value(self.channel.channel.mute_midi_cc)
@@ -1215,11 +1245,12 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                     self.channel.post_fader_output_channel.remove()
                     self.channel.post_fader_output_channel = None
 
-            for control in ("volume", "balance", "mute", "solo"):
+            for control in ("midi_channel", "volume", "balance", "mute", "solo"):
                 widget = getattr(self, "entry_{}_cc".format(control), None)
                 if widget is not None:
                     value = int(widget.get_value())
                     if value != -1:
+                        # looking for where midi_channel_midi_cc can persist in a running session. Is this in the C function?
                         setattr(self.channel.channel, "{}_midi_cc".format(control), value)
 
         self.hide()
@@ -1236,7 +1267,7 @@ class ChannelPropertiesDialog(Gtk.Dialog):
                 sensitive = True
         self.ok_button.set_sensitive(sensitive)
 
-
+# prolly where the values of the dialog persist?
 class NewChannelDialog(ChannelPropertiesDialog):
     def create_ui(self):
         super().create_ui()
@@ -1267,6 +1298,7 @@ class NewInputChannelDialog(NewChannelDialog):
         self.direct_output.set_active(values.get("direct_output", True))
         # don't set MIDI CCs to previously used values, because they
         # would overwrite existing mappings, if accepted.
+        self.entry_midi_channel_cc.set_value(1)
         self.entry_volume_cc.set_value(-1)
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)
@@ -1280,6 +1312,7 @@ class NewInputChannelDialog(NewChannelDialog):
             "name": self.entry_name.get_text(),
             "stereo": self.stereo.get_active(),
             "direct_output": self.direct_output.get_active(),
+            "midi_channel_cc": int(self.entry_midi_channel_cc.get_value()),
             "volume_cc": int(self.entry_volume_cc.get_value()),
             "balance_cc": int(self.entry_balance_cc.get_value()),
             "mute_cc": int(self.entry_mute_cc.get_value()),
@@ -1338,6 +1371,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
 
         # don't set MIDI CCs to previously used values, because they
         # would overwrite existing mappings, if accepted.
+        self.entry_midi_channel_cc.set_value(-1)
         self.entry_volume_cc.set_value(-1)
         self.entry_balance_cc.set_value(-1)
         self.entry_mute_cc.set_value(-1)
@@ -1352,6 +1386,7 @@ class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):
         return {
             "name": self.entry_name.get_text(),
             "stereo": self.stereo.get_active(),
+            "midi_channel_cc": int(self.entry_midi_channel_cc.get_value()),
             "volume_cc": int(self.entry_volume_cc.get_value()),
             "balance_cc": int(self.entry_balance_cc.get_value()),
             "mute_cc": int(self.entry_mute_cc.get_value()),

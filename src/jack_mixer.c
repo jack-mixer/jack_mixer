@@ -104,6 +104,7 @@ struct channel {
 
   bool NaN_detected;
 
+  int8_t midi_channel_index;
   int8_t midi_cc_volume_index;
   int8_t midi_cc_balance_index;
   int8_t midi_cc_mute_index;
@@ -428,6 +429,33 @@ channel_set_balance_midi_cc(
 }
 
 int8_t
+channel_get_midi_channel_midi_cc(
+  jack_mixer_channel_t channel)
+{
+  // prolly need to set this index somewhere else
+  return channel_ptr->midi_channel_index;
+}
+
+int
+channel_set_midi_channel_midi_cc(
+  jack_mixer_channel_t channel,
+  int8_t new_channel)
+{
+  if (new_channel < 0) {
+    _jack_mixer_error = JACK_MIXER_ERROR_INVALID_CC;
+    return -1;
+  }
+
+  unset_midi_cc_mapping(channel_ptr->mixer_ptr, new_channel);
+  if (channel_ptr->midi_channel_index != -1) {
+    channel_ptr->mixer_ptr->midi_cc_map[channel_ptr->midi_channel_index] = NULL;
+  }
+  channel_ptr->mixer_ptr->midi_cc_map[new_channel] = channel_ptr;
+  channel_ptr->midi_channel_index = new_channel;
+  return 0;
+}
+
+int8_t
 channel_get_volume_midi_cc(
   jack_mixer_channel_t channel)
 {
@@ -527,6 +555,27 @@ channel_set_solo_midi_cc(
   channel_ptr->mixer_ptr->midi_cc_map[new_cc] = channel_ptr;
   channel_ptr->midi_cc_solo_index = new_cc;
   return 0;
+}
+
+int
+channel_autoset_midi_channel_midi_cc(
+  jack_mixer_channel_t channel)
+{
+  struct jack_mixer *mixer_ptr = channel_ptr->mixer_ptr;
+
+  for (int i = 1 ; i < 16 ; i++)
+  {
+    if (!mixer_ptr->midi_cc_map[i])
+    {
+      mixer_ptr->midi_cc_map[i] = channel_ptr;
+      channel_ptr->midi_channel_index = i;
+
+      LOG_DEBUG("New channel \"%s\" MIDI channel mapped to %i.\n", channel_ptr->name, i);
+      return i;
+    }
+  }
+  _jack_mixer_error = JACK_MIXER_ERROR_NO_FREE_CC;
+  return -1;
 }
 
 int
@@ -1554,7 +1603,7 @@ process(
   void * midi_buffer;
   double volume, balance;
   uint8_t cc_channel_index;
-  uint8_t cc_num, cc_val, cur_cc_val;
+  uint8_t cc_num, cc_val, cur_cc_val, cc_channel;
 #endif
 
   /* Get input ports buffer pointers */
@@ -1589,14 +1638,17 @@ process(
 
     assert(in_event.time < nframes);
 
+    // mask out the first bits, keep the second bits for MIDI channel
+    cc_channel = (uint8_t)(in_event.buffer[0] & 0x0F );
     cc_num = (uint8_t)(in_event.buffer[1] & 0x7F);
     cc_val = (uint8_t)(in_event.buffer[2] & 0x7F);
     mixer_ptr->last_midi_cc = (int8_t)cc_num;
-
-    LOG_DEBUG("%u: CC#%u -> %u\n", (unsigned int)(in_event.buffer[0]), cc_num, cc_val);
+    LOG_DEBUG("MIDI CHANNEL %u: CC#%u -> %u\n", cc_channel, cc_num, cc_val);
 
     /* Do we have a mapping for particular CC? */
     channel_ptr = mixer_ptr->midi_cc_map[cc_num];
+    // this is our global channel
+    mixer_ptr->midi_cc_map[cc_channel];
     if (channel_ptr)
     {
       if (channel_ptr->midi_cc_balance_index == cc_num)

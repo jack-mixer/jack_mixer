@@ -443,6 +443,16 @@ cdef class Channel:
             raise ValueError(jack_mixer_error_str().decode('utf-8'))
 
     @property
+    def midi_channel_midi_cc(self):
+        """MIDI channel to control audio channel."""
+        return channel_get_midi_channel_midi_cc(self._channel)
+
+    @midi_channel_midi_cc.setter
+    def midi_channel_midi_cc(self, int channel):
+        if channel_set_midi_channel_midi_cc(self._channel, channel) != 0:
+            raise ValueError(jack_mixer_error_str().decode('utf-8'))
+
+    @property
     def volume_midi_cc(self):
         """MIDI CC assigned to control channel volume."""
         return channel_get_volume_midi_cc(self._channel)
@@ -463,6 +473,10 @@ cdef class Channel:
     def autoset_solo_midi_cc(self):
         """Auto assign MIDI CC for channel solo status."""
         return channel_autoset_solo_midi_cc(self._channel)
+
+    def autoset_midi_channel_midi_cc(self):
+        """Auto assign MIDI channel."""
+        return channel_autoset_midi_channel_midi_cc(self._channel)
 
     def autoset_volume_midi_cc(self):
         """Auto assign MIDI CC for channel volume."""

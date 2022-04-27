@@ -371,6 +371,7 @@ class JackMixer(SerializedObject):
         name,
         stereo=True,
         direct_output=True,
+        midi_channel_cc=1,
         volume_cc=-1,
         balance_cc=-1,
         mute_cc=-1,
@@ -386,7 +387,7 @@ class JackMixer(SerializedObject):
             error_dialog(self.window, _("Input channel creation failed."))
             return
 
-        channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc, solo_cc)
+        channel.assign_midi_ccs(midi_channel_cc, volume_cc, balance_cc, mute_cc, solo_cc)
         return channel
 
     def add_channel_precreated(self, channel):
@@ -432,6 +433,7 @@ class JackMixer(SerializedObject):
         self,
         name,
         stereo=True,
+        midi_channel_cc=1,
         volume_cc=-1,
         balance_cc=-1,
         mute_cc=-1,
@@ -448,7 +450,7 @@ class JackMixer(SerializedObject):
             error_dialog(self.window, _("Output channel creation failed."))
             return
 
-        channel.assign_midi_ccs(volume_cc, balance_cc, mute_cc)
+        channel.assign_midi_ccs(midi_channel_cc, volume_cc, balance_cc, mute_cc)
         return channel
 
     def add_output_channel_precreated(self, channel):
@@ -1048,6 +1050,7 @@ class JackMixer(SerializedObject):
         b = self.get_xml_serialization()
         b.save(file)
 
+    # I think I broke loading XML (or perhaps saving) with my midi channel changes
     def load_from_xml(self, file, silence_errors=False, from_nsm=False):
         log.debug("Loading from XML...")
         self.unserialized_channels = []

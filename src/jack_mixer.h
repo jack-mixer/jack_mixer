@@ -251,6 +251,15 @@ channel_set_balance_midi_cc(
   int8_t new_cc);
 
 int8_t
+channel_get_midi_channel_midi_cc(
+  jack_mixer_channel_t channel);
+
+int
+channel_set_midi_channel_midi_cc(
+  jack_mixer_channel_t channel,
+  int8_t new_channel);
+
+int8_t
 channel_get_volume_midi_cc(
   jack_mixer_channel_t channel);
 
@@ -286,6 +295,10 @@ void
 channel_set_midi_cc_balance_picked_up(
   jack_mixer_channel_t channel,
   bool status);
+
+int
+channel_autoset_midi_channel_midi_cc(
+  jack_mixer_channel_t channel);
 
 int
 channel_autoset_volume_midi_cc(

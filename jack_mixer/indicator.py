@@ -29,7 +29,6 @@ class Indicator:
     def create_menu(self):
         self.menu = Gtk.Menu()
         self.menu.set_title('Jack Mixer')
-        self.menu
  
         self.hidewindow = Gtk.MenuItem(label = 'Hide / Show Jack Mixer')
         self.hidewindow.connect('activate', self.hideshow)

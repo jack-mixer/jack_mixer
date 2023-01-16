@@ -34,7 +34,7 @@ from .serialization_xml import XmlSerialization
 from .serialization import SerializedObject, Serializator
 from .styling import load_css_styles
 from .version import __version__
-
+from .indicator import Indicator
 
 __program__ = "jack_mixer"
 # A "locale" directory present within the package take precedence
@@ -92,7 +92,8 @@ class JackMixer(SerializedObject):
     # scales suitable as volume slider scales
     slider_scales = [scale.Linear30dB(), scale.Linear70dB()]
 
-    def __init__(self, client_name=__program__):
+    def __init__(self, client_name=__program__, minimized=False):
+        self.minimize_on_start = minimized
         self.visible = False
         self.nsm_client = None
         # name of project file that is currently open
@@ -102,6 +103,9 @@ class JackMixer(SerializedObject):
         self._init_solo_channels = None
         self.last_xml_serialization = None
         self.cached_xml_serialization = None
+
+        log.info("Starting %s %s", __program__, __version__)
+        self.indicator = Indicator(self)
 
         if os.environ.get("NSM_URL"):
             self.nsm_client = NSMClient(
@@ -719,6 +723,10 @@ class JackMixer(SerializedObject):
         dlg.destroy()
 
     def on_quit_cb(self, *args, on_delete=False):
+        if self.gui_factory.get_tray_minimized():
+            self.window.hide()
+            return True
+
         if not self.nsm_client and self.gui_factory.get_confirm_quit():
             dlg = Gtk.MessageDialog(
                 parent=self.window,
@@ -1049,7 +1057,7 @@ class JackMixer(SerializedObject):
         b.save(file)
 
     def load_from_xml(self, file, silence_errors=False, from_nsm=False):
-        log.debug("Loading from XML...")
+        log.debug("Loading from XML... YES WE ARE!")
         self.unserialized_channels = []
         b = XmlSerialization()
         try:
@@ -1146,11 +1154,16 @@ class JackMixer(SerializedObject):
         if not self.mixer:
             return
 
-        if self.visible or self.nsm_client is None:
-            width, height = self.window.get_size()
-            self.window.show_all()
-            if hasattr(self, "paned_position"):
-                self.paned.set_position(self.paned_position / self.width * width)
+        if not self.minimize_on_start:
+            log.info("Showing main window")
+            if self.visible or self.nsm_client is None:
+                width, height = self.window.get_size()
+                self.window.show_all()
+                if hasattr(self, "paned_position"):
+                    self.paned.set_position(self.paned_position / self.width * width)
+        else:
+            log.info("Minimizing main window")
+            self.window.hide()
 
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)
@@ -1176,7 +1189,16 @@ def error_dialog(parent, msg, *args, **kw):
 
 
 def main():
+    log.debug("JACK Mixer version %s" % __version__)
+    sys.stdout.flush()
     parser = argparse.ArgumentParser(prog=__program__, description=_(__doc__.splitlines()[0]))
+    parser.add_argument(
+        "-m",
+        "--minimized",
+        action="store_true",
+        default=False,
+        help=_("start JACK Mixer minimized to system tray (default: %(default)s)"),
+    )
     parser.add_argument(
         "-c",
         "--config",
@@ -1204,7 +1226,7 @@ def main():
     )
 
     try:
-        mixer = JackMixer(args.client_name)
+        mixer = JackMixer(args.client_name, args.minimized)
     except Exception as e:
         error_dialog(None, _("Mixer creation failed:\n\n{}"), e, debug=args.debug)
         sys.exit(1)
@@ -1229,7 +1251,6 @@ def main():
 
     mixer.main()
     mixer.cleanup()
-
 
 if __name__ == "__main__":
     main()

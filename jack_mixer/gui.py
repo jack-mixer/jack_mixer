@@ -74,6 +74,7 @@ class Factory(GObject.GObject, SerializedObject):
             )
 
     def set_default_preferences(self):
+        self.tray_minimized = False
         self.confirm_quit = False
         self.default_meter_scale = self.meter_scales[0]
         self.default_project_path = None
@@ -91,6 +92,10 @@ class Factory(GObject.GObject, SerializedObject):
         self.config.read(self.path)
         self.confirm_quit = self.config.getboolean(
             "Preferences", "confirm_quit", fallback=self.confirm_quit
+        )
+
+        self.tray_minimized = self.config.getboolean(
+            "Preferences", "tray_minimized", fallback=self.tray_minimized
         )
 
         scale_id = self.config["Preferences"]["default_meter_scale"]
@@ -137,6 +142,7 @@ class Factory(GObject.GObject, SerializedObject):
 
     def write_preferences(self):
         self.config["Preferences"] = {}
+        self.config["Preferences"]["tray_minimized"] = str(self.tray_minimized)
         self.config["Preferences"]["confirm_quit"] = str(self.confirm_quit)
         self.config["Preferences"]["default_meter_scale"] = self.default_meter_scale.scale_id
         self.config["Preferences"]["default_project_path"] = self.default_project_path or ""
@@ -163,6 +169,9 @@ class Factory(GObject.GObject, SerializedObject):
                 self.write_preferences()
             signal = "{}-changed".format(name.replace("_", "-"))
             self.emit(signal, value)
+
+    def set_tray_minimized(self, tray_minimized):
+        self._update_setting("tray_minimized", tray_minimized)
 
     def set_confirm_quit(self, confirm_quit):
         self._update_setting("confirm_quit", confirm_quit)
@@ -209,6 +218,9 @@ class Factory(GObject.GObject, SerializedObject):
 
     def set_meter_refresh_period_milliseconds(self, period):
         self._update_setting("meter_refresh_period_milliseconds", period)
+
+    def get_tray_minimized(self):
+        return self.tray_minimized
 
     def get_confirm_quit(self):
         return self.confirm_quit
@@ -284,7 +296,10 @@ class Factory(GObject.GObject, SerializedObject):
         )
 
     def unserialize_property(self, name, value):
-        if name == "confirm_quit":
+        if name == "tray_minimized":
+            self.set_tray_minimized(value == "True")
+            return True
+        elif name == "confirm_quit":
             self.set_confirm_quit(value == "True")
             return True
         elif name == "default_meter_scale":
@@ -319,6 +334,13 @@ class Factory(GObject.GObject, SerializedObject):
         return False
 
 
+GObject.signal_new(
+    "tray-minimized-changed",
+    Factory,
+    GObject.SignalFlags.RUN_FIRST | GObject.SignalFlags.ACTION,
+    None,
+    [bool],
+)
 GObject.signal_new(
     "confirm-quit-changed",
     Factory,

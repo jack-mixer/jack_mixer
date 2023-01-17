@@ -1,15 +1,19 @@
 import gi
 try:
-    gi.require_version('AppIndicator3', '0.1')
     gi.require_version('Gtk', '3.0')
 except Exception as e:
     print(e)
     print('Repository version required not present')
     exit(1)
 
+try:
+    from gi.repository import AppIndicator3 as appindicator
+except ImportError:
+    appindicator = None
+
 import os
 import logging as log
-from gi.repository import Gtk, AppIndicator3 as appindicator
+from gi.repository import Gtk
 from os import environ, path
 
 prefix = environ.get('MESON_INSTALL_PREFIX', '/usr/local')
@@ -19,6 +23,9 @@ icondir = path.join(datadir, 'icons', 'hicolor', 'scalable', 'apps')
 class Indicator:
     def __init__(self, jack_mixer):
         self.app = jack_mixer
+        if appindicator is None:
+            log.warning('AppIndicator3 not found, indicator will not be available')
+            return
         icon = os.path.join(icondir, 'jack_mixer.svg')
         self.indicator = appindicator.Indicator.new("Jack Mixer",
             icon,
@@ -26,6 +33,9 @@ class Indicator:
         self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
         self.indicator.set_menu(self.create_menu())
  
+    def available(self):
+        return not self.indicator is None
+
     def create_menu(self):
         self.menu = Gtk.Menu()
         self.menu.set_title('Jack Mixer')

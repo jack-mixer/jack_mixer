@@ -723,7 +723,7 @@ class JackMixer(SerializedObject):
         dlg.destroy()
 
     def on_quit_cb(self, *args, on_delete=False):
-        if self.gui_factory.get_tray_minimized():
+        if self.Indicator.available() and self.indicator. self.gui_factory.get_tray_minimized():
             self.window.hide()
             return True
 

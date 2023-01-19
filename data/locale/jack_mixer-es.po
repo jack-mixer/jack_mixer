@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: jack_mixer 16\n"
 "Report-Msgid-Bugs-To: https://github.com/jack-mixer/jack_mixer/issues\n"
 "POT-Creation-Date: 2021-10-14 12:58+0200\n"
-"PO-Revision-Date: 2021-10-14 14:08+0200\n"
+"PO-Revision-Date: 2023-01-19 11:30+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.3\n"
+"X-Generator: Poedit 3.2.2\n"
 
 #: jack_mixer/app.py:48
 msgid ""
@@ -441,6 +441,8 @@ msgstr "Preferencias"
 msgid ""
 "Set the path where mixer project files are saved and loaded from by default"
 msgstr ""
+"Establecer la ruta donde se guardan los archivos de proyecto del mezclador y "
+"se cargan por defecto"
 
 #: jack_mixer/preferences.py:59 jack_mixer/preferences.py:71
 msgid "Default Project Path"
@@ -448,7 +450,7 @@ msgstr "Ruta Predeterminada de Proyecto"
 
 #: jack_mixer/preferences.py:76
 msgid "Set the interface language and localisation"
-msgstr ""
+msgstr "Establecer la lengua y localización de la interfaz"
 
 #: jack_mixer/preferences.py:80
 msgid "Language:"
@@ -469,10 +471,11 @@ msgstr "Utilizar widgets personalizados"
 #: jack_mixer/preferences.py:93
 msgid "Use widgets with custom design for the channel sliders"
 msgstr ""
+"Utilizar widgets con diseño personalizado para los potenciómetros de canal"
 
 #: jack_mixer/preferences.py:99
 msgid "Draw the volume meters with the selected solid color"
-msgstr ""
+msgstr "Trazar los medidores de volumen con el color sólido seleccionado"
 
 #: jack_mixer/preferences.py:100
 msgid "Use custom vumeter color"
@@ -498,6 +501,8 @@ msgstr "Tiempo (s):"
 msgid ""
 "Update the volume level meters with the specified interval in milliseconds"
 msgstr ""
+"Actualizar los medidores de nivel de volumen con el intervalo especificado "
+"en milisegundos"
 
 #: jack_mixer/preferences.py:152
 msgid "Meter Refresh Period (ms):"
@@ -509,7 +514,7 @@ msgstr "Interfaz"
 
 #: jack_mixer/preferences.py:164
 msgid "Set the scale for all volume meters"
-msgstr ""
+msgstr "Establece la escala para todos los medidores de volumen"
 
 #: jack_mixer/preferences.py:165
 msgid "Meter scale:"
@@ -517,7 +522,7 @@ msgstr "Escala medidor:"
 
 #: jack_mixer/preferences.py:172
 msgid "Set the scale for all volume sliders"
-msgstr ""
+msgstr "Establece la escala para todos los potenciómetros de volumen"
 
 #: jack_mixer/preferences.py:173
 msgid "Slider scale:"
@@ -536,6 +541,12 @@ msgid ""
 "- Pick Up: control changes are ignored until a controller value near the "
 "current value is received\n"
 msgstr ""
+"Establece cómo se controlan volumen y balance a través de MIDI:\n"
+"\n"
+"- Saltar al Valor: el volumen o balance del canal salta inmediatamente al "
+"valor recibido del controlador\n"
+"- Recoger: los cambios del controlador son ignorados hasta que se recibe un "
+"valor del controlador cerca del valor actual\n"
 
 #: jack_mixer/preferences.py:191
 msgid "Control Behavior:"

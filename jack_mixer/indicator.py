@@ -16,7 +16,7 @@ import logging as log
 from gi.repository import Gtk
 from os import environ, path
 
-prefix = environ.get('MESON_INSTALL_PREFIX', '/usr/local')
+prefix = environ.get('MESON_INSTALL_PREFIX', '/usr')
 datadir = path.join(prefix, 'share')
 icondir = path.join(datadir, 'icons', 'hicolor', 'scalable', 'apps')
 
@@ -25,7 +25,9 @@ class Indicator:
         self.app = jack_mixer
         if appindicator is None:
             log.warning('AppIndicator3 not found, indicator will not be available')
+            self.available = False
             return
+        self.available = True
         icon = os.path.join(icondir, 'jack_mixer.svg')
         self.indicator = appindicator.Indicator.new("Jack Mixer",
             icon,
@@ -33,9 +35,6 @@ class Indicator:
         self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
         self.indicator.set_menu(self.create_menu())
  
-    def available(self):
-        return not self.indicator is None
-
     def create_menu(self):
         self.menu = Gtk.Menu()
         self.menu.set_title('Jack Mixer')

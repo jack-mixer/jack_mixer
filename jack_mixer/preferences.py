@@ -80,7 +80,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.language_box.pack_start(Gtk.Label(_("Language:")), False, True, 5)
         self.language_box.pack_start(self.language_combo, True, True, 0)
 
-        if self.app.indicator.available():
+        if self.app.indicator.available:
             self.tray_minimized_checkbutton = Gtk.CheckButton(_("Minimize to tray"))
             self.tray_minimized_checkbutton.set_tooltip_text(
                 _("Minimize the application to the system tray when the window is closed")

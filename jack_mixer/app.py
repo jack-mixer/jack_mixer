@@ -723,11 +723,14 @@ class JackMixer(SerializedObject):
         dlg.destroy()
 
     def on_quit_cb(self, *args, on_delete=False):
-        if self.Indicator.available() and self.indicator. self.gui_factory.get_tray_minimized():
-            self.window.hide()
+        log.info("on_quit_cb")
+        if  self.indicator.available and self.gui_factory.get_tray_minimized():
+            log.info("on_quit_cb: hiding window")
+            self.window.set_visible(False)
             return True
 
-        if not self.nsm_client and self.gui_factory.get_confirm_quit():
+        elif not self.nsm_client and self.gui_factory.get_confirm_quit():
+            log.info("on_quit_cb: confirm quit")
             dlg = Gtk.MessageDialog(
                 parent=self.window,
                 message_type=Gtk.MessageType.QUESTION,
@@ -749,6 +752,7 @@ class JackMixer(SerializedObject):
             if response != Gtk.ResponseType.OK:
                 return on_delete
 
+        log.info("on_quit_cb: quitting")
         Gtk.main_quit()
 
     def on_shrink_channels_cb(self, widget):

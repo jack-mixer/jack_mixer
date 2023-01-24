@@ -1166,11 +1166,9 @@ class JackMixer(SerializedObject):
                 if hasattr(self, "paned_position"):
                     self.paned.set_position(self.paned_position / self.width * width)
         else:
-            log.info("Minimizing main window")
             if self.indicator.available:
+                log.info("Minimizing main window")
                 self.window.hide()
-            else:
-                self.window.iconify()
 
         signal.signal(signal.SIGUSR1, self.sighandler)
         signal.signal(signal.SIGTERM, self.sighandler)
@@ -1204,7 +1202,7 @@ def main():
         "--minimized",
         action="store_true",
         default=False,
-        help=_("start JACK Mixer minimized to system tray (default: %(default)s) If system tray is not available, JACK Mixer will start minimized to taskbar."),
+        help=_("start JACK Mixer minimized to system tray (default: %(default)s) If system tray is available."),
     )
     parser.add_argument(
         "-c",

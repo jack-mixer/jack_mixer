@@ -1316,6 +1316,10 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
 
     def on_response_cb(self, dlg, response_id, *args):
         if response_id == Gtk.ResponseType.APPLY:
+            name = self.entry_name.get_text()
+            if name != self.channel.channel_name:
+                self.channel.channel_name = name
+
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
             self.channel.set_color(self.color_chooser_button.get_rgba())
             for inputchannel in self.app.channels:

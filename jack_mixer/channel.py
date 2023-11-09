@@ -1318,10 +1318,14 @@ class OutputChannelPropertiesDialog(ChannelPropertiesDialog):
         if response_id == Gtk.ResponseType.APPLY:
             self.channel.display_solo_buttons = self.display_solo_buttons.get_active()
             self.channel.set_color(self.color_chooser_button.get_rgba())
+
+        super().on_response_cb(dlg, response_id, *args)
+
+        if response_id == Gtk.ResponseType.APPLY:
             for inputchannel in self.app.channels:
                 inputchannel.update_control_group(self.channel)
 
-        return super().on_response_cb(dlg, response_id, *args)
+        return True
 
 
 class NewOutputChannelDialog(NewChannelDialog, OutputChannelPropertiesDialog):

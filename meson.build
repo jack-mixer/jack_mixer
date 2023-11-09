@@ -6,7 +6,7 @@ project(
     default_options: [
         'warning_level=2'
     ],
-    meson_version: '>=0.53.0'
+    meson_version: '>=0.64.0'
 )
 
 # Dependencies
@@ -33,6 +33,7 @@ if get_option('gui').enabled()
     python = pymod.find_installation(
         'python3',
         required: true,
+        pure: false,
         modules: get_option('check-py-modules') ? ['gi', 'cairo', 'appdirs'] : []
     )
 endif

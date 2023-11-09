@@ -1,41 +1,25 @@
 [build-system]
-# https://thiblahute.gitlab.io/mesonpep517/
-build-backend = "mesonpep517.buildapi"
+build-backend = "mesonpy"
 requires = [
     "cython",
-    "docutils",
     "wheel",
-    "mesonpep517>=0.2",
-    "ninja"
+    "meson-python",
+    "ninja",
+    "docutils",
 ]
 
 
-[tool.mesonpep517.entry-points]
-console_scripts = [
-    "jack_mixer = jack_mixer.app:main"
+[project]
+name = "jack_mixer"
+dynamic = ['version']
+description = "A GTK+ JACK audio mixer application"
+readme = "README.md"
+authors = [
+    { name="Nedko Arnaudov", email="nedko (a.t) arnaudov (dot) name" },
 ]
-
-
-[tool.mesonpep517.metadata]
-summary = "A GTK+ JACK audio mixer application"
-description-file = "README.md"
-# 'keywords' metadata field not supported by mesonpep517 (yet)
-#keywords = "mixer,audio,music,jack,gtk"
-license = "GPL2+"
-author = "Nedko Arnaudov"
-author-email = "nedko (a.t) arnaudov (dot) name"
-maintainer = "Christopher Arndt"
-maintainer-email = "info (a.t.) chrisarndt.de"
-home-page = "https://rdio.space/jackmixer/"
-project-urls = [
-    "Source, https://github.com/jack-mixer/jack-mixer",
+maintainers = [
+    { name="Christopher Arndt", email="info (a.t.) chrisarndt.de" },
 ]
-requires= [
-    "PyGObject",
-    "pycairo",
-    "appdirs",
-]
-requires-python = ">=3.6"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -47,29 +31,66 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Sound/Audio :: Mixers",
 ]
-meson-python-option-name = "python3"
-meson-options = [
+keywords = [
+    "mixer",
+    "audio",
+    "music",
+    "jack",
+    "gtk",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "PyGObject",
+    "pycairo",
+    "appdirs",
+]
+
+[project.license]
+file = "COPYING"
+
+
+[project.urls]
+"Homepage" = "https://rdio.space/jackmixer/"
+"Source" = "https://github.com/jack-mixer/jack-mixer"
+"Bug Tracker" = "https://github.com/jack-mixer/jack-mixer/issues"
+
+
+[project.scripts]
+"jack_mixer" = "jack_mixer.app:main"
+
+
+[tool.meson-python.args]
+setup = [
     "-Dwheel=true",
-    "--buildtype=release"
+    "-Dbuildtype=release",
+    "-Dcheck-py-modules=false",
 ]
 
 
 [tool.isort]
+line_length = 99
+profile = "black"
 ensure_newline_before_comments = true
 force_grid_wrap = 0
 include_trailing_comma = true
-line_length = 99
 multi_line_output = 3
 use_parentheses = true
 
 
 [tool.black]
 line-length = 99
-target-version = ['py36', 'py37', 'py38']
+target-version = [
+    "py38",
+    "py39",
+    "py310",
+    "py311",
+    "py312",
+]
 force-exclude = 'jack_mixer/nsmclient\.py'

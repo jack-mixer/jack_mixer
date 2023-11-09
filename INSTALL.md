@@ -1,16 +1,16 @@
 Installation
 ============
 
-**jack_mixer** uses [meson] and optionally a Python [PEP-517]-compliant build
-system for building, installation and packaging.
+**jack_mixer** uses the [meson] build system for building, installation and
+packaging.
 
 
 ## Requirements
 
 Build requirements:
 
- * GCC (version 9.x or 10.x recommended)
- * meson >= 0.54.0[<sup>1</sup>](#1)
+ * GCC (version >= 9.x recommended)
+ * meson >= 0.64.0
  * [ninja]
  * Python headers
  * [JACK] headers
@@ -21,7 +21,7 @@ Build requirements:
 
 Runtime requirements:
 
- * Python >= 3.6
+ * Python >= 3.8
  * [Pygobject]
  * [pycairo]
  * JACK library and server
@@ -34,11 +34,6 @@ Optional run-time dependencies:
 The run-time Python dependencies are checked by meson when setting up the
 build directory. To disable this, use the `-Dcheck-py-modules=false` option to
 `meson setup.`
-
-<a class="anchor" id="1"></a>
-
-<sup>1</sup> *meson 0.53.0 also works if you use `ninja compile` and
-`ninja install` instead of  `meson compile` and `meson install`.*
 
 
 ## Building
@@ -99,32 +94,39 @@ meson configure builddir -Dgui=disabled
 ```
 
 
-## Building a Python wheel (for maintainers)
+## Building a Python wheel (only for special needs)
 
-1. Make sure you have Python 3, `git` and [pip] installed and your internet
-   connection is online.
+**Note:** Due to limitations of Python's build ecosystem, the wheel packages
+built with the instructions given here, will *not* contain any files used
+for system desktop integration, e.g. icons and `.desktop' files, nor man pages
+or translation files. Using this method to install jack_mixer is thus not
+recommended and mainly provided for testing prurposes.
+
+1. Make sure you have Python 3, `git`, [pip] and the Python [build] package
+   installed and your internet connection is online.
 2. Run the following command to build a binary wheel:
 
 ```console
-pip wheel .
+python -m build -w
 ```
 
 This will automatically download the required build tools, e.g. Cython, meson,
 ninja, the Python `wheel` package etc. (see the [pyproject.toml] file for
 details), build the software with meson and then package it into a wheel, which
-will be placed in the project's root directory.
+will be placed in the `dist` directory below the project's root directory.
 
-The wheel can be installed with `pip install jack_mixer-*.whl`.
+The wheel can be installed with `python -m pip install dist/jack_mixer-*.whl`.
 
 
 [docutils]: https://pypi.org/project/docutils/
+[build]: https://pypi.org/project/build
 [Cython]: https://cython.org/
 [JACK]: https://jackaudio.org/
 [meson]: https://mesonbuild.com/
 [ninja]: https://ninja-build.org/
 [NSM]: https://new-session-manager.jackaudio.org/
 [options]: https://mesonbuild.com/Build-options.html
-[pip]: https://pypi.org/project/pip/
+[pip]: https://pypi.org/project/pip
 [pycairo]: https://pypi.org/project/pycairo/
 [PyGObject]: https://pypi.org/project/PyGObject/
 [appdirs]: https://pypi.org/project/appdirs/

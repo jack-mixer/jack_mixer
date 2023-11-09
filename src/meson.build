@@ -35,7 +35,7 @@ if get_option('gui').enabled()
     jack_mixer_mod_pyx = '_jack_mixer.pyx'
     jack_mixer_mod_c = '_jack_mixer.c'
 
-    cython = find_program('cython3', 'cython', required: false)
+    cython = find_program('cython3', 'cython', 'cython0', required: false)
 
     if fs.exists(jack_mixer_mod_c)
         jack_mixer_cython = files(jack_mixer_mod_c)

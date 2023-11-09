@@ -17,7 +17,7 @@ information.
 To build and install jack_mixer run:
 
 ```console
-meson builddir --prefix=/usr --buildtype=release
+meson setup builddir --prefix=/usr --buildtype=release
 meson compile -C builddir
 [sudo] meson install -C builddir
 ```

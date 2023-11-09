@@ -25,7 +25,7 @@ cdef extern from "jack_mixer.h":
     ctypedef void * jack_mixer_output_channel_t
     ctypedef void * jack_mixer_threshold_t
 
-    ctypedef void (*midi_change_callback)(void *)
+    ctypedef void (*midi_change_callback)(void *) noexcept with gil
 
     cdef enum midi_behavior_mode:
         pass

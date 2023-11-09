@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-## Version 18 (2023-11-10)
+## Version 18 (2023-11-09)
 
 Fixed:
 
@@ -22,7 +22,7 @@ Changes:
 
 Features:
 
-* NSM implemntation now includes support for dirty/clean save status (#154).
+* NSM implementation now includes support for dirty/clean save status (#154).
 
 With contributions from Christopher Arndt, Daryl Hanlon, Nils Hilbricht, Mark
 Knoop and Daniel Sheeler.

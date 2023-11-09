@@ -1,11 +1,39 @@
 Change Log
 ==========
+
+## Version 18 (2023-11-10)
+
+Fixed:
+
+* Compilation with Cython >= 3 has been fixed (#176).
+* Output channel name changes are properkly reflected in input channel control
+  groups (#177).
+* Prefader kmeters now also fall at same rate regardless of jack buffer size.
+* The Spanish translations was updated (#168).
+
+Changes:
+
+* `PyDG` has been replaced with `appdirs` (#150).
+* `mesonep517` has been replaced with `meson-python` for PEP-517 compliant
+  builds (for testing needs only) (#179).
+* All log messages are now prefixed with `[jack_mixer]` so they can be better
+  recognized / filtered in the NSM session logs (#162).
+* The included `nsmclient` module was updated (#164).
+
+Features:
+
+* NSM implemntation now includes support for dirty/clean save status (#154).
+
+With contributions from Christopher Arndt, Daryl Hanlon, Nils Hilbricht, Mark
+Knoop and Daniel Sheeler.
+
+
 ## Version 17 (2021-10-15)
 
 Fixed:
 
 * Uniform fall rate for kmeter peak indicators across different jack
-  period sizes was enforced (#133).
+  buffer sizes was enforced (#133).
 
 Features:
 
@@ -25,6 +53,7 @@ Features:
 
 With contributions from Daniel Sheeler and Christopher Arndt and with
 Daryl Hanlon providing the Spanish translation.
+
 
 ## Version 16 (2021-04-15)
 

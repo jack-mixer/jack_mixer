@@ -10,7 +10,7 @@ import enum
 from _jack_mixer cimport *
 
 
-cdef void midi_change_callback_func(void *userdata) with gil:
+cdef void midi_change_callback_func(void *userdata) noexcept with gil:
     """Wrapper for a Python callback function for MIDI input."""
     channel = <object> userdata
     channel._midi_change_callback()

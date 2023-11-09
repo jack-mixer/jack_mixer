@@ -16,4 +16,4 @@ if 'DESTDIR' not in environ:
 
 print('Compiling Python module to bytecode...')
 moduledir = sysconfig.get_path('purelib', vars={'base': destdir})
-compile_dir(path.join(moduledir, 'jack_mixer'), optimize=1)
+compile_dir(path.join(moduledir, 'jack_mixer'), optimize=1, stripdir=destdir)

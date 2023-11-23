@@ -64,7 +64,7 @@ cdef class Scale:
             scale_destroy(self._scale)
 
     cpdef bool add_threshold(self, float db, float scale_value):
-        """Add scale treshold."""
+        """Add scale threshold."""
         return scale_add_threshold(self._scale, db, scale_value)
 
     cpdef void remove_thresholds(self):
@@ -72,7 +72,7 @@ cdef class Scale:
         scale_remove_thresholds(self._scale)
 
     cpdef void calculate_coefficients(self):
-        """Calculate scale coefficents."""
+        """Calculate scale coefficients."""
         scale_calculate_coefficients(self._scale)
 
     cpdef double db_to_scale(self, double db):
@@ -147,7 +147,7 @@ cdef class Mixer:
     cpdef add_channel(self, channel_name, stereo=None):
         """Add a stereo or mono input channel with given name to the mixer.
 
-        Returns a `Channel` instance when successfull or `None` if channel
+        Returns a `Channel` instance when successful or `None` if channel
         creation failed.
         """
         cdef jack_mixer_channel_t chan_ptr
@@ -163,7 +163,7 @@ cdef class Mixer:
     cpdef add_output_channel(self, channel_name, stereo=None, system=False):
         """Add a stereo or mono output channel with given name to the mixer.
 
-        Returns a `OutputChannel` instance when successfull or `None` if
+        Returns a `OutputChannel` instance when successful or `None` if
         channel creation failed.
         """
         cdef jack_mixer_output_channel_t chan_ptr

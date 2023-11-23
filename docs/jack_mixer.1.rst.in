@@ -76,7 +76,7 @@ JACK AUDIO AND MIDI PORTS
   output port (mono) or pair of output ports (stereo). These are named the same
   as their input port(s) with " Out" resp. " Out L" / "Out R" appended.
 
-* For each ouput channel it will create one (mono) or two (stereo) audio output
+* For each output channel it will create one (mono) or two (stereo) audio output
   ports.
 
 * Additionally it will create one pair of audio monitor ports named "Monitor L"

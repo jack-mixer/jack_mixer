@@ -166,6 +166,15 @@ const char *
 channel_get_name(
   jack_mixer_channel_t channel);
 
+bool
+channel_get_metering(
+  jack_mixer_channel_t channel);
+
+void
+channel_set_metering(
+  jack_mixer_channel_t channel,
+  bool metering);
+
 /* returned values are in dBFS */
 void
 channel_stereo_meter_read(

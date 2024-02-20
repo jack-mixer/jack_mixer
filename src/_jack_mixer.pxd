@@ -73,6 +73,9 @@ cdef extern from "jack_mixer.h":
     cdef const char * channel_get_name(jack_mixer_channel_t channel)
     cdef int channel_rename(jack_mixer_channel_t channel, const char * name)
 
+    cdef bool channel_get_metering(jack_mixer_channel_t channel)
+    cdef void channel_set_metering(jack_mixer_channel_t channel, bool flag)
+
     cdef double channel_abspeak_read(jack_mixer_channel_t channel, meter_mode mode)
     cdef void channel_abspeak_reset(jack_mixer_channel_t channel, meter_mode mode)
 

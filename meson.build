@@ -1,7 +1,7 @@
 project(
     'jack_mixer',
     'c',
-    version: '18',
+    version: '19',
     license: 'GPL2+',
     default_options: [
         'warning_level=2'

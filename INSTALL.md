@@ -16,6 +16,7 @@ Build requirements:
  * [JACK] headers
  * glib2 headers
  * gettext
+
  * [Cython] (optional, required if building from a Git checkout)
  * [docutils] (optional, `rst2man` required if building from a Git checkout)
 
@@ -115,22 +116,34 @@ ninja, the Python `wheel` package etc. (see the [pyproject.toml] file for
 details), build the software with meson and then package it into a wheel, which
 will be placed in the `dist` directory below the project's root directory.
 
-The wheel can be installed with `python -m pip install dist/jack_mixer-*.whl`.
+Make sure you have the [installer] Python package installed and then the wheel
+package just built can be installed with:
 
+```console
+python -m pip installer dist/jack_mixer-*.whl
+```
 
-[docutils]: https://pypi.org/project/docutils/
+If you want to also install the Python dependencies at the same time, use [pip]
+instead:
+
+```console
+python -m pip install dist/jack_mixer-*.whl
+```
+
 [build]: https://pypi.org/project/build
 [Cython]: https://cython.org/
+[docutils]: https://pypi.org/project/docutils/
+[installer]: https://pypi.org/project/installer/
 [JACK]: https://jackaudio.org/
 [meson]: https://mesonbuild.com/
 [ninja]: https://ninja-build.org/
 [NSM]: https://new-session-manager.jackaudio.org/
 [options]: https://mesonbuild.com/Build-options.html
+[PEP-517]: https://www.python.org/dev/peps/pep-0517/
 [pip]: https://pypi.org/project/pip
+[platformdirs]: https://pypi.org/project/platformdirs/
 [pycairo]: https://pypi.org/project/pycairo/
 [PyGObject]: https://pypi.org/project/PyGObject/
-[platformdirs]: https://pypi.org/project/platformdirs/
-[PEP-517]: https://www.python.org/dev/peps/pep-0517/
 [pyproject.toml]: ./pyproject.toml
 [standard meson options]: https://mesonbuild.com/Builtin-options.html
 [wiki page]: https://github.com/jack-mixer/jack_mixer/wiki/Installing-on-debian---Ubuntu

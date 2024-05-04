@@ -23,10 +23,10 @@ import gi  # noqa: F401
 from gi.repository import GObject
 
 try:
-    import appdirs
+    import platformdirs
 
-    confdir = appdirs.user_config_dir("jack_mixer")
-    datadir = appdirs.user_data_dir("jack_mixer")
+    confdir = platformdirs.user_config_dir("jack_mixer")
+    datadir = platformdirs.user_data_dir("jack_mixer")
 except ImportError:
     confdir = None
     datadir = None
@@ -69,7 +69,7 @@ class Factory(GObject.GObject, SerializedObject):
                 self.write_preferences()
         else:
             log.warning(
-                _("Cannot load appdirs. ")
+                _("Cannot load platformdirs. ")
                 + _("Your preferences will not be preserved across jack_mixer invocations.")
             )
 

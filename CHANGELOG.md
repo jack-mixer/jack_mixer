@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+## Version 19 (in development)
+
+Changes:
+
+* The dependency on `appdirs`, which has become unmaintained, has been replaced
+  with `plaformdirs` (184).
+
+
 ## Version 18 (2023-11-09)
 
 Fixed:

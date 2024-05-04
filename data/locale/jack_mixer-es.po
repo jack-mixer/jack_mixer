@@ -411,8 +411,8 @@ msgid "Use system setting"
 msgstr "Utilizar configuración del sistema"
 
 #: jack_mixer/gui.py:70
-msgid "Cannot load appdirs. "
-msgstr "No se pudo cargar appdirs. "
+msgid "Cannot load platformdirs. "
+msgstr "No se pudo cargar platformdirs. "
 
 #: jack_mixer/gui.py:71
 msgid "Your preferences will not be preserved across jack_mixer invocations."

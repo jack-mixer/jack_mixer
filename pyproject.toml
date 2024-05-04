@@ -47,9 +47,9 @@ keywords = [
 ]
 requires-python = ">=3.8"
 dependencies = [
+    "platformdirs",
     "PyGObject",
     "pycairo",
-    "appdirs",
 ]
 
 [project.license]

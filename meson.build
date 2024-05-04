@@ -34,7 +34,7 @@ if get_option('gui').enabled()
         'python3',
         required: true,
         pure: false,
-        modules: get_option('check-py-modules') ? ['gi', 'cairo', 'appdirs'] : []
+        modules: get_option('check-py-modules') ? ['gi', 'cairo', 'platformdirs'] : []
     )
 endif
 

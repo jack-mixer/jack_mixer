@@ -28,7 +28,7 @@ Runtime requirements:
 
 Optional run-time dependencies:
 
-* [appdirs] (for saving your preferences, strongly recommended)
+* [platformdirs] (for saving your preferences, strongly recommended)
 * [NSM] (for NSM session management support)
 
 The run-time Python dependencies are checked by meson when setting up the
@@ -129,7 +129,7 @@ The wheel can be installed with `python -m pip install dist/jack_mixer-*.whl`.
 [pip]: https://pypi.org/project/pip
 [pycairo]: https://pypi.org/project/pycairo/
 [PyGObject]: https://pypi.org/project/PyGObject/
-[appdirs]: https://pypi.org/project/appdirs/
+[platformdirs]: https://pypi.org/project/platformdirs/
 [PEP-517]: https://www.python.org/dev/peps/pep-0517/
 [pyproject.toml]: ./pyproject.toml
 [standard meson options]: https://mesonbuild.com/Builtin-options.html

@@ -63,6 +63,7 @@ class Channel(Gtk.Box, SerializedObject):
         self.css_name = "css_name_%d" % Channel.num_instances
         self.label_name = None
         self.wide = True
+        self.future_metering = None
         self.meter_prefader = False
         self.prefader_button = None
         self.label_chars_wide = 12
@@ -137,6 +138,11 @@ class Channel(Gtk.Box, SerializedObject):
         pre.connect("toggled", self.on_prefader_metering_toggled)
         pre.set_active(self.meter_prefader)
 
+        self.metering_button = mb = Gtk.ToggleButton(_("METER"))
+        mb.get_style_context().add_class("metering")
+        mb.set_tooltip_text(_("Show (on) / Hide (off) metering"))
+        mb.connect("toggled", self.on_metering_toggled)
+
         self.hbox_readouts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox_readouts.set_homogeneous(True)
         self.hbox_readouts.pack_start(self.volume_digits, False, True, 0)
@@ -154,9 +160,11 @@ class Channel(Gtk.Box, SerializedObject):
         self.event_box_fader.connect("scroll-event", self.on_scroll)
         self.event_box_fader.add(self.hbox_fader)
         self.vbox_fader.pack_start(self.event_box_fader, True, True, 0)
+        self.vbox_fader.pack_end(self.metering_button, False, False, 0)
         self.vbox_fader.pack_end(self.balance, False, True, 0)
 
         self.pack_start(self.vbox_fader, True, True, 0)
+        self.metering_button.set_active(self.channel.metering)
 
     def create_slider_widget(self):
         parent = None
@@ -180,6 +188,8 @@ class Channel(Gtk.Box, SerializedObject):
         log.debug('Realizing channel "%s".', self.channel_name)
         if self.future_out_mute is not None:
             self.channel.out_mute = self.future_out_mute
+        if self.future_metering is not None:
+            self.channel.metering = self.future_metering
 
         # Widgets
         # Channel strip label
@@ -319,6 +329,17 @@ class Channel(Gtk.Box, SerializedObject):
     def on_custom_widgets_changed(self, gui_factory, value):
         self.create_slider_widget()
         # balance slider has no custom variant, no need to re-create it.
+
+    def on_metering_toggled(self, button):
+        log.debug(f'on_metering_toggled: {button.get_active()}')
+        if not button.get_active():
+            self.channel.metering = False
+            self.vbox_meter.hide()
+            self.abspeak.hide()
+        else:
+            self.channel.metering = True
+            self.abspeak.show()
+            self.vbox_meter.show()
 
     def on_prefader_metering_toggled(self, button):
         self.use_prefader_metering(button.get_active())
@@ -509,7 +530,7 @@ class Channel(Gtk.Box, SerializedObject):
             self.channel.kmeter_reset()
 
     def read_meter(self):
-        if not self.channel:
+        if not self.channel or self.channel.metering is False:
             return
 
         if self.stereo:
@@ -574,7 +595,8 @@ class Channel(Gtk.Box, SerializedObject):
         object_backend.add_property("balance", "%f" % self.balance_adjustment.get_value())
         object_backend.add_property("wide", "%s" % str(self.wide))
         object_backend.add_property("meter_prefader", "%s" % str(self.meter_prefader))
-
+        if hasattr(self.channel, "metering"):
+            object_backend.add_property("metering", "%s" % str(self.channel.metering))
         if hasattr(self.channel, "out_mute"):
             object_backend.add_property("out_mute", str(self.channel.out_mute))
         if self.channel.volume_midi_cc != -1:
@@ -599,8 +621,10 @@ class Channel(Gtk.Box, SerializedObject):
         elif name == "meter_prefader":
             self.meter_prefader = (value == "True")
             return True
+        elif name == "metering":
+            self.future_metering = (value == "True")
+            return True
         elif name == "volume_midi_cc":
-
             self.future_volume_midi_cc = int(value)
             return True
         elif name == "balance_midi_cc":

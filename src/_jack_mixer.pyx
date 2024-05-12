@@ -333,6 +333,15 @@ cdef class Channel:
             return (left,)
 
     @property
+    def metering(self):
+        """Using meters."""
+        return channel_get_metering(self._channel)
+
+    @metering.setter
+    def metering(self, bool flag):
+        channel_set_metering(self._channel, flag)
+
+    @property
     def midi_change_callback(self):
         """Function to be called when a channel property is changed via MIDI.
 

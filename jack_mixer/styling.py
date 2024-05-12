@@ -36,7 +36,8 @@ DEFAULT_CSS = """\
 @define-color solo_bgcolor_checked #26A269;
 @define-color prefader_bgcolor_hover #A6C2E4;
 @define-color prefader_bgcolor_checked #3584E4;
-
+@define-color metering_bgcolor_hover #906090;
+@define-color metering_bgcolor_checked #663366;
 
 /* Channel strips */
 
@@ -85,7 +86,9 @@ button.monitor:checked,
 button.mute:checked,
 button.solo:checked,
 button.prefader:checked,
-button.prefader_meter:checked {
+button.prefader_meter:checked,
+button.metering:hover,
+button.metering:checked {
     color: white;
     text-shadow: unset;
     background-image: none;
@@ -120,7 +123,12 @@ button.prefader_meter:hover {
 button.prefader_meter:checked {
     background-color: @prefader_bgcolor_checked;
 }
-
+button.metering:hover {
+    background-color: @metering_bgcolor_hover;
+}
+button.metering:checked {
+    background-color: @metering_bgcolor_checked;
+}
 
 /* Control groups */
 

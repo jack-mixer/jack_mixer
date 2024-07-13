@@ -7,7 +7,7 @@ Change Log
 Changes:
 
 * The dependency on `appdirs`, which has become unmaintained, has been replaced
-  with `plaformdirs` (184).
+  with `plaformdirs` (#184).
 
 Documentation:
 

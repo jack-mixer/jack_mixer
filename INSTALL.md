@@ -120,7 +120,7 @@ Make sure you have the [installer] Python package installed and then the wheel
 package just built can be installed with:
 
 ```console
-python -m pip installer dist/jack_mixer-*.whl
+python -m installer dist/jack_mixer-*.whl
 ```
 
 If you want to also install the Python dependencies at the same time, use [pip]

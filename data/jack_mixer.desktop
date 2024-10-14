@@ -10,3 +10,5 @@ Type=Application
 StartupNotify=true
 Categories=GTK;GNOME;AudioVideo;Player;Audio;
 Icon=jack_mixer
+X-NSM-Capable=true
+X-NSM-Exec=jack_mixer

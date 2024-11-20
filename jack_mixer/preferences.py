@@ -80,6 +80,15 @@ class PreferencesDialog(Gtk.Dialog):
         self.language_box.pack_start(Gtk.Label(_("Language:")), False, True, 5)
         self.language_box.pack_start(self.language_combo, True, True, 0)
 
+        if self.app.indicator.available:
+            self.tray_minimized_checkbutton = Gtk.CheckButton(_("Minimize to tray"))
+            self.tray_minimized_checkbutton.set_tooltip_text(
+                _("Minimize the application to the system tray when the window is closed")
+            )
+            self.tray_minimized_checkbutton.set_active(self.app.gui_factory.get_tray_minimized())
+            self.tray_minimized_checkbutton.connect("toggled", self.on_tray_minimized_toggled)
+            interface_vbox.pack_start(self.tray_minimized_checkbutton, True, True, 3)
+
         self.confirm_quit_checkbutton = Gtk.CheckButton(_("Confirm quit"))
         self.confirm_quit_checkbutton.set_tooltip_text(
             _("Always ask for confirmation before quitting the application")
@@ -335,6 +344,9 @@ class PreferencesDialog(Gtk.Dialog):
         self.app.gui_factory.set_vumeter_color(color)
 
         self.custom_color_box.set_sensitive(self.vumeter_color_checkbutton.get_active())
+
+    def on_tray_minimized_toggled(self, *args):
+        self.app.gui_factory.set_tray_minimized(self.tray_minimized_checkbutton.get_active())
 
     def on_confirm_quit_toggled(self, *args):
         self.app.gui_factory.set_confirm_quit(self.confirm_quit_checkbutton.get_active())

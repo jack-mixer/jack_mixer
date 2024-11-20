@@ -53,6 +53,7 @@ python_sources = files([
     'serialization_xml.py',
     'slider.py',
     'styling.py',
+    'indicator.py',
 ])
 
 

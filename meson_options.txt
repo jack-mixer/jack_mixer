@@ -23,3 +23,8 @@ option('wheel',
     value: false,
     description: 'Turn on build mode for creating a Python wheel (should not be used directly)'
 )
+option('raysessiondir',
+    type: 'string',
+    value: '/etc/xdg/raysession/client_templates/35_jackmixer',
+    description: 'Directory in which to place a RaySession integration configuration file'
+)
